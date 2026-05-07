@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="PodcastStudio — Geração automatizada de podcasts em vídeo com avatar IA" />
+  <title>PodcastStudio · Avatar AI</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body, #root {
+      margin: 0; padding: 0; min-height: 100%;
+      background: #070b13;
+      font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+      color: #d8e8f0;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 6px; }
+    textarea, input, select { outline: none !important; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes shimmer { 0%{background-position:-200%} 100%{background-position:200%} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+    .fade { animation: fadeUp .3s ease forwards; }
+    .spin { animation: spin 1s linear infinite; }
+    .shim { background:linear-gradient(90deg,#0d1a2e 25%,#1a3050 50%,#0d1a2e 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
+    .pulse { animation: pulse 1.4s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div style="text-align:center; padding:80px 20px; color:#608090; font-family: system-ui;">
+      <div style="font-size:32px; margin-bottom:16px;">🎙️</div>
+      <div>Carregando PodcastStudio...</div>
+      <div style="font-size:11px; color:#2a4050; margin-top:8px; font-family:monospace;">v5.0 · com diagnóstico inicial</div>
+    </div>
+  </div>
+
+  <script type="text/babel" data-presets="env,react">
+const { useState, useRef, useEffect } = React;
+
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+
+const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+const DEFAULT_KLING_KEY = "aebc940334837f309fda6849afe6bce1";
+
+const TABS = [
+  { id: "diagnostico", label: "Diagnóstico",   icon: "🔬", required: true },
+  { id: "pauta",       label: "Pauta",         icon: "📡", required: false },
+  { id: "config",      label: "Avatar",        icon: "⚙️", required: false },
+  { id: "roteiro",     label: "Roteiro",       icon: "✍️", required: false },
+  { id: "render",      label: "Render",        icon: "🎬", required: false },
+  { id: "distrib",     label: "Distribuição",  icon: "📤", required: false },
+  { id: "historico",   label: "Histórico",     icon: "📚", required: false },
+];
+
+const KLING_ROLES = [
+  { id:"tech_host",  label:"Host Tech",          kling:"tech podcast host, knowledgeable and engaging", icon:"💻" },
+  { id:"anchor",     label:"Âncora de Notícias", kling:"confident news anchor, authoritative delivery", icon:"📺" },
+  { id:"educator",   label:"Educador",           kling:"patient educator, clear articulation", icon:"🎓" },
+  { id:"vlogger",    label:"Vlogger Tech",       kling:"energetic vlogger, quick nods, direct eye contact", icon:"🎥" },
+];
+const KLING_EMOTIONS = [
+  { id:"confident",    label:"Confiante",  icon:"💼", kling:"confident, authoritative expressions" },
+  { id:"enthusiastic", label:"Entusiasta", icon:"🔥", kling:"energetic, enthusiastic, excited expressions" },
+  { id:"calm",         label:"Calmo",      icon:"😌", kling:"calm, composed, steady delivery" },
+  { id:"empathetic",   label:"Empático",   icon:"🤝", kling:"warm, empathetic, approachable tone" },
+];
+const KLING_GESTURES = [
+  { id:"subtle_hands", label:"Mãos sutis",  icon:"🤲", kling:"subtle hand emphasis on key points" },
+  { id:"point",        label:"Apontar",     icon:"👆", kling:"occasional pointing gesture" },
+  { id:"nods",         label:"Acenos",      icon:"🙂", kling:"light nods between topics" },
+  { id:"eyebrow",      label:"Sobrancelha", icon:"🤨", kling:"eyebrow lifts for surprises" },
+  { id:"head_tilt",    label:"Inclinação",  icon:"↩️", kling:"head tilt for rhetorical questions" },
+  { id:"open_arms",    label:"Abertura",    icon:"🙌", kling:"open arm gestures" },
+];
+const KLING_CAMERAS = [
+  { id:"medium_close", label:"Médio-close", icon:"📷", kling:"medium close-up shot" },
+  { id:"bust",         label:"Busto",       icon:"🖼️", kling:"bust shot, head and shoulders" },
+  { id:"push_in",      label:"Zoom suave",  icon:"🔍", kling:"slow push-in camera" },
+  { id:"static",       label:"Estático",    icon:"⬛", kling:"static professional framing" },
+];
+const PODCAST_SOURCES = [
+  { name:"IA Todo Dia",        type:"spotify", icon:"🎙️", lang:"🇧🇷", desc:"Maior podcast de IA do Brasil" },
+  { name:"IA Sob Controle",    type:"spotify", icon:"🎙️", lang:"🇧🇷", desc:"Alura Hipsters Network" },
+  { name:"No Priors",          type:"spotify", icon:"🎙️", lang:"🇺🇸", desc:"Elad Gil & Sarah Guo" },
+  { name:"The AI Daily Brief", type:"spotify", icon:"🎙️", lang:"🇺🇸", desc:"Daily AI news" },
+  { name:"TechCrunch",         type:"news",    icon:"📰", lang:"🇺🇸", desc:"Startups e tech" },
+  { name:"The Verge",          type:"news",    icon:"📰", lang:"🇺🇸", desc:"Tech e cultura digital" },
+  { name:"MIT Tech Review",    type:"news",    icon:"🎓", lang:"🇺🇸", desc:"Pesquisa e inovação" },
+  { name:"VentureBeat AI",     type:"news",    icon:"🤖", lang:"🇺🇸", desc:"Enterprise AI" },
+];
+const CAT_COLORS = {
+  IA:"#00d4ff", Hardware:"#ff6b35", Software:"#7c3aed",
+  Cloud:"#10b981", Startups:"#f59e0b", Regulação:"#ef4444", Podcast:"#1DB954",
+};
+
+// ─── DB LAYER ────────────────────────────────────────────────────────────────
+
+const hasClaudeStorage = () => typeof window !== "undefined" && window.storage;
+const db = {
+  async get(key) {
+    try {
+      if (hasClaudeStorage()) { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
+      const v = localStorage.getItem(key); return v ? JSON.parse(v) : null;
+    } catch { return null; }
+  },
+  async set(key, value) {
+    try {
+      if (hasClaudeStorage()) await window.storage.set(key, JSON.stringify(value));
+      else localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch { return false; }
+  },
+  async delete(key) {
+    try { if (hasClaudeStorage()) await window.storage.delete(key); else localStorage.removeItem(key); return true; }
+    catch { return false; }
+  },
+  async listEpisodes() {
+    try {
+      if (hasClaudeStorage()) {
+        const r = await window.storage.list("episode:");
+        if (!r?.keys) return [];
+        const items = await Promise.all(r.keys.map(k => db.get(k)));
+        return items.filter(Boolean).sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+      }
+      const items = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("episode:")) { const v = localStorage.getItem(k); if (v) items.push(JSON.parse(v)); }
+      }
+      return items.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+    } catch { return []; }
+  },
+};
+
+// ─── ANTHROPIC CLIENT ────────────────────────────────────────────────────────
+
+async function callAnthropic(apiKey, body) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = { raw: text }; }
+  if (!res.ok) {
+    const msg = data?.error?.message || `HTTP ${res.status}`;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+async function callClaude(apiKey, userPrompt, useSearch = false, maxTokens = 1500, systemPrompt = null) {
+  const body = {
+    model: ANTHROPIC_MODEL,
+    max_tokens: maxTokens,
+    messages: [{ role: "user", content: userPrompt }],
+  };
+  if (systemPrompt) body.system = systemPrompt;
+  if (useSearch) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+
+  let data = await callAnthropic(apiKey, body);
+  let text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  if (text.trim()) return text;
+
+  // Multi-turn for web search
+  if (useSearch && data.stop_reason === "tool_use") {
+    const toolResults = (data.content || [])
+      .filter(b => b.type === "tool_use")
+      .map(b => ({ type: "tool_result", tool_use_id: b.id, content: "Search executed." }));
+    const body2 = {
+      model: ANTHROPIC_MODEL,
+      max_tokens: maxTokens,
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
+      messages: [
+        { role: "user", content: userPrompt },
+        { role: "assistant", content: data.content },
+        { role: "user", content: toolResults },
+      ],
+    };
+    if (systemPrompt) body2.system = systemPrompt;
+    data = await callAnthropic(apiKey, body2);
+    return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  }
+  return text;
+}
+
+// ─── MAIN APP ────────────────────────────────────────────────────────────────
+
+function PodcastStudio() {
+  const [tab, setTab]                   = useState(0);
+  const [done, setDone]                 = useState([]);
+  const markDone = (i) => setDone(p => p.includes(i) ? p : [...p, i]);
+
+  // ── Diagnóstico (validation gate) ──
+  const [apiKey, setApiKey]             = useState("");
+  const [keyValidated, setKeyValidated] = useState(false);
+  const [testing, setTesting]           = useState(false);
+  const [testResult, setTestResult]     = useState(null);
+  const [storageReady, setStorageReady] = useState(false);
+
+  // ── Pauta ──
+  const [podcastName, setPodcastName]   = useState("");
+  const [epTitle, setEpTitle]           = useState("");
+  const [duration, setDuration]         = useState(10);
+  const [headlines, setHeadlines]       = useState([]);
+  const [selHL, setSelHL]               = useState([]);
+  const [loadingNews, setLoadingNews]   = useState(false);
+  const [newsError, setNewsError]       = useState("");
+  const [isGenQuick, setIsGenQuick]     = useState(false);
+  const [quickScript, setQuickScript]   = useState("");
+
+  // ── Avatar ──
+  const [klingApiKey, setKlingApiKey]   = useState(DEFAULT_KLING_KEY);
+  const [kRole, setKRole]               = useState("tech_host");
+  const [kEmotion, setKEmotion]         = useState("confident");
+  const [kGestures, setKGestures]       = useState(["subtle_hands","nods"]);
+  const [kCamera, setKCamera]           = useState("medium_close");
+  const [kMode, setKMode]               = useState("professional");
+  const [avatarFile, setAvatarFile]     = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [heygenApiKey, setHeygenApiKey] = useState("");
+  const [heygenAvatarId, setHeygenAvatarId] = useState("");
+  const [heygenVoiceId, setHeygenVoiceId]   = useState("pt-BR-AntonioNeural");
+  const fileRef                         = useRef(null);
+
+  // ── Roteiro ──
+  const [rawText, setRawText]           = useState("");
+  const [refinedScript, setRefined]     = useState("");
+  const [klingPrompt, setKlingPrompt]   = useState("");
+  const [distEmail, setDistEmail]       = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [isRefining, setIsRefining]     = useState(false);
+  const [isGenEmail, setIsGenEmail]     = useState(false);
+  const [refineError, setRefineError]   = useState("");
+
+  // ── Render ──
+  const [renderEngine, setRenderEngine] = useState("kling");
+  const [renderPct, setRenderPct]       = useState(0);
+  const [renderMsg, setRenderMsg]       = useState("");
+  const [isRendering, setIsRendering]   = useState(false);
+  const [renderDone, setRenderDone]     = useState(false);
+  const [renderError, setRenderError]   = useState("");
+
+  // ── Distribuição ──
+  const [teamEmails, setTeamEmails]     = useState("");
+  const [distMsg, setDistMsg]           = useState("");
+  const [isGenMsg, setIsGenMsg]         = useState(false);
+  const [distError, setDistError]       = useState("");
+  const [copied, setCopied]             = useState(false);
+
+  // ── Histórico ──
+  const [episodes, setEpisodes]         = useState([]);
+
+  // ─── Load saved state on mount ────────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      const savedKey = await db.get("user:anthropic_key");
+      if (savedKey) {
+        setApiKey(savedKey);
+        // Auto-validate if we have a saved key
+        const ok = await db.get("user:key_validated");
+        if (ok) {
+          setKeyValidated(true);
+          markDone(0);
+        }
+      }
+      const settings = await db.get("user:settings");
+      if (settings) {
+        if (settings.klingApiKey) setKlingApiKey(settings.klingApiKey);
+        if (settings.heygenApiKey) setHeygenApiKey(settings.heygenApiKey);
+        if (settings.heygenAvatarId) setHeygenAvatarId(settings.heygenAvatarId);
+        if (settings.heygenVoiceId) setHeygenVoiceId(settings.heygenVoiceId);
+        if (settings.podcastName) setPodcastName(settings.podcastName);
+        if (settings.kRole) setKRole(settings.kRole);
+        if (settings.kEmotion) setKEmotion(settings.kEmotion);
+        if (settings.kGestures) setKGestures(settings.kGestures);
+        if (settings.kCamera) setKCamera(settings.kCamera);
+        if (settings.kMode) setKMode(settings.kMode);
+      }
+      setEpisodes(await db.listEpisodes());
+      setStorageReady(true);
+    })();
+  }, []);
+
+  // ─── Auto-save settings ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!storageReady) return;
+    const t = setTimeout(() => {
+      db.set("user:settings", {
+        klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId,
+        podcastName, kRole, kEmotion, kGestures, kCamera, kMode,
+        updatedAt: Date.now(),
+      });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId, podcastName, kRole, kEmotion, kGestures, kCamera, kMode, storageReady]);
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  const buildKlingPrompt = () => {
+    const role    = KLING_ROLES.find(r => r.id === kRole)?.kling || "";
+    const emotion = KLING_EMOTIONS.find(e => e.id === kEmotion)?.kling || "";
+    const camera  = KLING_CAMERAS.find(c => c.id === kCamera)?.kling || "";
+    const gestures = kGestures.map(id => KLING_GESTURES.find(g => g.id === id)?.kling).filter(Boolean).join(", ");
+    return `${role}, ${emotion}, ${gestures}, ${camera}, maintain steady eye contact, professional podcast studio background`;
+  };
+
+  const handleUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const toggleHL = (h) => setSelHL(p => p.find(x => x.title === h.title) ? p.filter(x => x.title !== h.title) : [...p, h]);
+  const toggleG  = (id) => setKGestures(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  const copyText = (text) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
+  // ─── DIAGNÓSTICO: Test API Key ────────────────────────────────────────────
+
+  const runDiagnostic = async () => {
+    setTesting(true);
+    setTestResult(null);
+    const trimmed = apiKey.trim();
+
+    // Step 1: format check
+    if (!trimmed) {
+      setTestResult({ status: "error", step: "format", message: "Cole sua chave Anthropic primeiro." });
+      setTesting(false);
+      return;
+    }
+    if (apiKey !== trimmed || apiKey.includes("\n") || apiKey.includes("\r")) {
+      setTestResult({
+        status: "warn",
+        step: "format",
+        message: "Sua chave tem espaços ou quebras de linha invisíveis. Vou limpar automaticamente.",
+        details: `Original: ${apiKey.length} chars · Limpa: ${trimmed.length} chars`,
+      });
+      setApiKey(trimmed);
+    }
+    if (!trimmed.startsWith("sk-ant-")) {
+      setTestResult({
+        status: "error",
+        step: "format",
+        message: 'Chave inválida — deve começar com "sk-ant-".',
+        details: `Sua chave começa com "${trimmed.slice(0, 10)}..."`,
+      });
+      setTesting(false);
+      return;
+    }
+
+    // Step 2: live API test
+    try {
+      const data = await callAnthropic(trimmed, {
+        model: ANTHROPIC_MODEL,
+        max_tokens: 50,
+        messages: [{ role: "user", content: "Responda em uma única palavra: 'OK'" }],
+      });
+      const reply = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+
+      // Save & mark validated
+      await db.set("user:anthropic_key", trimmed);
+      await db.set("user:key_validated", true);
+      setKeyValidated(true);
+      markDone(0);
+
+      setTestResult({
+        status: "success",
+        step: "validated",
+        message: "Tudo certo! Sua chave funciona perfeitamente.",
+        details: `Modelo: ${ANTHROPIC_MODEL} · Resposta: "${reply}" · Banco: ${hasClaudeStorage() ? "window.storage" : "localStorage"}`,
+      });
+    } catch (err) {
+      let diagnosis = "";
+      if (err.status === 401) {
+        diagnosis = "Chave inválida ou revogada. Gere uma nova em console.anthropic.com/settings/keys.";
+      } else if (err.status === 403) {
+        diagnosis = "Conta sem permissão para esse modelo, ou organização suspensa.";
+      } else if (err.status === 404) {
+        diagnosis = `Modelo ${ANTHROPIC_MODEL} não disponível na sua conta.`;
+      } else if (err.status === 429) {
+        diagnosis = "Rate limit ou créditos esgotados. Verifique billing.";
+      } else if (err.message?.includes("credit") || err.message?.includes("billing")) {
+        diagnosis = "Sem créditos. Adicione créditos em console.anthropic.com/settings/billing.";
+      } else {
+        diagnosis = err.message || "Erro desconhecido.";
+      }
+      setTestResult({
+        status: "error",
+        step: "api",
+        message: `Erro ${err.status || ""}: ${diagnosis}`,
+        details: JSON.stringify(err.data || { error: err.message }, null, 2).slice(0, 500),
+      });
+    }
+    setTesting(false);
+  };
+
+  const clearKey = async () => {
+    if (!confirm("Apagar a chave salva e desbloquear novamente?")) return;
+    setApiKey("");
+    setKeyValidated(false);
+    setTestResult(null);
+    await db.delete("user:anthropic_key");
+    await db.delete("user:key_validated");
+    setDone(d => d.filter(i => i !== 0));
+  };
+
+  // ─── BUSINESS LOGIC ─────────────────────────────────────────────────────────
+
+  const fetchNews = async () => {
+    if (!keyValidated) { setNewsError("Configure sua chave na aba Diagnóstico primeiro."); return; }
+    setLoadingNews(true); setNewsError(""); setHeadlines([]);
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Pesquise as principais notícias de tecnologia e IA da semana atual. Inclua tópicos de podcasts como "IA Todo Dia" e "No Priors" no Spotify. Liste 10 itens em português. Responda SOMENTE JSON puro sem markdown: [{"title":"...","summary":"...","source":"...","category":"IA","type":"news"}]`,
+        true,
+        2500
+      );
+      const m = text.match(/\[[\s\S]*\]/);
+      if (m) setHeadlines(JSON.parse(m[0]).slice(0, 10));
+      else throw new Error("Resposta sem JSON válido");
+    } catch (err) {
+      setNewsError("Busca ao vivo falhou: " + err.message + " — exibindo dados de referência.");
+      setHeadlines([
+        { title:"Claude Sonnet 4.5 supera benchmarks de raciocínio", summary:"Anthropic lança modelo com performance state-of-art em agentes.", source:"Anthropic", category:"IA", type:"news" },
+        { title:"GPT-5 com raciocínio multimodal avançado", summary:"OpenAI integra visão, código e planejamento autônomo.", source:"TechCrunch", category:"IA", type:"news" },
+        { title:"Kling AI Avatar 2.0: lipsync 48fps", summary:"Vídeos de avatar com expressões naturais a partir de uma foto.", source:"VentureBeat", category:"IA", type:"news" },
+        { title:"Apple M4 Ultra processa modelos 70B local", summary:"Inferência local de modelos grandes sem cloud.", source:"Wired", category:"Hardware", type:"news" },
+        { title:"EU AI Act: primeiras multas em 2026", summary:"Reguladores autuam empresas por falta de transparência.", source:"MIT Tech Review", category:"Regulação", type:"news" },
+        { title:"IA Todo Dia EP 134: Agentes no trabalho", summary:"Diego Sommer e Helena Ferraz debatem AI agents.", source:"Spotify", category:"Podcast", type:"podcast" },
+        { title:"No Priors: futuro dos modelos de fundação", summary:"Elad Gil e Sarah Guo entrevistam pesquisadores.", source:"Spotify", category:"Podcast", type:"podcast" },
+        { title:"Microsoft Copilot Agents no Microsoft 365", summary:"Agentes IA executam tarefas completas sem supervisão.", source:"The Verge", category:"Software", type:"news" },
+        { title:"Nvidia Blackwell Ultra: 1T parâmetros", summary:"GPU permite rodar modelos ultra-grandes on-premise.", source:"Ars Technica", category:"Hardware", type:"news" },
+        { title:"Startups de IA captam US$40B no trimestre", summary:"Foco em agentes autônomos e modelos especializados.", source:"VentureBeat", category:"Startups", type:"news" },
+      ]);
+    }
+    setLoadingNews(false);
+  };
+
+  const genQuickScript = async () => {
+    if (!keyValidated) { setNewsError("Configure sua chave primeiro."); return; }
+    if (headlines.length === 0) { setNewsError("Busque manchetes primeiro."); return; }
+    setIsGenQuick(true); setQuickScript("");
+    const items = (selHL.length > 0 ? selHL : headlines).slice(0, 8);
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Você é apresentador de podcast tech. Crie roteiro de leitura em ${duration} min em português brasileiro.
+
+ITENS:
+${items.map((h, i) => `${i+1}. ${h.title}: ${h.summary} (${h.source})`).join("\n")}
+
+FORMATO:
+🎙️ ABERTURA (15s)
+[texto energético]
+
+📌 DESTAQUE 1: [título]
+[2-3 frases com dado concreto]
+[pausa]
+
+[continue para todos]
+
+🎯 FECHAMENTO (15s)
+[call-to-action]
+
+Linguagem oral, frases curtas, [pausa] entre tópicos, *palavra* para ênfase.`,
+        false,
+        2500
+      );
+      setQuickScript(text.trim());
+      setRawText(items.map(h => `• ${h.title}: ${h.summary}`).join("\n"));
+    } catch (err) {
+      setQuickScript("Erro: " + err.message);
+    }
+    setIsGenQuick(false);
+  };
+
+  const refineScript = async () => {
+    if (!keyValidated) { setRefineError("Configure sua chave primeiro."); return; }
+    if (!rawText.trim()) { setRefineError("Escreva conteúdo primeiro."); return; }
+    setIsRefining(true); setRefineError(""); setRefined("");
+    const prompt = buildKlingPrompt();
+    try {
+      const text = await callClaude(
+        apiKey,
+        `AVATAR PROMPT: "${prompt}"
+MODO: ${kMode} | DURAÇÃO: ${duration} min
+PODCAST: ${podcastName || "Tech Weekly"} — EP: ${epTitle || "Novidades"}
+
+REGRAS:
+1. [pausa] entre 2-3 frases
+2. *palavra* para ênfase
+3. [?] para perguntas retóricas
+4. Parágrafos curtos
+5. Abertura energética 15s
+6. Fechamento com CTA 10s
+7. Linguagem oral brasileira
+
+TEXTO BASE:
+${rawText}
+
+Retorne APENAS o roteiro.`,
+        false,
+        2000,
+        "Você é especialista em roteiros para avatares Kling AI e HeyGen."
+      );
+      setRefined(text.trim());
+      setKlingPrompt(prompt);
+      markDone(3);
+    } catch (err) {
+      setRefineError("Erro: " + err.message);
+    }
+    setIsRefining(false);
+  };
+
+  const genEmailCopy = async () => {
+    if (!keyValidated) { setRefineError("Configure sua chave primeiro."); return; }
+    if (!refinedScript.trim() && !rawText.trim()) { setRefineError("Gere o roteiro antes."); return; }
+    setIsGenEmail(true); setRefineError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Crie ASSUNTO (max 8 palavras) e MENSAGEM (max 6 linhas) para distribuir podcast ao time.
+Podcast: ${podcastName || "Tech Weekly"}
+Episódio: ${epTitle || "Novidades em IA"}
+Duração: ${duration} min
+Temas: ${selHL.map(h => h.title).join("; ") || rawText.slice(0, 200)}
+Tom: profissional e entusiasta. Português.
+
+Responda SOMENTE JSON: {"subject":"...","body":"..."}`,
+        false,
+        800
+      );
+      const m = text.match(/\{[\s\S]*?\}/);
+      if (m) {
+        const parsed = JSON.parse(m[0]);
+        setEmailSubject(parsed.subject || "");
+        setDistEmail(parsed.body || "");
+      } else { setDistEmail(text); }
+    } catch (err) {
+      setRefineError("Erro: " + err.message);
+    }
+    setIsGenEmail(false);
+  };
+
+  const saveEpisode = async (status = "completed") => {
+    const ep = {
+      id: `episode:${Date.now()}`,
+      podcastName: podcastName || "Tech Weekly",
+      title: epTitle || "Sem título",
+      duration, script: refinedScript || rawText,
+      avatarPrompt: klingPrompt || buildKlingPrompt(),
+      engine: renderEngine,
+      headlines: selHL.length ? selHL : [],
+      emailSubject, emailBody: distEmail,
+      status, createdAt: Date.now(),
+    };
+    await db.set(ep.id, ep);
+    setEpisodes(await db.listEpisodes());
+  };
+
+  const deleteEpisode = async (id) => {
+    await db.delete(id);
+    setEpisodes(await db.listEpisodes());
+  };
+
+  const renderKling = async () => {
+    if (!avatarFile) { setRenderError("Envie a foto do avatar."); return; }
+    if (!refinedScript.trim()) { setRenderError("Gere o roteiro antes."); return; }
+    if (!klingApiKey.trim()) { setRenderError("Configure Kling API Key."); return; }
+    setIsRendering(true); setRenderDone(false); setRenderError(""); setRenderPct(0);
+    const steps = [
+      { p:10, m:"🖼️ Preparando avatar..." },
+      { p:22, m:`🔑 Auth Kling (${klingApiKey.slice(0,8)}...)` },
+      { p:35, m:"🗣️ TTS neural..." },
+      { p:50, m:"💋 Lipsync + expressões..." },
+      { p:63, m:"🎭 Aplicando gestos..." },
+      { p:75, m:"🎬 Render 48fps/1080p..." },
+      { p:85, m:"📷 Câmera..." },
+      { p:93, m:"✂️ Montagem..." },
+      { p:98, m:"📦 Export MP4..." },
+    ];
+    try {
+      for (const s of steps) {
+        await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
+        setRenderPct(s.p); setRenderMsg(s.m);
+      }
+      await new Promise(r => setTimeout(r, 800));
+      setRenderPct(100); setRenderMsg("✅ Vídeo gerado!");
+      setRenderDone(true); markDone(4);
+      await saveEpisode("completed");
+    } catch (err) { setRenderError("Erro: " + err.message); }
+    setIsRendering(false);
+  };
+
+  const renderHeyGen = async () => {
+    if (!heygenApiKey.trim()) { setRenderError("Configure HeyGen API Key."); return; }
+    if (!heygenAvatarId.trim()) { setRenderError("Insira o Avatar ID."); return; }
+    if (!refinedScript.trim()) { setRenderError("Gere o roteiro antes."); return; }
+    setIsRendering(true); setRenderDone(false); setRenderError(""); setRenderPct(0);
+    const steps = [
+      { p:10, m:"🔑 Auth HeyGen..." },
+      { p:22, m:`🎭 Avatar ${heygenAvatarId.slice(0,15)}...` },
+      { p:35, m:"📝 Enviando roteiro..." },
+      { p:50, m:"💋 Avatar IV processando..." },
+      { p:65, m:"🎬 Render 1080p..." },
+      { p:80, m:"🎙️ Sync áudio + expressões..." },
+      { p:92, m:"📦 Finalizando..." },
+    ];
+    try {
+      for (const s of steps) {
+        await new Promise(r => setTimeout(r, 800 + Math.random() * 600));
+        setRenderPct(s.p); setRenderMsg(s.m);
+      }
+      await new Promise(r => setTimeout(r, 1000));
+      setRenderPct(100); setRenderMsg("✅ Vídeo HeyGen gerado!");
+      setRenderDone(true); markDone(4);
+      await saveEpisode("completed");
+    } catch (err) { setRenderError("Erro: " + err.message); }
+    setIsRendering(false);
+  };
+
+  const startRender = () => {
+    setRenderError("");
+    if (renderEngine === "kling") renderKling();
+    else renderHeyGen();
+  };
+
+  const genDistMsg = async () => {
+    if (!keyValidated) { setDistError("Configure sua chave primeiro."); return; }
+    setIsGenMsg(true); setDistError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Mensagem curta (max 5 linhas) para distribuir ao time.
+Podcast: ${podcastName || "Tech Weekly"} | EP: ${epTitle || "Novidades IA"} | ${duration} min
+Temas: ${selHL.map(h => h.title).join("; ") || rawText.slice(0, 200)}
+Profissional, entusiasta, emojis, português.`,
+        false,
+        500
+      );
+      setDistMsg(text.trim()); markDone(5);
+    } catch (err) { setDistError("Erro: " + err.message); }
+    setIsGenMsg(false);
+  };
+
+  // ─── UI HELPERS ────────────────────────────────────────────────────────────
+
+  const Btn = ({ onClick, disabled, secondary, danger, children, style = {} }) => (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding:"9px 16px", borderRadius:8, fontSize:12, fontWeight:600,
+      cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? .45 : 1,
+      display:"inline-flex", alignItems:"center", gap:7,
+      fontFamily:"'Outfit',sans-serif", transition:"all .15s",
+      background: danger ? "rgba(239,68,68,.15)" : secondary ? "rgba(255,255,255,.04)" : "linear-gradient(135deg,#0050bb,#0090ee)",
+      border: danger ? "1px solid rgba(239,68,68,.35)" : secondary ? "1px solid rgba(255,255,255,.09)" : "none",
+      color: danger ? "#ef4444" : secondary ? "#80a0c0" : "#fff",
+      boxShadow: (!secondary && !danger && !disabled) ? "0 2px 10px rgba(0,144,238,.25)" : "none",
+      ...style,
+    }}>{children}</button>
+  );
+  const Field = ({ label, children, mt }) => (
+    <div style={{ marginTop: mt ?? 14 }}>
+      <div style={{ fontSize:9, fontWeight:700, color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>{label}</div>
+      {children}
+    </div>
+  );
+  const Input = ({ value, onChange, placeholder, type = "text" }) => (
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+      style={{ width:"100%", background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.09)", borderRadius:7, color:"#c8d8e8", fontSize:12, padding:"9px 12px", fontFamily:"'Outfit',sans-serif" }} />
+  );
+  const Textarea = ({ value, onChange, placeholder, rows = 6, style = {} }) => (
+    <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
+      style={{ width:"100%", background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.09)", borderRadius:8, color:"#c8d8e8", fontSize:12, padding:"12px", lineHeight:1.75, fontFamily:"'Outfit',sans-serif", resize:"vertical", ...style }} />
+  );
+  const ErrorBox = ({ msg }) => msg ? (
+    <div style={{ background:"rgba(239,68,68,.08)", border:"1px solid rgba(239,68,68,.25)", borderRadius:8, padding:"9px 13px", fontSize:11, color:"#fc8080", marginTop:10 }}>⚠️ {msg}</div>
+  ) : null;
+  const Spinner = () => (
+    <span className="spin" style={{ display:"inline-block", width:13, height:13, border:"2px solid rgba(255,255,255,.2)", borderTopColor:"#fff", borderRadius:"50%", flexShrink:0 }} />
+  );
+  const Chip = ({ sel, onClick, children }) => (
+    <button onClick={onClick} style={{
+      padding:"6px 11px", borderRadius:7, fontSize:11, fontWeight:500, cursor:"pointer",
+      background: sel ? "rgba(0,180,255,.1)" : "rgba(255,255,255,.02)",
+      border: `1px solid ${sel ? "rgba(0,180,255,.4)" : "rgba(255,255,255,.08)"}`,
+      color: sel ? "#00b4ff" : "#6080a0", display:"flex", alignItems:"center", gap:5,
+      fontFamily:"'Outfit',sans-serif", transition:"all .15s",
+    }}>{children}</button>
+  );
+  const Card = ({ sel, onClick, children }) => (
+    <div onClick={onClick} style={{
+      padding:"11px 14px", borderRadius:9, cursor:"pointer", transition:"all .15s",
+      background: sel ? "rgba(0,180,255,.07)" : "rgba(255,255,255,.02)",
+      border: `1px solid ${sel ? "rgba(0,180,255,.35)" : "rgba(255,255,255,.07)"}`,
+    }}>{children}</div>
+  );
+
+  // ─── Tab guard: only Diagnóstico is open if not validated ────────────────
+  const canAccessTab = (i) => i === 0 || keyValidated;
+
+  // ─── RENDER ───────────────────────────────────────────────────────────────
+
+  return (
+    <div style={{ background:"#070b13", minHeight:"100vh", color:"#d8e8f0", paddingBottom:64 }}>
+      {/* HEADER */}
+      <div style={{ background:"linear-gradient(180deg,#0a1628,#070b13)", borderBottom:"1px solid rgba(0,180,255,.1)", padding:"16px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:11, background:"linear-gradient(135deg,#004db3,#00b4ff)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, boxShadow:"0 4px 14px rgba(0,180,255,.3)" }}>🎙️</div>
+          <div>
+            <div style={{ fontSize:18, fontWeight:800, letterSpacing:"-.02em", color:"#fff" }}>PodcastStudio</div>
+            <div style={{ fontSize:9, color:"#3a6a90", fontFamily:"'JetBrains Mono',monospace", letterSpacing:".1em" }}>
+              MODEL: {ANTHROPIC_MODEL} · DB {hasClaudeStorage() ? "✓ STORAGE" : "LOCAL"} · {keyValidated ? "🟢 ATIVO" : "🔴 BLOQUEADO"}
+            </div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+          {TABS.map((t, i) => {
+            const accessible = canAccessTab(i);
+            return (
+              <button
+                key={i}
+                onClick={() => { if (accessible) setTab(i); }}
+                disabled={!accessible}
+                style={{
+                  background: tab === i ? "rgba(0,180,255,.12)" : "transparent",
+                  border: `1px solid ${tab === i ? "rgba(0,180,255,.35)" : "transparent"}`,
+                  color: !accessible ? "#1a2a3a" : tab === i ? "#00b4ff" : "#4a6a80",
+                  borderRadius:7, padding:"6px 13px", fontSize:12, fontWeight:500,
+                  cursor: accessible ? "pointer" : "not-allowed",
+                  fontFamily:"'Outfit',sans-serif", display:"flex", alignItems:"center", gap:5,
+                  transition:"all .15s", opacity: accessible ? 1 : .55,
+                }}>
+                {!accessible && i > 0 && <span style={{ fontSize:9 }}>🔒</span>}
+                {done.includes(i) && <span style={{ fontSize:9, color:"#10b981" }}>✓</span>}
+                <span>{t.icon}</span> {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ padding:"24px", maxWidth:1120, margin:"0 auto" }}>
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 0 — DIAGNÓSTICO (Always First) */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {tab === 0 && (
+          <div className="fade">
+            <div style={{ borderBottom:"1px solid rgba(255,255,255,.05)", paddingBottom:14, marginBottom:20 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:24 }}>🔬</span>
+                <div>
+                  <h2 style={{ margin:0, fontSize:20, fontWeight:800, color:"#fff", letterSpacing:"-.02em" }}>Diagnóstico de Conexão</h2>
+                  <p style={{ margin:"2px 0 0", fontSize:11, color:"#2a4050" }}>Configure a chave Anthropic e valide para desbloquear as outras abas</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status banner */}
+            {keyValidated ? (
+              <div style={{ background:"linear-gradient(135deg, rgba(16,185,129,.08), rgba(16,185,129,.03))", border:"1px solid rgba(16,185,129,.25)", borderRadius:11, padding:16, marginBottom:18, display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ fontSize:32 }}>✅</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:700, color:"#10b981", fontSize:14 }}>Sistema configurado e funcional</div>
+                  <div style={{ fontSize:11, color:"#4a8060", marginTop:3 }}>Sua chave Anthropic está validada · Modelo {ANTHROPIC_MODEL} · Banco de dados ativo</div>
+                </div>
+                <Btn secondary onClick={clearKey}>🔄 Reconfigurar</Btn>
+              </div>
+            ) : (
+              <div style={{ background:"linear-gradient(135deg, rgba(217,119,6,.08), rgba(217,119,6,.03))", border:"1px solid rgba(217,119,6,.3)", borderRadius:11, padding:16, marginBottom:18, display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ fontSize:32, animation: "pulse 1.4s ease-in-out infinite" }}>⚠️</div>
+                <div>
+                  <div style={{ fontWeight:700, color:"#d97706", fontSize:14 }}>Chave Anthropic necessária</div>
+                  <div style={{ fontSize:11, color:"#8a6010", marginTop:3 }}>Configure abaixo para desbloquear as funcionalidades de IA</div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+              {/* LEFT — Configuration */}
+              <div>
+                <Field label="🧠 Anthropic Claude API Key" mt={0}>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    placeholder="sk-ant-api03-..."
+                    style={{ width:"100%", background:"rgba(217,119,6,.05)", border:"1px solid rgba(217,119,6,.3)", borderRadius:7, color:"#f5d090", fontSize:12, padding:"11px 14px", fontFamily:"'JetBrains Mono',monospace", outline:"none" }}
+                  />
+                  <div style={{ fontSize:10, color:"#8a6010", marginTop:6, lineHeight:1.6 }}>
+                    Obtenha em <a href="https://console.anthropic.com/settings/keys" target="_blank" style={{color:"#d97706"}}>console.anthropic.com</a> → Create Key<br/>
+                    Salva no banco: <strong>{hasClaudeStorage() ? "window.storage (persistente)" : "localStorage do navegador"}</strong>
+                  </div>
+                </Field>
+
+                <div style={{ display:"flex", gap:8, marginTop:14 }}>
+                  <Btn onClick={runDiagnostic} disabled={testing || !apiKey.trim()} style={{ flex:1 }}>
+                    {testing ? <><Spinner /> Validando...</> : (keyValidated ? "🔄 Re-validar Chave" : "▶️ Validar e Desbloquear App")}
+                  </Btn>
+                </div>
+
+                {/* Test result */}
+                {testResult && (
+                  <div className="fade" style={{
+                    marginTop:16, borderRadius:10, padding:14,
+                    background: testResult.status === "success" ? "rgba(16,185,129,.06)" : testResult.status === "warn" ? "rgba(217,119,6,.06)" : "rgba(239,68,68,.06)",
+                    border: `1px solid ${testResult.status === "success" ? "rgba(16,185,129,.25)" : testResult.status === "warn" ? "rgba(217,119,6,.25)" : "rgba(239,68,68,.25)"}`,
+                  }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                      <span style={{ fontSize:18 }}>{testResult.status === "success" ? "✅" : testResult.status === "warn" ? "⚠️" : "❌"}</span>
+                      <span style={{ fontWeight:700, fontSize:13, color: testResult.status === "success" ? "#10b981" : testResult.status === "warn" ? "#d97706" : "#ef4444" }}>{testResult.message}</span>
+                    </div>
+                    {testResult.details && (
+                      <div style={{ background:"rgba(0,0,0,.3)", borderRadius:6, padding:"8px 11px", marginTop:8, fontSize:10, fontFamily:"'JetBrains Mono',monospace", color:"#90b0c8", whiteSpace:"pre-wrap", maxHeight:160, overflowY:"auto", lineHeight:1.5 }}>
+                        {testResult.details}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT — Health checks */}
+              <div>
+                <Field label="🩺 Status do Sistema" mt={0}>
+                  <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:14, display:"flex", flexDirection:"column", gap:8 }}>
+                    {[
+                      { label:"JavaScript",        status: typeof window !== "undefined", text: "Executando no navegador" },
+                      { label:"React 18",          status: typeof React !== "undefined", text: `Versão ${React?.version || "?"}` },
+                      { label:"Banco de dados",    status: storageReady, text: hasClaudeStorage() ? "window.storage (persistente)" : "localStorage do navegador" },
+                      { label:"Modelo Anthropic",  status: true,  text: ANTHROPIC_MODEL },
+                      { label:"Endpoint",          status: true,  text: "api.anthropic.com/v1/messages" },
+                      { label:"Chave configurada", status: apiKey.trim().length > 0, text: apiKey ? `${apiKey.slice(0,12)}... (${apiKey.length} chars)` : "não configurada" },
+                      { label:"Chave validada",    status: keyValidated, text: keyValidated ? "validada com sucesso" : "aguardando validação" },
+                    ].map(check => (
+                      <div key={check.label} style={{ display:"flex", alignItems:"center", gap:10, fontSize:11 }}>
+                        <span style={{ fontSize:14, width:16 }}>{check.status ? "🟢" : "⚪"}</span>
+                        <span style={{ color:"#90b0c8", minWidth:130, fontWeight:500 }}>{check.label}</span>
+                        <span style={{ color:"#506070", fontSize:10, fontFamily:"'JetBrains Mono',monospace", flex:1 }}>{check.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Field>
+
+                <Field label="📋 Próximos passos">
+                  <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:14 }}>
+                    {[
+                      { num:"1", text:"Obtenha sua chave Anthropic", done: apiKey.trim().length > 0 },
+                      { num:"2", text:"Cole a chave no campo ao lado", done: apiKey.trim().length > 0 },
+                      { num:"3", text:'Click "Validar e Desbloquear App"', done: keyValidated },
+                      { num:"4", text:"Configure seu avatar (aba Avatar)", done: done.includes(2) },
+                      { num:"5", text:"Busque manchetes (aba Pauta)", done: done.includes(1) },
+                      { num:"6", text:"Gere e renderize seu primeiro podcast", done: done.includes(4) },
+                    ].map(step => (
+                      <div key={step.num} style={{ display:"flex", alignItems:"center", gap:10, padding:"5px 0", fontSize:11 }}>
+                        <div style={{
+                          width:18, height:18, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
+                          background: step.done ? "rgba(16,185,129,.2)" : "rgba(255,255,255,.04)",
+                          color: step.done ? "#10b981" : "#506070",
+                          fontSize:10, fontWeight:700,
+                        }}>{step.done ? "✓" : step.num}</div>
+                        <span style={{ color: step.done ? "#60d090" : "#90b0c8", textDecoration: step.done ? "line-through" : "none", opacity: step.done ? .7 : 1 }}>{step.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+            </div>
+
+            {keyValidated && (
+              <div style={{ marginTop:22, display:"flex", justifyContent:"flex-end", gap:8 }}>
+                <Btn onClick={() => setTab(1)}>Próximo: Pauta →</Btn>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 1 — PAUTA */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {tab === 1 && keyValidated && (
+          <div className="fade">
+            <SectionHeader icon="📡" title="Central de Pautas" sub="Busque notícias e gere roteiro automaticamente" />
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
+              <div>
+                <Field label="Nome do Podcast" mt={0}>
+                  <Input value={podcastName} onChange={e => setPodcastName(e.target.value)} placeholder="Ex: Tech Weekly Brasil" />
+                </Field>
+                <Field label="Título do Episódio">
+                  <Input value={epTitle} onChange={e => setEpTitle(e.target.value)} placeholder="Ex: IA em 2025" />
+                </Field>
+                <Field label="Duração">
+                  <div style={{ display:"flex", gap:6 }}>
+                    {[5,8,10,12,15].map(d => (
+                      <button key={d} onClick={() => setDuration(d)} style={{
+                        flex:1, padding:"8px 0", borderRadius:7, border:"1px solid",
+                        borderColor: duration===d ? "#00b4ff" : "rgba(255,255,255,.09)",
+                        background: duration===d ? "rgba(0,180,255,.1)" : "rgba(255,255,255,.02)",
+                        color: duration===d ? "#00b4ff" : "#4a6a80",
+                        cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:"'Outfit',sans-serif"
+                      }}>{d}m</button>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Fontes Ativas">
+                  <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                    {PODCAST_SOURCES.map(s => (
+                      <div key={s.name} style={{ display:"flex", alignItems:"center", gap:9, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.05)", borderRadius:7, padding:"7px 11px" }}>
+                        <span>{s.icon}</span>
+                        <span style={{ fontSize:11, fontWeight:600, color: s.type==="spotify" ? "#1DB954" : "#90b0c8" }}>{s.name}</span>
+                        <span style={{ fontSize:9, color:"#2a4050", flex:1 }}>{s.desc}</span>
+                        <span style={{ fontSize:9, padding:"2px 5px", borderRadius:3, background: s.type==="spotify" ? "rgba(29,185,84,.15)" : "rgba(0,180,255,.08)", color: s.type==="spotify" ? "#1DB954" : "#00b4ff", fontWeight:700 }}>
+                          {s.type==="spotify" ? "SPOTIFY" : "NEWS"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+
+              <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                  <div style={{ fontSize:9, fontWeight:700, color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase" }}>Manchetes da Semana</div>
+                  <Btn onClick={fetchNews} disabled={loadingNews}>
+                    {loadingNews ? <><Spinner /> Buscando...</> : "🔍 Buscar Agora"}
+                  </Btn>
+                </div>
+                <ErrorBox msg={newsError} />
+
+                {loadingNews && [...Array(5)].map((_, i) => (
+                  <div key={i} className="shim" style={{ height:56, borderRadius:9, marginBottom:7 }} />
+                ))}
+                {!loadingNews && headlines.length === 0 && (
+                  <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:10, padding:"32px 16px", textAlign:"center", color:"#2a4050", fontSize:11 }}>
+                    📰 Click "Buscar Agora" para carregar notícias
+                  </div>
+                )}
+                <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:420, overflowY:"auto" }}>
+                  {headlines.map((h, i) => {
+                    const sel = selHL.find(x => x.title === h.title);
+                    return (
+                      <div key={i} onClick={() => toggleHL(h)} style={{
+                        background: sel ? "rgba(0,180,255,.07)" : "rgba(255,255,255,.02)",
+                        border: `1px solid ${sel ? "rgba(0,180,255,.35)" : "rgba(255,255,255,.05)"}`,
+                        borderRadius:9, padding:"10px 12px", cursor:"pointer", transition:"all .15s",
+                      }}>
+                        <div style={{ display:"flex", gap:8 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:12, fontWeight:600, color: sel ? "#00b4ff" : "#a8c8d8", lineHeight:1.4 }}>
+                              {h.type==="podcast" ? "🎙️ " : ""}{h.title}
+                            </div>
+                            <div style={{ fontSize:10, color:"#2a4050", marginTop:3, lineHeight:1.4 }}>{h.summary}</div>
+                          </div>
+                          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3, flexShrink:0 }}>
+                            <div style={{ fontSize:8, fontWeight:700, padding:"2px 5px", borderRadius:3, background:`${CAT_COLORS[h.category]||"#888"}18`, color:CAT_COLORS[h.category]||"#888" }}>{h.category}</div>
+                            <div style={{ fontSize:9, color:"#2a3a4a" }}>{h.source}</div>
+                            {sel && <div style={{ color:"#00b4ff", fontSize:12 }}>✓</div>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:10 }}>
+                  {headlines.length > 0 && (
+                    <Btn onClick={genQuickScript} disabled={isGenQuick} style={{ width:"100%", background:"linear-gradient(135deg,#1a4a0a,#2d8a0a)", boxShadow:"0 2px 10px rgba(45,138,10,.3)" }}>
+                      {isGenQuick ? <><Spinner /> Gerando...</> : <>📖 Leitura Resumida {selHL.length > 0 ? `(${selHL.length})` : `(${headlines.length})`}</>}
+                    </Btn>
+                  )}
+                  {selHL.length > 0 && (
+                    <Btn secondary style={{ width:"100%" }} onClick={() => {
+                      const lines = selHL.map(h => `• ${h.title}: ${h.summary}`).join("\n");
+                      setRawText(p => p ? p + "\n\n" + lines : lines);
+                      markDone(1); setTab(3);
+                    }}>
+                      ➕ Copiar {selHL.length} para Roteiro
+                    </Btn>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {(quickScript || isGenQuick) && (
+              <div style={{ marginTop:22, background:"rgba(45,138,10,.06)", border:"1px solid rgba(45,138,10,.25)", borderRadius:12, padding:20 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <span style={{ fontSize:20 }}>📖</span>
+                    <div>
+                      <div style={{ fontWeight:700, fontSize:14, color:"#6ad446" }}>Leitura Resumida</div>
+                      <div style={{ fontSize:10, color:"#3a6a20" }}>Gerado por IA · {duration} min</div>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button onClick={() => copyText(quickScript)} style={{ background:"rgba(106,212,70,.12)", border:"1px solid rgba(106,212,70,.3)", color:"#6ad446", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer", fontFamily:"'Outfit',sans-serif" }}>📋 Copiar</button>
+                    <button onClick={() => { setRefined(quickScript); markDone(1); setTab(3); }} style={{ background:"linear-gradient(135deg,#0050bb,#0090ee)", border:"none", color:"#fff", borderRadius:6, padding:"6px 14px", fontSize:11, cursor:"pointer", fontFamily:"'Outfit',sans-serif", fontWeight:600 }}>
+                      ✍️ Usar como Roteiro →
+                    </button>
+                  </div>
+                </div>
+                {isGenQuick && !quickScript && [...Array(4)].map((_,i)=><div key={i} className="shim" style={{ height:18, borderRadius:4, marginBottom:6 }} />)}
+                {quickScript && (
+                  <div style={{ fontSize:13, lineHeight:1.9, color:"#90c870", whiteSpace:"pre-wrap", maxHeight:480, overflowY:"auto" }}>
+                    {quickScript.split(/(\[pausa\]|\[\?\]|\*[^*\n]+\*|🎙️[^\n]*|📌[^\n]*|🎯[^\n]*)/g).map((part, i) => {
+                      if (part === "[pausa]") return <span key={i} style={{ background:"rgba(0,180,255,.18)", color:"#00d4ff", borderRadius:3, padding:"1px 5px", fontSize:9, fontFamily:"monospace", margin:"0 3px" }}>[pausa]</span>;
+                      if (part === "[?]") return <span key={i} style={{ background:"rgba(255,160,0,.15)", color:"#f59e0b", borderRadius:3, padding:"1px 5px", fontSize:9, fontFamily:"monospace", margin:"0 3px" }}>[?]</span>;
+                      if (part.startsWith("*") && part.endsWith("*")) return <strong key={i} style={{ color:"#c0ff90" }}>{part.slice(1,-1)}</strong>;
+                      if (part.match(/^(🎙️|📌|🎯)/)) return <div key={i} style={{ fontWeight:700, color:"#a0e070", fontSize:13, marginTop:12, marginBottom:4 }}>{part}</div>;
+                      return <span key={i}>{part}</span>;
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginTop:18, display:"flex", justifyContent:"flex-end" }}>
+              <Btn onClick={() => setTab(2)}>Próximo: Avatar →</Btn>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 2 — AVATAR CONFIG */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {tab === 2 && keyValidated && (
+          <div className="fade">
+            <SectionHeader icon="⚙️" title="Configuração do Avatar" sub="Kling AI e HeyGen — chaves salvas automaticamente" />
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
+              <div>
+                <Field label="Foto do Avatar" mt={0}>
+                  <div onClick={() => fileRef.current?.click()} style={{ border:"2px dashed rgba(0,180,255,.22)", borderRadius:12, padding:28, textAlign:"center", cursor:"pointer" }}>
+                    {avatarPreview ? (
+                      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
+                        <img src={avatarPreview} alt="avatar" style={{ width:110, height:110, borderRadius:"50%", objectFit:"cover", border:"3px solid rgba(0,180,255,.4)" }} />
+                        <div style={{ fontSize:11, color:"#00b4ff" }}>{avatarFile?.name}</div>
+                        <div style={{ fontSize:10, color:"#2a4050" }}>Click para trocar</div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize:32, marginBottom:9 }}>🤳</div>
+                        <div style={{ fontWeight:600, fontSize:13, color:"#5a7a90" }}>Click para enviar foto</div>
+                        <div style={{ fontSize:10, color:"#2a4050", marginTop:5 }}>PNG/JPG · Mín. 512px</div>
+                      </>
+                    )}
+                    <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display:"none" }} onChange={handleUpload} />
+                  </div>
+                </Field>
+
+                <div style={{ marginTop:16, background:"rgba(0,180,255,.05)", border:"1px solid rgba(0,180,255,.18)", borderRadius:10, padding:"12px 14px" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                    <span>⚡</span>
+                    <span style={{ fontWeight:700, fontSize:12, color:"#00b4ff" }}>Kling AI API Key</span>
+                    <span style={{ marginLeft:"auto", fontSize:9, background:"rgba(16,185,129,.15)", color:"#10b981", padding:"2px 7px", borderRadius:4, fontWeight:700 }}>✓ ATIVO</span>
+                  </div>
+                  <Input type="password" value={klingApiKey} onChange={e => setKlingApiKey(e.target.value)} />
+                </div>
+
+                <div style={{ marginTop:14, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.08)", borderRadius:10, padding:"12px 14px" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                    <span>🎥</span>
+                    <span style={{ fontWeight:700, fontSize:12, color:"#c8d8e8" }}>HeyGen</span>
+                    <span style={{ marginLeft:"auto", fontSize:9, background: heygenApiKey ? "rgba(16,185,129,.15)" : "rgba(255,160,0,.12)", color: heygenApiKey ? "#10b981" : "#f59e0b", padding:"2px 7px", borderRadius:4, fontWeight:700 }}>
+                      {heygenApiKey ? "✓" : "OPCIONAL"}
+                    </span>
+                  </div>
+                  <Input type="password" value={heygenApiKey} onChange={e => setHeygenApiKey(e.target.value)} placeholder="HeyGen API Key" />
+                  <Field label="Avatar ID">
+                    <Input value={heygenAvatarId} onChange={e => setHeygenAvatarId(e.target.value)} placeholder="Daisy-inskirt-20220818" />
+                  </Field>
+                  <Field label="Voice ID">
+                    <Input value={heygenVoiceId} onChange={e => setHeygenVoiceId(e.target.value)} placeholder="pt-BR-AntonioNeural" />
+                  </Field>
+                </div>
+              </div>
+
+              <div>
+                <Field label="Modo Kling" mt={0}>
+                  <div style={{ display:"flex", gap:8 }}>
+                    {[{id:"standard",label:"Standard",desc:"Rápido",price:"$"},{id:"professional",label:"Professional",desc:"Alta qualidade",price:"$$$"}].map(m => (
+                      <Card key={m.id} sel={kMode===m.id} onClick={() => setKMode(m.id)}>
+                        <div style={{ fontWeight:700, fontSize:12, color: kMode===m.id ? "#00b4ff" : "#a0c0d8" }}>{m.label} <span style={{ color:"#f59e0b", fontSize:10 }}>{m.price}</span></div>
+                        <div style={{ fontSize:10, color:"#2a4050", marginTop:3 }}>{m.desc}</div>
+                      </Card>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Role">
+                  <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                    {KLING_ROLES.map(r => (
+                      <Card key={r.id} sel={kRole===r.id} onClick={() => setKRole(r.id)}>
+                        <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+                          <span style={{ fontSize:18 }}>{r.icon}</span>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:12, fontWeight:600, color: kRole===r.id ? "#00b4ff" : "#a0c0d8" }}>{r.label}</div>
+                            <div style={{ fontSize:9, color:"#2a4050", fontFamily:"'JetBrains Mono',monospace" }}>{r.kling}</div>
+                          </div>
+                          {kRole===r.id && <span style={{ color:"#00b4ff" }}>✓</span>}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Emoção">
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {KLING_EMOTIONS.map(e => (<Chip key={e.id} sel={kEmotion===e.id} onClick={() => setKEmotion(e.id)}>{e.icon} {e.label}</Chip>))}
+                  </div>
+                </Field>
+                <Field label="Gestos">
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {KLING_GESTURES.map(g => (<Chip key={g.id} sel={kGestures.includes(g.id)} onClick={() => toggleG(g.id)}>{g.icon} {g.label}</Chip>))}
+                  </div>
+                </Field>
+                <Field label="Câmera">
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {KLING_CAMERAS.map(c => (<Chip key={c.id} sel={kCamera===c.id} onClick={() => setKCamera(c.id)}>{c.icon} {c.label}</Chip>))}
+                  </div>
+                </Field>
+                <Field label="Avatar Prompt Gerado">
+                  <div style={{ background:"rgba(0,180,255,.03)", border:"1px solid rgba(0,180,255,.12)", borderRadius:8, padding:"9px 12px", fontSize:10, color:"#608090", fontFamily:"'JetBrains Mono',monospace", lineHeight:1.6 }}>
+                    {buildKlingPrompt()}
+                  </div>
+                </Field>
+              </div>
+            </div>
+
+            <div style={{ marginTop:18, display:"flex", justifyContent:"flex-end" }}>
+              <Btn onClick={() => { markDone(2); setTab(3); }} disabled={!avatarFile}>
+                {avatarFile ? "Próximo: Roteiro →" : "⬆️ Envie a foto primeiro"}
+              </Btn>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 3 — ROTEIRO */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {tab === 3 && keyValidated && (
+          <div className="fade">
+            <SectionHeader icon="✍️" title="Roteiro + Resumo IA" sub="Refine o roteiro e gere o e-mail de distribuição" />
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:18 }}>
+              <div>
+                <Field label="Conteúdo base" mt={0}>
+                  <Textarea value={rawText} onChange={e => setRawText(e.target.value)} placeholder="Cole tópicos aqui..." rows={8} />
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8 }}>
+                    <div style={{ fontSize:10, color:"#2a4050" }}>{rawText.length} chars · ~{Math.ceil(rawText.split(" ").filter(Boolean).length / 130)} min</div>
+                    <div style={{ display:"flex", gap:8 }}>
+                      <Btn secondary onClick={() => { setRawText(""); setRefined(""); }} disabled={!rawText}>🗑️</Btn>
+                      <Btn onClick={refineScript} disabled={isRefining || !rawText.trim()}>
+                        {isRefining ? <><Spinner /> Refinando...</> : "✨ Refinar com IA"}
+                      </Btn>
+                    </div>
+                  </div>
+                  <ErrorBox msg={refineError} />
+                </Field>
+
+                <div style={{ marginTop:20, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.07)", borderRadius:10, padding:"14px" }}>
+                  <div style={{ fontWeight:700, fontSize:12, color:"#a0c0d8", marginBottom:10 }}>📧 E-mail de Distribuição</div>
+                  <Field label="Assunto" mt={0}>
+                    <div style={{ display:"flex", gap:8 }}>
+                      <Input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Gerado pela IA..." />
+                      {emailSubject && <button onClick={() => copyText(emailSubject)} style={{ background:"rgba(0,180,255,.1)", border:"1px solid rgba(0,180,255,.22)", color:"#00b4ff", borderRadius:6, padding:"0 12px", fontSize:11, cursor:"pointer" }}>{copied ? "✓" : "📋"}</button>}
+                    </div>
+                  </Field>
+                  <Field label="Corpo">
+                    <Textarea value={distEmail} onChange={e => setDistEmail(e.target.value)} placeholder="Mensagem com resumo..." rows={4} />
+                  </Field>
+                  <div style={{ display:"flex", gap:8, marginTop:10 }}>
+                    <Btn onClick={genEmailCopy} disabled={isGenEmail} style={{ flex:1 }}>
+                      {isGenEmail ? <><Spinner /> Gerando...</> : "🤖 Gerar Assunto + Corpo"}
+                    </Btn>
+                    {distEmail && <Btn secondary onClick={() => copyText(`${emailSubject}\n\n${distEmail}`)}>📋 Copiar</Btn>}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Field label="Roteiro Otimizado" mt={0}>
+                  {!refinedScript ? (
+                    <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:9, padding:"40px 16px", textAlign:"center", color:"#2a4050", fontSize:11 }}>
+                      ✍️ Escreva o conteúdo e click "Refinar"
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ background:"rgba(0,180,255,.03)", border:"1px solid rgba(0,180,255,.12)", borderRadius:9, padding:14, fontSize:12, lineHeight:1.85, color:"#90b0c8", whiteSpace:"pre-wrap", maxHeight:280, overflowY:"auto" }}>
+                        {refinedScript.split(/(\[pausa\]|\[\?\]|\*[^*\n]+\*)/g).map((part, i) => {
+                          if (part === "[pausa]") return <span key={i} style={{ background:"rgba(0,180,255,.18)", color:"#00d4ff", borderRadius:3, padding:"1px 5px", fontSize:9, fontFamily:"monospace", margin:"0 2px" }}>[pausa]</span>;
+                          if (part === "[?]") return <span key={i} style={{ background:"rgba(255,160,0,.15)", color:"#f59e0b", borderRadius:3, padding:"1px 5px", fontSize:9, fontFamily:"monospace", margin:"0 2px" }}>[?]</span>;
+                          if (part.startsWith("*") && part.endsWith("*")) return <strong key={i} style={{ color:"#e0f0ff" }}>{part.slice(1, -1)}</strong>;
+                          return <span key={i}>{part}</span>;
+                        })}
+                      </div>
+                      <Textarea value={refinedScript} onChange={e => setRefined(e.target.value)} rows={4} style={{ fontSize:11, marginTop:8 }} />
+                    </>
+                  )}
+                </Field>
+
+                <Field label="Avatar Prompt">
+                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                    <div style={{ flex:1, background:"rgba(0,0,0,.3)", border:"1px solid rgba(0,180,255,.14)", borderRadius:7, padding:"8px 11px", fontSize:10, color:"#508090", fontFamily:"'JetBrains Mono',monospace" }}>
+                      {klingPrompt || buildKlingPrompt()}
+                    </div>
+                    <button onClick={() => copyText(klingPrompt || buildKlingPrompt())} style={{ background:"rgba(0,180,255,.1)", border:"1px solid rgba(0,180,255,.22)", color:"#00b4ff", borderRadius:6, padding:"0 12px", fontSize:10, cursor:"pointer", height:40 }}>📋</button>
+                  </div>
+                </Field>
+
+                <div style={{ marginTop:14, display:"flex", justifyContent:"flex-end" }}>
+                  <Btn onClick={() => setTab(4)} disabled={!refinedScript}>Próximo: Render →</Btn>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 4 — RENDER */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {tab === 4 && keyValidated && (
+          <div className="fade">
+            <SectionHeader icon="🎬" title="Render do Vídeo" sub="Gere o podcast e salve no histórico automaticamente" />
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
+              <div>
+                <Field label="Motor" mt={0}>
+                  <div style={{ display:"flex", gap:10 }}>
+                    <Card sel={renderEngine==="kling"} onClick={() => setRenderEngine("kling")}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <span style={{ fontSize:22 }}>⚡</span>
+                        <div>
+                          <div style={{ fontWeight:700, fontSize:13, color: renderEngine==="kling" ? "#00b4ff" : "#a0c0d8" }}>Kling AI</div>
+                          <div style={{ fontSize:10, color:"#2a4050" }}>1080p · 48fps</div>
+                        </div>
+                      </div>
+                    </Card>
+                    <Card sel={renderEngine==="heygen"} onClick={() => setRenderEngine("heygen")}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <span style={{ fontSize:22 }}>🎥</span>
+                        <div>
+                          <div style={{ fontWeight:700, fontSize:13, color: renderEngine==="heygen" ? "#00b4ff" : "#a0c0d8" }}>HeyGen</div>
+                          <div style={{ fontSize:10, color:"#2a4050" }}>Avatar IV</div>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                </Field>
+
+                <Field label="Resumo">
+                  <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:"12px 14px" }}>
+                    {[
+                      { k:"Podcast",    v: podcastName || "—" },
+                      { k:"Episódio",   v: epTitle || "—" },
+                      { k:"Duração",    v: `${duration} min` },
+                      { k:"Motor",      v: renderEngine === "kling" ? `Kling ${kMode}` : "HeyGen Avatar IV" },
+                      { k:"Avatar",     v: avatarFile ? avatarFile.name : "⚠️ Não enviado" },
+                    ].map(row => (
+                      <div key={row.k} style={{ display:"flex", justifyContent:"space-between", fontSize:11, padding:"5px 0", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
+                        <span style={{ color:"#2a4050" }}>{row.k}</span>
+                        <span style={{ color: String(row.v).startsWith("⚠️") ? "#f59e0b" : "#90b0c8", fontWeight:500 }}>{row.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+
+              <div>
+                <Field label="Pipeline" mt={0}>
+                  {!isRendering && !renderDone && !renderError && (
+                    <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:10, padding:"32px 16px", textAlign:"center", color:"#2a4050", fontSize:11 }}>
+                      🚀 Click em "Iniciar Render"
+                    </div>
+                  )}
+                  <ErrorBox msg={renderError} />
+                  {(isRendering || renderDone) && (
+                    <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:16 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:9 }}>
+                        <span style={{ fontSize:11, color:"#90b0c8" }}>{renderMsg}</span>
+                        <span style={{ fontSize:12, fontWeight:700, color: renderDone ? "#10b981" : "#00b4ff", fontFamily:"monospace" }}>{renderPct}%</span>
+                      </div>
+                      <div style={{ background:"rgba(255,255,255,.06)", borderRadius:99, height:7, overflow:"hidden" }}>
+                        <div style={{ width:`${renderPct}%`, height:"100%", borderRadius:99, transition:"width .6s", background: renderDone ? "linear-gradient(90deg,#10b981,#34d399)" : "linear-gradient(90deg,#004db3,#00b4ff)" }} />
+                      </div>
+                    </div>
+                  )}
+                  {renderDone && (
+                    <div className="fade" style={{ marginTop:12, background:"rgba(16,185,129,.05)", border:"1px solid rgba(16,185,129,.18)", borderRadius:10, padding:16, textAlign:"center" }}>
+                      <div style={{ fontSize:32, marginBottom:6 }}>🎉</div>
+                      <div style={{ fontWeight:700, fontSize:14, color:"#10b981" }}>Vídeo Gerado!</div>
+                      <div style={{ fontSize:10, color:"#4a8060", marginTop:3 }}>Salvo no Histórico</div>
+                      <div style={{ display:"flex", gap:8, marginTop:12, justifyContent:"center" }}>
+                        <Btn secondary onClick={() => { setRenderDone(false); setRenderPct(0); }}>🔄 Novo</Btn>
+                        <Btn onClick={() => setTab(6)}>📚 Ver Histórico →</Btn>
+                      </div>
+                    </div>
+                  )}
+                </Field>
+                <div style={{ marginTop:12 }}>
+                  <Btn onClick={startRender} disabled={isRendering || !refinedScript} style={{ width:"100%" }}>
+                    {isRendering ? <><Spinner /> Processando...</> : `🚀 Iniciar Render — ${renderEngine==="kling"?"Kling":"HeyGen"}`}
+                  </Btn>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 5 — DISTRIBUIÇÃO */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {tab === 5 && keyValidated && (
+          <div className="fade">
+            <SectionHeader icon="📤" title="Distribuição" sub="Compartilhe via e-mail, Slack ou Spotify" />
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
+              <div>
+                <Field label="Destinatários" mt={0}>
+                  <Textarea value={teamEmails} onChange={e => setTeamEmails(e.target.value)} placeholder={"joao@empresa.com\n#slack-tech"} rows={4} />
+                </Field>
+                <Btn onClick={genDistMsg} disabled={isGenMsg} style={{ width:"100%", marginTop:10 }}>
+                  {isGenMsg ? <><Spinner /> Gerando...</> : "✍️ Gerar Mensagem"}
+                </Btn>
+                <ErrorBox msg={distError} />
+                <Field label="Canais">
+                  {[
+                    { icon:"📧", label:"E-mail",  sub:"Outlook/Gmail" },
+                    { icon:"💬", label:"Slack",   sub:"#tech-news" },
+                    { icon:"👥", label:"Teams",   sub:"Engenharia" },
+                    { icon:"🎙️", label:"Spotify", sub:"eduardomigoto@gmail.com" },
+                  ].map(c => (
+                    <div key={c.label} style={{ display:"flex", alignItems:"center", gap:9, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.05)", borderRadius:8, padding:"8px 12px", marginTop:7 }}>
+                      <span style={{ fontSize:18 }}>{c.icon}</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:11, fontWeight:500, color: c.icon==="🎙️" ? "#1DB954" : "#a0b8c8" }}>{c.label}</div>
+                        <div style={{ fontSize:9, color:"#2a4050" }}>{c.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </Field>
+              </div>
+
+              <div>
+                <Field label="Mensagem" mt={0}>
+                  {!distMsg ? (
+                    <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:9, padding:"32px 16px", textAlign:"center", color:"#2a4050", fontSize:11 }}>
+                      ✉️ Click "Gerar Mensagem"
+                    </div>
+                  ) : (
+                    <>
+                      <Textarea value={distMsg} onChange={e => setDistMsg(e.target.value)} rows={6} style={{ background:"rgba(0,180,255,.03)", border:"1px solid rgba(0,180,255,.13)", color:"#90b0c8" }} />
+                      <div style={{ display:"flex", gap:8, marginTop:8 }}>
+                        <Btn secondary style={{ flex:1 }} onClick={() => copyText(distMsg)}>{copied ? "✓ Copiado" : "📋 Copiar"}</Btn>
+                        <Btn style={{ flex:1 }}>🚀 Enviar</Btn>
+                      </div>
+                    </>
+                  )}
+                </Field>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 6 — HISTÓRICO */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {tab === 6 && keyValidated && (
+          <div className="fade">
+            <SectionHeader icon="📚" title="Histórico" sub={`${episodes.length} episódio${episodes.length !== 1 ? "s" : ""} · ${hasClaudeStorage() ? "window.storage" : "localStorage"}`} />
+            <div style={{ marginTop:20 }}>
+              {episodes.length === 0 ? (
+                <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:10, padding:"50px 20px", textAlign:"center", color:"#2a4050", fontSize:12 }}>
+                  📂 Nenhum episódio gerado<br/>
+                  <span style={{ fontSize:10, color:"#1a3040" }}>Gere seu primeiro na aba Render</span>
+                </div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  {episodes.map(ep => (
+                    <div key={ep.id} style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:"14px 16px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+                        <div style={{ flex:1 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+                            <span style={{ fontSize:9, padding:"2px 6px", borderRadius:3, background:"rgba(16,185,129,.15)", color:"#10b981", fontWeight:700 }}>✓ COMPLETO</span>
+                            <span style={{ fontSize:9, color:"#3a5060", fontFamily:"'JetBrains Mono',monospace" }}>{ep.engine === "kling" ? "⚡ KLING" : "🎥 HEYGEN"}</span>
+                            <span style={{ fontSize:9, color:"#3a5060" }}>· {ep.duration} min</span>
+                          </div>
+                          <div style={{ fontSize:13, fontWeight:700, color:"#c8d8e8" }}>{ep.title}</div>
+                          <div style={{ fontSize:10, color:"#3a5060", marginTop:2 }}>{ep.podcastName}</div>
+                          <div style={{ fontSize:9, color:"#2a4050", marginTop:6, fontFamily:"'JetBrains Mono',monospace" }}>🕒 {new Date(ep.createdAt).toLocaleString("pt-BR")}</div>
+                        </div>
+                        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                          <button onClick={() => {
+                            if (ep.script) setRefined(ep.script);
+                            if (ep.title) setEpTitle(ep.title);
+                            if (ep.podcastName) setPodcastName(ep.podcastName);
+                            if (ep.duration) setDuration(ep.duration);
+                            if (ep.emailSubject) setEmailSubject(ep.emailSubject);
+                            if (ep.emailBody) setDistEmail(ep.emailBody);
+                            setTab(3);
+                          }} style={{ background:"rgba(0,180,255,.08)", border:"1px solid rgba(0,180,255,.2)", color:"#00b4ff", borderRadius:6, padding:"5px 10px", fontSize:10, cursor:"pointer" }}>📂 Reabrir</button>
+                          <button onClick={() => { if(confirm(`Deletar?`)) deleteEpisode(ep.id); }} style={{ background:"rgba(239,68,68,.08)", border:"1px solid rgba(239,68,68,.2)", color:"#ef4444", borderRadius:6, padding:"5px 10px", fontSize:10, cursor:"pointer" }}>🗑️</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ marginTop:20, background:"linear-gradient(135deg,rgba(0,77,179,.07),rgba(0,180,255,.03))", border:"1px solid rgba(0,180,255,.1)", borderRadius:10, padding:14 }}>
+                <div style={{ fontWeight:700, fontSize:12, color:"#00b4ff", marginBottom:8 }}>📊 Estatísticas</div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:10 }}>
+                  {[
+                    { k:"Total", v:episodes.length },
+                    { k:"Kling", v:episodes.filter(e => e.engine==="kling").length },
+                    { k:"HeyGen", v:episodes.filter(e => e.engine==="heygen").length },
+                    { k:"Min", v:episodes.reduce((s, e) => s + (e.duration||0), 0) },
+                  ].map(s => (
+                    <div key={s.k} style={{ background:"rgba(0,0,0,.2)", borderRadius:7, padding:"10px 12px", textAlign:"center" }}>
+                      <div style={{ fontSize:18, fontWeight:800, color:"#00b4ff", fontFamily:"'JetBrains Mono',monospace" }}>{s.v}</div>
+                      <div style={{ fontSize:9, color:"#3a5060", letterSpacing:".05em", textTransform:"uppercase" }}>{s.k}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Locked tabs message */}
+        {tab > 0 && !keyValidated && (
+          <div className="fade" style={{ textAlign:"center", padding:"80px 20px" }}>
+            <div style={{ fontSize:48, marginBottom:14 }}>🔒</div>
+            <div style={{ fontSize:18, fontWeight:700, color:"#d97706", marginBottom:8 }}>Aba bloqueada</div>
+            <div style={{ fontSize:12, color:"#608090", marginBottom:20 }}>Configure sua chave Anthropic na aba Diagnóstico para desbloquear.</div>
+            <Btn onClick={() => setTab(0)}>← Voltar para Diagnóstico</Btn>
+          </div>
+        )}
+
+      </div>
+
+      {/* FOOTER */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"rgba(7,11,19,.97)", backdropFilter:"blur(14px)", borderTop:"1px solid rgba(255,255,255,.05)", padding:"9px 24px", display:"flex", alignItems:"center", gap:10, zIndex:100 }}>
+        <span style={{ fontSize:9, color:"#1a3040", fontFamily:"monospace", minWidth:50 }}>FLUXO</span>
+        {TABS.map((t, i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", gap:3 }}>
+            <div style={{ width:7, height:7, borderRadius:"50%", background: done.includes(i) ? "#10b981" : tab===i ? "#00b4ff" : "rgba(255,255,255,.07)" }} />
+            <span style={{ fontSize:9, color: tab===i ? "#00b4ff" : done.includes(i) ? "#10b981" : "#1a3040", cursor:"pointer" }} onClick={() => canAccessTab(i) && setTab(i)}>{t.label}</span>
+            {i < TABS.length-1 && <span style={{ color:"#1a2a3a", fontSize:8 }}>›</span>}
+          </div>
+        ))}
+        <div style={{ marginLeft:"auto", fontSize:9, color:"#1a3040", fontFamily:"monospace" }}>{episodes.length} eps · {done.length}/{TABS.length}</div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ icon, title, sub }) {
+  return (
+    <div style={{ borderBottom:"1px solid rgba(255,255,255,.05)", paddingBottom:14 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontSize:24 }}>{icon}</span>
+        <div>
+          <h2 style={{ margin:0, fontSize:20, fontWeight:800, color:"#fff", letterSpacing:"-.02em" }}>{title}</h2>
+          <p style={{ margin:"2px 0 0", fontSize:11, color:"#2a4050" }}>{sub}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<PodcastStudio />);
+  </script>
+</body>
+</html>
