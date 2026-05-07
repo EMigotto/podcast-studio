@@ -1,29 +1,19 @@
-// Serverless function that proxies requests to the Anthropic API.
-// Works on Vercel (api/claude.js) and Netlify (with redirects in netlify.toml).
-// Set ANTHROPIC_API_KEY in your hosting provider's environment variables.
+// Vercel serverless function — Web Standard format
+// Compatible with package.json having "type": "module"
+// Set ANTHROPIC_API_KEY in Vercel → Settings → Environment Variables
 
-export default async function handler(req, res) {
-  // CORS for local dev
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return;
-  }
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
-    return;
-  }
-
+export async function POST(request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
+
   if (!apiKey) {
-    res.status(500).json({ error: "ANTHROPIC_API_KEY not configured on server" });
-    return;
+    return Response.json(
+      { error: "ANTHROPIC_API_KEY not configured on server" },
+      { status: 500 }
+    );
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const body = await request.json();
 
     const upstream = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -36,8 +26,28 @@ export default async function handler(req, res) {
     });
 
     const data = await upstream.json();
-    res.status(upstream.status).json(data);
+
+    return Response.json(data, {
+      status: upstream.status,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message || "Proxy error" });
+    return Response.json(
+      { error: err.message || "Proxy error" },
+      { status: 500 }
+    );
   }
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 }
