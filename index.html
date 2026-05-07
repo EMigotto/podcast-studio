@@ -180,7 +180,7 @@ function buildAnthropicHeaders() {
 
 async function fetchWithSearch(userPrompt, maxTokens = 2000) {
   const body = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5",
     max_tokens: maxTokens,
     tools: [{ type: "web_search_20250305", name: "web_search" }],
     messages: [{ role: "user", content: userPrompt }],
@@ -205,7 +205,7 @@ async function fetchWithSearch(userPrompt, maxTokens = 2000) {
       .filter(b => b.type === "tool_use")
       .map(b => ({ type: "tool_result", tool_use_id: b.id, content: "Search executed." }));
     const body2 = {
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-5",
       max_tokens: maxTokens,
       tools: [{ type: "web_search_20250305", name: "web_search" }],
       messages: [
@@ -229,7 +229,7 @@ async function fetchWithSearch(userPrompt, maxTokens = 2000) {
 async function callClaude(systemPrompt, userPrompt, useSearch = false, maxTokens = 1500) {
   if (useSearch) return fetchWithSearch(userPrompt, maxTokens);
   const body = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5",
     max_tokens: maxTokens,
     messages: [{ role: "user", content: userPrompt }],
   };
