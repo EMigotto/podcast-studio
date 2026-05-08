@@ -1,0 +1,2360 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syncronize-MI · NewsLetter de IA</title>
+  <meta property="og:title" content="Syncronize-MI · NewsLetter de IA" />
+  <meta property="og:description" content="Atualizações de Inteligência Artificial para quem tem pouco tempo" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&display=swap" rel="stylesheet">
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body, #root { margin: 0; padding: 0; min-height: 100%; }
+
+    /* ─── BRAND COLORS (Syncronize-MI poster) ─────────────────────── */
+    :root {
+      --navy: #1f3a5c;
+      --navy-deep: #15273f;
+      --sage: #9eaf95;
+      --sage-light: #b8c5b0;
+      --sage-dark: #7d8f73;
+      --gold: #cdb380;
+      --gold-light: #e0c995;
+      --gold-dark: #a8915f;
+      --cream: #f1ede1;
+      --cream-soft: #faf7ed;
+      --ink: #0f1a2e;
+      --ink-soft: #2a3d5a;
+      --muted: #6b7d96;
+    }
+
+    /* Light theme (default for newsletter) */
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+    }
+    /* Admin always dark unless toggled */
+    body.admin-dark {
+      background: var(--ink);
+      color: var(--cream);
+    }
+    body.newsletter-dark {
+      background: var(--ink);
+      color: var(--cream);
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,.04); }
+    ::-webkit-scrollbar-thumb { background: rgba(31,58,92,.25); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(31,58,92,.45); }
+    body.admin-dark ::-webkit-scrollbar-track,
+    body.newsletter-dark ::-webkit-scrollbar-track { background: rgba(255,255,255,.04); }
+    body.admin-dark ::-webkit-scrollbar-thumb,
+    body.newsletter-dark ::-webkit-scrollbar-thumb { background: rgba(205,179,128,.3); }
+
+    textarea, input, select { outline: none !important; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes shimmer { 0%{background-position:-200%} 100%{background-position:200%} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    .fade { animation: fadeUp .35s ease forwards; }
+    .fadein { animation: fadeIn .5s ease forwards; }
+    .spin { animation: spin 1s linear infinite; }
+    .pulse { animation: pulse 1.4s ease-in-out infinite; }
+    .float { animation: float 3s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div style="text-align:center; padding:80px 20px; color:#6b7d96;">
+      <div style="font-size:32px;">🧠</div>
+      <div>Carregando Syncronize-MI...</div>
+    </div>
+  </div>
+
+  <script type="text/babel" data-presets="env,react">
+const { useState, useRef, useEffect, useCallback, useMemo, memo } = React;
+
+// ═════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ═════════════════════════════════════════════════════════════════════════════
+
+const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+const DEFAULT_KLING_KEY = "aebc940334837f309fda6849afe6bce1";
+
+// SYNCRONIZE-MI BRAND PALETTE (extracted from poster)
+const BRAND = {
+  navy:      "#1f3a5c",      // primary — deep navy
+  navyDeep:  "#15273f",
+  navyLight: "#2c4f7a",
+  sage:      "#9eaf95",      // secondary — sage green
+  sageLight: "#b8c5b0",
+  sageDark:  "#7d8f73",
+  gold:      "#cdb380",      // accent — warm gold
+  goldLight: "#e0c995",
+  goldDark:  "#a8915f",
+  cream:     "#f1ede1",      // light bg
+  creamSoft: "#faf7ed",
+  ink:       "#0f1a2e",      // text dark / dark bg
+  inkSoft:   "#2a3d5a",
+  muted:     "#6b7d96",
+};
+
+const ADMIN_TABS = [
+  { id: "newsletter",  label: "Newsletter",  icon: "📰" },
+  { id: "diagnostico", label: "Diagnóstico", icon: "🔬" },
+  { id: "pauta",       label: "Pauta",       icon: "📡" },
+  { id: "roteiro",     label: "Roteiro",     icon: "✍️" },
+  { id: "render",      label: "Render",      icon: "🎬" },
+  { id: "distrib",     label: "Distribuição", icon: "📤" },
+  { id: "historico",   label: "Histórico",   icon: "📚" },
+];
+
+const FOCUS_AREAS = [
+  { id: "produtividade", label: "Produtividade",                icon: "⚡", colorLight: BRAND.navy,  colorDark: "#5a8fc7" },
+  { id: "sistemico",     label: "Desenvolvimento Sistêmico",   icon: "🔧", colorLight: BRAND.sageDark, colorDark: BRAND.sage },
+  { id: "llm",           label: "Novos Modelos LLM/IA",         icon: "🧠", colorLight: BRAND.goldDark, colorDark: BRAND.gold },
+];
+
+const KLING_ROLES = [
+  { id:"tech_host",  label:"Host Tech",  kling:"tech podcast host", icon:"💻" },
+  { id:"anchor",     label:"Âncora",     kling:"news anchor", icon:"📺" },
+  { id:"educator",   label:"Educador",   kling:"patient educator", icon:"🎓" },
+  { id:"vlogger",    label:"Vlogger",    kling:"energetic vlogger", icon:"🎥" },
+];
+
+// Categories — light / dark variants
+const CAT_STYLE = {
+  IA:           { lightBg: "#dde6f0", lightFg: BRAND.navy,    darkBg: "rgba(90,143,199,.18)",  darkFg: "#a8c8e8" },
+  LLM:          { lightBg: "#f0e3c8", lightFg: BRAND.goldDark, darkBg: "rgba(205,179,128,.18)", darkFg: BRAND.goldLight },
+  Produtividade:{ lightBg: "#dde6f0", lightFg: BRAND.navy,    darkBg: "rgba(90,143,199,.18)",  darkFg: "#a8c8e8" },
+  "Sistêmico":  { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
+  Hardware:     { lightBg: "#f0e3c8", lightFg: BRAND.goldDark, darkBg: "rgba(205,179,128,.18)", darkFg: BRAND.goldLight },
+  Software:     { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
+  Cloud:        { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
+  Startups:     { lightBg: "#f0e3c8", lightFg: BRAND.goldDark, darkBg: "rgba(205,179,128,.18)", darkFg: BRAND.goldLight },
+  "Regulação":  { lightBg: "#f0d8c8", lightFg: "#9a3412",     darkBg: "rgba(180,90,40,.18)",   darkFg: "#e8a888" },
+  Podcast:      { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
+};
+const catStyle = (cat, dark) => {
+  const s = CAT_STYLE[cat] || CAT_STYLE.IA;
+  return dark
+    ? { background: s.darkBg, color: s.darkFg }
+    : { background: s.lightBg, color: s.lightFg };
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// DB LAYER — with separate storage for large blobs (videos)
+// ═════════════════════════════════════════════════════════════════════════════
+
+const hasClaudeStorage = () => typeof window !== "undefined" && window.storage;
+
+const db = {
+  async get(key) {
+    try {
+      if (hasClaudeStorage()) {
+        const r = await window.storage.get(key);
+        return r ? JSON.parse(r.value) : null;
+      }
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : null;
+    } catch (e) {
+      console.error("db.get error", key, e);
+      return null;
+    }
+  },
+  async set(key, value) {
+    const json = JSON.stringify(value);
+    try {
+      if (hasClaudeStorage()) {
+        await window.storage.set(key, json);
+      } else {
+        localStorage.setItem(key, json);
+      }
+      return { ok: true };
+    } catch (e) {
+      console.error("db.set FAILED", key, "size:", json.length, e);
+      return { ok: false, error: e.message, size: json.length };
+    }
+  },
+  async delete(key) {
+    try {
+      if (hasClaudeStorage()) await window.storage.delete(key);
+      else localStorage.removeItem(key);
+      return { ok: true };
+    } catch { return { ok: false }; }
+  },
+  async listByPrefix(prefix) {
+    try {
+      if (hasClaudeStorage()) {
+        const r = await window.storage.list(prefix);
+        if (!r?.keys) return [];
+        const items = await Promise.all(r.keys.map(k => db.get(k)));
+        return items.filter(Boolean);
+      }
+      const items = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith(prefix)) {
+          const v = localStorage.getItem(k);
+          if (v) try { items.push(JSON.parse(v)); } catch {}
+        }
+      }
+      return items;
+    } catch { return []; }
+  },
+  async listEpisodes() {
+    const items = await db.listByPrefix("episode:");
+    return items.sort((a, b) => (b.createdAt||0) - (a.createdAt||0));
+  },
+  async listNewsletters() {
+    const items = await db.listByPrefix("newsletter:");
+    return items.sort((a, b) => (b.date||"").localeCompare(a.date||""));
+  },
+  // Save big blob separately so it doesn't bloat the newsletter record
+  async saveVideoBlob(blobKey, dataUrl) {
+    return await db.set(blobKey, { data: dataUrl, savedAt: Date.now() });
+  },
+  async getVideoBlob(blobKey) {
+    const r = await db.get(blobKey);
+    return r?.data || null;
+  },
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ANTHROPIC
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function callAnthropic(apiKey, body) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
+  if (!res.ok) {
+    const err = new Error(data?.error?.message || `HTTP ${res.status}`);
+    err.status = res.status; err.data = data; throw err;
+  }
+  return data;
+}
+
+async function callClaude(apiKey, userPrompt, useSearch = false, maxTokens = 1500, systemPrompt = null) {
+  const body = { model: ANTHROPIC_MODEL, max_tokens: maxTokens, messages: [{ role: "user", content: userPrompt }] };
+  if (systemPrompt) body.system = systemPrompt;
+  if (useSearch) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+  let data = await callAnthropic(apiKey, body);
+  let text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  if (text.trim()) return text;
+  if (useSearch && data.stop_reason === "tool_use") {
+    const toolResults = (data.content || [])
+      .filter(b => b.type === "tool_use")
+      .map(b => ({ type: "tool_result", tool_use_id: b.id, content: "Search executed." }));
+    const body2 = {
+      model: ANTHROPIC_MODEL, max_tokens: maxTokens,
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
+      messages: [
+        { role: "user", content: userPrompt },
+        { role: "assistant", content: data.content },
+        { role: "user", content: toolResults },
+      ],
+    };
+    if (systemPrompt) body2.system = systemPrompt;
+    data = await callAnthropic(apiKey, body2);
+    return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  }
+  return text;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// HEYGEN
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function heygenTestConnection(apiKey) {
+  const res = await fetch("https://api.heygen.com/v2/voices", {
+    method: "GET", headers: { "X-Api-Key": apiKey, "Accept": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const err = new Error(data?.message || data?.error?.message || `HTTP ${res.status}`);
+    err.status = res.status; throw err;
+  }
+  return data;
+}
+
+async function heygenGenerateVideo(apiKey, { avatarId, voiceId, scriptText }) {
+  const safeScript = scriptText.slice(0, 4900);
+  const body = {
+    video_inputs: [{
+      character: { type: "avatar", avatar_id: avatarId, avatar_style: "normal" },
+      voice: { type: "text", input_text: safeScript, voice_id: voiceId },
+      background: { type: "color", value: BRAND.navy },
+    }],
+    dimension: { width: 1280, height: 720 },
+  };
+  const res = await fetch("https://api.heygen.com/v2/video/generate", {
+    method: "POST",
+    headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data?.error?.message || data?.message || `HTTP ${res.status}`);
+  return data?.data?.video_id;
+}
+
+async function heygenGetStatus(apiKey, videoId) {
+  const res = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, {
+    method: "GET", headers: { "X-Api-Key": apiKey, "Accept": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+  return data?.data;
+}
+
+async function klingTestConnection(apiKey) {
+  if (!apiKey || apiKey.length < 16) throw new Error("Chave Kling inválida");
+  return { ok: true };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// VIDEO PLAYER (smart: detects HeyGen, YouTube, Vimeo, mp4, data URL)
+// ═════════════════════════════════════════════════════════════════════════════
+
+function getVideoEmbedInfo(url) {
+  if (!url) return null;
+  if (url.includes("app.heygen.com/videos/") || url.includes("share.heygen.com")) {
+    return { type: "iframe", src: url };
+  }
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
+  if (ytMatch) return { type: "iframe", src: `https://www.youtube.com/embed/${ytMatch[1]}` };
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return { type: "iframe", src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
+  if (url.startsWith("data:video") || /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url)) {
+    return { type: "video", src: url };
+  }
+  if (url.includes("heygen.ai") && url.includes(".mp4")) return { type: "video", src: url };
+  return { type: "iframe", src: url };
+}
+
+const VideoPlayer = memo(function VideoPlayer({ url, poster, maxHeight = 480 }) {
+  const info = getVideoEmbedInfo(url);
+  if (!info) return null;
+  if (info.type === "video") {
+    return (
+      <video controls poster={poster} style={{ width:"100%", borderRadius:12, background:"#000", maxHeight, display:"block" }}>
+        <source src={info.src} />
+      </video>
+    );
+  }
+  return (
+    <div style={{ position:"relative", paddingBottom:"56.25%", height:0, overflow:"hidden", borderRadius:12, background:"#000" }}>
+      <iframe src={info.src}
+        style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", border:0, borderRadius:12 }}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowFullScreen title="Video Player" />
+    </div>
+  );
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// DISTRIBUTION
+// ═════════════════════════════════════════════════════════════════════════════
+
+function openMailto(toList, subject, body) {
+  const recipients = (toList || "").split(/[,;\n]/).map(s => s.trim()).filter(s => s.includes("@")).join(",");
+  const url = `mailto:${recipients}?subject=${encodeURIComponent(subject || "")}&body=${encodeURIComponent(body || "")}`;
+  window.open(url, "_blank");
+}
+
+async function sendTeamsWebhook(webhookUrl, title, body, videoUrl) {
+  if (!webhookUrl?.startsWith("https://")) throw new Error("URL Teams inválida");
+  const card = {
+    "@type": "MessageCard", "@context": "https://schema.org/extensions",
+    summary: title, themeColor: BRAND.navy.replace("#", ""),
+    title: title || "🎙️ Syncronize-MI", text: body || "",
+    potentialAction: videoUrl ? [{ "@type": "OpenUri", name: "▶️ Assistir", targets: [{ os: "default", uri: videoUrl }] }] : [],
+  };
+  await fetch(webhookUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(card) });
+  return { ok: true };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═════════════════════════════════════════════════════════════════════════════
+
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = (iso) => { if (!iso) return ""; const [y, m, d] = iso.split("-"); return `${d}/${m}/${y}`; };
+const fmtDateLong = (iso) => {
+  if (!iso) return "";
+  const months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const [y, m, d] = iso.split("-");
+  return `${parseInt(d)} de ${months[parseInt(m)-1]} de ${y}`;
+};
+const fmtDateShort = (iso) => {
+  if (!iso) return "";
+  const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const [y, m, d] = iso.split("-");
+  return `${parseInt(d)} ${months[parseInt(m)-1]}`;
+};
+const isExpired = (expiresAt) => expiresAt && Date.now() > expiresAt;
+const estimateReadTime = (text) => {
+  if (!text) return 0;
+  return Math.max(1, Math.round(text.split(/\s+/).filter(Boolean).length / 200));
+};
+const getShareUrl = (date) => {
+  const url = new URL(window.location.href);
+  url.search = `?view=public&date=${date}`;
+  return url.toString();
+};
+
+// Theme hook
+function useTheme(storageKey = "user:theme", defaultTheme = "light") {
+  const [theme, setTheme] = useState(defaultTheme);
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) setTheme(saved);
+  }, [storageKey]);
+  const toggle = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    localStorage.setItem(storageKey, next);
+  };
+  return [theme, toggle];
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// COMPONENTS (defined OUTSIDE main app — prevents textarea remount bug)
+// ═════════════════════════════════════════════════════════════════════════════
+
+const Btn = memo(function Btn({ onClick, disabled, secondary, danger, success, gold, sage, children, style = {} }) {
+  let bg, color, border, shadow;
+  if (success) { bg = `linear-gradient(135deg, ${BRAND.sageDark}, ${BRAND.sage})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.sage}40`; }
+  else if (gold) { bg = `linear-gradient(135deg, ${BRAND.goldDark}, ${BRAND.gold})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.gold}40`; }
+  else if (sage) { bg = `linear-gradient(135deg, ${BRAND.sageDark}, ${BRAND.sage})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.sage}40`; }
+  else if (danger) { bg = "rgba(180,40,40,.12)"; color = "#c84545"; border = "1px solid rgba(180,40,40,.3)"; shadow = "none"; }
+  else if (secondary) { bg = "transparent"; color = BRAND.muted; border = `1px solid ${BRAND.muted}40`; shadow = "none"; }
+  else { bg = `linear-gradient(135deg, ${BRAND.navyDeep}, ${BRAND.navy})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.navy}40`; }
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding:"9px 16px", borderRadius:8, fontSize:12, fontWeight:600,
+      cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? .45 : 1,
+      display:"inline-flex", alignItems:"center", gap:7, fontFamily:"'Outfit',sans-serif",
+      transition:"all .15s", background: bg, color, border,
+      boxShadow: !disabled ? shadow : "none",
+      ...style,
+    }}>{children}</button>
+  );
+});
+
+const Field = memo(function Field({ label, children, mt, dark }) {
+  return (
+    <div style={{ marginTop: mt ?? 14 }}>
+      <div style={{ fontSize:9, fontWeight:700, color: dark ? BRAND.gold : BRAND.muted, letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>{label}</div>
+      {children}
+    </div>
+  );
+});
+
+const TextInput = memo(function TextInput({ value, onChange, placeholder, type = "text", dark, style = {} }) {
+  return (
+    <input type={type} value={value || ""} onChange={onChange} placeholder={placeholder}
+      style={{
+        width:"100%",
+        background: dark ? "rgba(255,255,255,.04)" : "#fff",
+        border: `1px solid ${dark ? "rgba(255,255,255,.1)" : BRAND.sage + "40"}`,
+        borderRadius:7, color: dark ? BRAND.cream : BRAND.ink,
+        fontSize:12, padding:"9px 12px", fontFamily:"'Outfit',sans-serif",
+        ...style
+      }} />
+  );
+});
+
+const TextArea = memo(function TextArea({ value, onChange, placeholder, rows = 6, dark, style = {} }) {
+  return (
+    <textarea value={value || ""} onChange={onChange} placeholder={placeholder} rows={rows}
+      style={{
+        width:"100%",
+        background: dark ? "rgba(255,255,255,.04)" : "#fff",
+        border: `1px solid ${dark ? "rgba(255,255,255,.1)" : BRAND.sage + "40"}`,
+        borderRadius:8, color: dark ? BRAND.cream : BRAND.ink,
+        fontSize:12, padding:"12px", lineHeight:1.75,
+        fontFamily:"'Outfit',sans-serif", resize:"vertical",
+        ...style
+      }} />
+  );
+});
+
+const ErrorBox = memo(function ErrorBox({ msg }) {
+  if (!msg) return null;
+  return <div style={{ background:"rgba(200,69,69,.08)", border:"1px solid rgba(200,69,69,.3)", borderRadius:8, padding:"9px 13px", fontSize:11, color:"#c84545", marginTop:10 }}>⚠️ {msg}</div>;
+});
+
+const InfoBox = memo(function InfoBox({ msg }) {
+  if (!msg) return null;
+  return <div style={{ background:`${BRAND.sage}20`, border:`1px solid ${BRAND.sage}50`, borderRadius:8, padding:"9px 13px", fontSize:11, color:BRAND.sageDark, marginTop:10 }}>✅ {msg}</div>;
+});
+
+const Spinner = memo(function Spinner({ light }) {
+  return <span className="spin" style={{ display:"inline-block", width:13, height:13, border:`2px solid ${light ? BRAND.navy + "20" : "rgba(255,255,255,.2)"}`, borderTopColor: light ? BRAND.navy : "#fff", borderRadius:"50%", flexShrink:0 }} />;
+});
+
+const ThemeToggle = memo(function ThemeToggle({ theme, onToggle, style = {} }) {
+  return (
+    <button onClick={onToggle} title={theme === "light" ? "Modo escuro" : "Modo claro"} style={{
+      background:"transparent", border:`1px solid ${theme === "dark" ? "rgba(255,255,255,.15)" : BRAND.muted + "40"}`,
+      color: theme === "dark" ? BRAND.gold : BRAND.navy,
+      padding:"7px 12px", borderRadius:8, fontSize:14, cursor:"pointer",
+      fontFamily:"'Outfit',sans-serif",
+      ...style,
+    }}>
+      {theme === "light" ? "🌙" : "☀️"}
+    </button>
+  );
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PUBLIC NEWSLETTER
+// ═════════════════════════════════════════════════════════════════════════════
+
+function PublicNewsletter() {
+  const [newsletters, setNewsletters] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [shareCopied, setShareCopied] = useState(false);
+  const [theme, toggleTheme] = useTheme("user:newsletter_theme", "light");
+  const [videoBlob, setVideoBlob] = useState(null);
+
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    document.body.classList.toggle("newsletter-dark", isDark);
+    return () => document.body.classList.remove("newsletter-dark");
+  }, [isDark]);
+
+  useEffect(() => {
+    (async () => {
+      const items = await db.listNewsletters();
+      setNewsletters(items);
+      const params = new URLSearchParams(window.location.search);
+      const urlDate = params.get("date");
+      if (urlDate && items.find(n => n.date === urlDate)) setSelectedDate(urlDate);
+      else if (items.length > 0) setSelectedDate(items[0].date);
+      else setSelectedDate(today());
+      setLoading(false);
+    })();
+  }, []);
+
+  // Load video blob from separate storage if podcastUrl points to blob ref
+  useEffect(() => {
+    if (!selectedDate) return;
+    const current = newsletters.find(n => n.date === selectedDate);
+    if (current?.podcastBlobRef) {
+      db.getVideoBlob(current.podcastBlobRef).then(setVideoBlob);
+    } else {
+      setVideoBlob(null);
+    }
+  }, [selectedDate, newsletters]);
+
+  useEffect(() => {
+    if (!selectedDate || loading) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "public");
+    url.searchParams.set("date", selectedDate);
+    window.history.replaceState({}, "", url.toString());
+  }, [selectedDate, loading]);
+
+  const current = newsletters.find(n => n.date === selectedDate);
+  const effectivePodcastUrl = videoBlob || current?.podcastUrl;
+  const podcastValid = effectivePodcastUrl && (!current?.podcastExpiresAt || !isExpired(current.podcastExpiresAt));
+
+  const filteredHeadlines = useMemo(() => {
+    if (!current?.headlines) return [];
+    if (filter === "all") return current.headlines;
+    return current.headlines.filter(h => h.category === filter);
+  }, [current, filter]);
+
+  const categoriesInUse = useMemo(() => {
+    if (!current?.headlines) return [];
+    return Array.from(new Set(current.headlines.map(h => h.category).filter(Boolean)));
+  }, [current]);
+
+  const readTime = useMemo(() => {
+    if (!current) return 0;
+    return estimateReadTime((current.aiSummary || "") + " " + (current.headlines || []).map(h => h.summary).join(" "));
+  }, [current]);
+
+  const handleShare = async () => {
+    const url = getShareUrl(selectedDate);
+    const title = current?.title || `Syncronize-MI · ${fmtDate(selectedDate)}`;
+    const text = current?.subtitle || "Atualizações de IA para quem tem pouco tempo";
+    if (navigator.share) {
+      try { await navigator.share({ title, text, url }); return; } catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch {}
+  };
+
+  const copyShareUrl = async () => {
+    await navigator.clipboard.writeText(getShareUrl(selectedDate));
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2500);
+  };
+
+  // Theme variables
+  const T = isDark ? {
+    bg: BRAND.ink,
+    bgAlt: BRAND.navyDeep,
+    text: BRAND.cream,
+    textMuted: "#9ba8b8",
+    cardBg: "rgba(255,255,255,.03)",
+    cardBorder: "rgba(255,255,255,.08)",
+    cardShadow: "none",
+    cardShadowHover: `0 8px 30px ${BRAND.gold}20`,
+    accent1: BRAND.gold,
+    accent2: BRAND.sage,
+    accent3: "#5a8fc7",
+    heroGradient: `linear-gradient(135deg, ${BRAND.navyDeep} 0%, ${BRAND.navy} 100%)`,
+    titleColor: BRAND.cream,
+    titleAccent: BRAND.gold,
+  } : {
+    bg: BRAND.cream,
+    bgAlt: BRAND.creamSoft,
+    text: BRAND.ink,
+    textMuted: BRAND.muted,
+    cardBg: "#fff",
+    cardBorder: "rgba(31,58,92,.12)",
+    cardShadow: "0 2px 14px rgba(31,58,92,.04)",
+    cardShadowHover: "0 8px 30px rgba(31,58,92,.12)",
+    accent1: BRAND.navy,
+    accent2: BRAND.sageDark,
+    accent3: BRAND.goldDark,
+    heroGradient: `linear-gradient(135deg, ${BRAND.cream} 0%, ${BRAND.creamSoft} 100%)`,
+    titleColor: BRAND.ink,
+    titleAccent: BRAND.navy,
+  };
+
+  if (loading) {
+    return (
+      <div style={{ background: T.bg, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", color: T.textMuted }}>
+        <div style={{ textAlign:"center" }}>
+          <div className="float" style={{ fontSize:48, marginBottom:12 }}>🧠</div>
+          <div style={{ fontFamily:"'Fraunces',serif", fontStyle:"italic" }}>Carregando edição...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: T.bg, minHeight:"100vh", color: T.text, transition:"all .3s" }}>
+      {/* HERO */}
+      <div style={{
+        background: T.heroGradient,
+        borderBottom: `1px solid ${T.cardBorder}`,
+        padding: "28px 24px 20px", position:"relative", overflow:"hidden",
+      }}>
+        {/* Decorative geometric shapes (poster-inspired) */}
+        <div style={{
+          position:"absolute", top: -60, right: -40, width: 200, height: 200,
+          background: BRAND.navy, opacity: isDark ? .25 : .12,
+          clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+          pointerEvents:"none",
+        }} />
+        <div style={{
+          position:"absolute", bottom: -50, left: -30, width: 180, height: 180,
+          background: BRAND.sage, opacity: isDark ? .15 : .25,
+          clipPath: "polygon(0% 0%, 100% 30%, 70% 100%, 0% 80%)",
+          pointerEvents:"none",
+        }} />
+        <div style={{
+          position:"absolute", top: 30, right: 100, width: 140, height: 140,
+          background: BRAND.gold, opacity: isDark ? .15 : .25,
+          clipPath: "polygon(20% 0%, 100% 50%, 80% 100%, 0% 60%)",
+          pointerEvents:"none",
+        }} />
+
+        <div style={{ maxWidth:1100, margin:"0 auto", position:"relative" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:6, flexWrap:"wrap" }}>
+            <div style={{
+              width:54, height:54, borderRadius:14,
+              background: T.titleAccent,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:26, color:"#fff",
+              boxShadow:`0 6px 20px ${T.titleAccent}60`,
+            }}>🧠</div>
+            <div style={{ flex:1, minWidth:200 }}>
+              <div style={{
+                fontFamily:"'Fraunces',serif", fontSize:34, fontWeight:800,
+                letterSpacing:"-.035em", lineHeight:1, color: T.titleColor,
+              }}>
+                Syncronize-MI
+              </div>
+              <div style={{
+                fontFamily:"'Fraunces',serif", fontStyle:"italic", fontWeight:400,
+                fontSize:13, color: T.textMuted, marginTop:4,
+              }}>
+                Atualizações de Inteligência Artificial para quem tem pouco tempo
+              </div>
+            </div>
+
+            <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+              <ThemeToggle theme={theme} onToggle={toggleTheme} />
+              <button onClick={handleShare} style={{
+                background: `linear-gradient(135deg, ${T.titleAccent}, ${BRAND.navyLight})`,
+                border:"none", color:"#fff", padding:"8px 16px", borderRadius:8,
+                fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"'Outfit',sans-serif",
+                display:"flex", alignItems:"center", gap:6,
+                boxShadow:`0 4px 14px ${T.titleAccent}40`,
+              }}>
+                {shareCopied ? "✓ Link copiado!" : "🔗 Compartilhar"}
+              </button>
+              <a href="?view=admin" style={{
+                fontSize:10, color: T.textMuted, textDecoration:"none",
+                padding:"7px 12px", borderRadius:8,
+                border: `1px solid ${T.cardBorder}`,
+              }}>Admin →</a>
+            </div>
+          </div>
+
+          {newsletters.length > 0 && (
+            <div style={{
+              display:"flex", alignItems:"center", gap:10, flexWrap:"wrap",
+              marginTop:18, paddingTop:18, borderTop: `1px solid ${T.cardBorder}`,
+            }}>
+              <span style={{ fontSize:10, color: T.textMuted, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase" }}>📆 Edições</span>
+              {newsletters.slice(0, 14).map(n => {
+                const sel = selectedDate === n.date;
+                return (
+                  <button key={n.date} onClick={() => setSelectedDate(n.date)} style={{
+                    background: sel ? T.titleAccent : (isDark ? "rgba(255,255,255,.05)" : "#fff"),
+                    border: `1px solid ${sel ? T.titleAccent : T.cardBorder}`,
+                    color: sel ? "#fff" : T.text,
+                    borderRadius:7, padding:"6px 12px", fontSize:11, cursor:"pointer",
+                    fontFamily:"'JetBrains Mono',monospace", fontWeight:600,
+                    boxShadow: sel ? `0 4px 14px ${T.titleAccent}40` : "none",
+                  }}>
+                    {fmtDateShort(n.date)}
+                    {n.podcastUrl && (!n.podcastExpiresAt || !isExpired(n.podcastExpiresAt)) && <span style={{ marginLeft:5 }}>🎙️</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MAIN */}
+      <div style={{ maxWidth:1100, margin:"0 auto", padding:"32px 24px 60px" }}>
+        {!current ? (
+          <div style={{
+            border: `2px dashed ${T.cardBorder}`,
+            borderRadius:16, padding:"80px 20px",
+            textAlign:"center", color: T.textMuted,
+            background: T.cardBg,
+          }}>
+            <div className="float" style={{ fontSize:48, marginBottom:14 }}>📭</div>
+            <div style={{ fontSize:18, fontWeight:600, color: T.text, fontFamily:"'Fraunces',serif" }}>Nenhuma edição disponível</div>
+          </div>
+        ) : (
+          <div className="fade">
+            <div style={{ marginBottom:28 }}>
+              <div style={{
+                display:"inline-block", fontSize:11, fontWeight:700, letterSpacing:".15em",
+                textTransform:"uppercase", color: T.titleAccent, marginBottom:10,
+              }}>
+                ◆ Edição de {fmtDateLong(current.date)}
+              </div>
+              <h1 style={{
+                fontFamily:"'Fraunces',serif", fontSize:"clamp(34px, 5.5vw, 56px)", fontWeight:800,
+                color: T.titleColor, margin:"4px 0 0",
+                letterSpacing:"-.035em", lineHeight:1.05,
+              }}>
+                {current.title || "Highlights de IA"}
+              </h1>
+              {current.subtitle && (
+                <div style={{
+                  fontSize:19, color: T.textMuted, marginTop:14, lineHeight:1.55, maxWidth:780,
+                  fontFamily:"'Fraunces',serif", fontWeight:400, fontStyle:"italic",
+                }}>
+                  {current.subtitle}
+                </div>
+              )}
+              <div style={{ display:"flex", gap:14, marginTop:16, fontSize:11, color: T.textMuted, flexWrap:"wrap" }}>
+                {readTime > 0 && <span>📖 {readTime} min de leitura</span>}
+                {current.headlines?.length > 0 && <span>📰 {current.headlines.length} notícia{current.headlines.length !== 1 ? "s" : ""}</span>}
+                {podcastValid && <span style={{ color: T.titleAccent, fontWeight:600 }}>🎙️ Podcast disponível</span>}
+              </div>
+            </div>
+
+            {/* PODCAST */}
+            {podcastValid && (
+              <div style={{
+                background: T.cardBg,
+                border: `1px solid ${T.cardBorder}`,
+                borderRadius:16, padding:24, marginBottom:30,
+                boxShadow: T.cardShadow,
+                position:"relative", overflow:"hidden",
+              }}>
+                <div style={{
+                  position:"absolute", top:0, left:0, right:0, height:4,
+                  background:`linear-gradient(90deg, ${BRAND.navy}, ${BRAND.sage}, ${BRAND.gold})`,
+                }} />
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, flexWrap:"wrap", gap:10 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                    <div style={{
+                      width:42, height:42, borderRadius:11, background: T.titleAccent,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:22, color:"#fff",
+                      boxShadow:`0 4px 14px ${T.titleAccent}40`,
+                    }}>🎙️</div>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:700, color: T.text, fontFamily:"'Fraunces',serif", fontStyle:"italic" }}>
+                        {current.podcastTitle || "Podcast da Semana"}
+                      </div>
+                      <div style={{ fontSize:11, color: T.textMuted, marginTop:2 }}>
+                        Syncronize-MI {current.podcastDuration ? `· ${current.podcastDuration} min` : ""}
+                      </div>
+                    </div>
+                  </div>
+                  {current.podcastExpiresAt && (
+                    <div style={{
+                      fontSize:10, padding:"4px 10px", borderRadius:6,
+                      background: `${BRAND.gold}25`, color: BRAND.goldDark,
+                      fontFamily:"'JetBrains Mono',monospace", fontWeight:600,
+                    }}>
+                      ⏰ até {new Date(current.podcastExpiresAt).toLocaleDateString("pt-BR")}
+                    </div>
+                  )}
+                </div>
+                <VideoPlayer url={effectivePodcastUrl} poster={current.podcastThumbnail} maxHeight={520} />
+              </div>
+            )}
+
+            {current?.podcastUrl && !podcastValid && (
+              <div style={{
+                background: `${BRAND.gold}15`, border: `1px solid ${BRAND.gold}40`,
+                borderRadius:11, padding:14, marginBottom:24, fontSize:12, color: BRAND.goldDark,
+              }}>
+                ⏰ O podcast desta edição expirou.
+              </div>
+            )}
+
+            {/* SUMMARY */}
+            {current.aiSummary && (
+              <div style={{
+                background: T.cardBg, border: `1px solid ${T.cardBorder}`,
+                borderRadius:16, padding:28, marginBottom:30,
+                boxShadow: T.cardShadow, position:"relative", overflow:"hidden",
+              }}>
+                <div style={{
+                  position:"absolute", top:0, left:0, bottom:0, width:5,
+                  background: T.titleAccent,
+                }} />
+                <div style={{ paddingLeft:14 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                    <span style={{
+                      fontSize:11, fontWeight:700, letterSpacing:".15em", textTransform:"uppercase",
+                      color: T.titleAccent,
+                    }}>🧠 Análise da Semana</span>
+                  </div>
+                  <div style={{
+                    fontFamily:"'Fraunces',serif", fontSize:18, lineHeight:1.7,
+                    color: T.text, whiteSpace:"pre-wrap", fontWeight:400,
+                  }}>{current.aiSummary}</div>
+                </div>
+              </div>
+            )}
+
+            {/* FOCUS INSIGHTS */}
+            {current.focusInsights && current.focusInsights.length > 0 && (
+              <div style={{ marginBottom:30 }}>
+                <div style={{
+                  fontSize:11, color: T.textMuted, fontWeight:700,
+                  letterSpacing:".15em", textTransform:"uppercase", marginBottom:14,
+                  display:"flex", alignItems:"center", gap:8,
+                }}>
+                  <span style={{ width:24, height:1, background: T.cardBorder }} />
+                  Temas em Destaque
+                  <span style={{ flex:1, height:1, background: T.cardBorder }} />
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14 }}>
+                  {FOCUS_AREAS.map((area, i) => {
+                    const insight = current.focusInsights.find(x => x.area === area.id);
+                    if (!insight?.summary) return null;
+                    const colors = [T.accent1, T.accent2, T.accent3];
+                    const color = colors[i] || T.titleAccent;
+                    return (
+                      <div key={area.id} style={{
+                        background: T.cardBg, border: `1px solid ${T.cardBorder}`,
+                        borderRadius:14, padding:20, boxShadow: T.cardShadow,
+                        position:"relative", overflow:"hidden", transition:"all .25s",
+                      }}>
+                        <div style={{ position:"absolute", top:0, left:0, bottom:0, width:4, background:color }} />
+                        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10, paddingLeft:8 }}>
+                          <div style={{
+                            width:36, height:36, borderRadius:10,
+                            background: `${color}20`, color: color,
+                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
+                          }}>{area.icon}</div>
+                          <div style={{ fontSize:11, color: color, fontWeight:700, letterSpacing:".05em", textTransform:"uppercase" }}>
+                            {area.label}
+                          </div>
+                        </div>
+                        <div style={{ fontSize:14, color: T.text, lineHeight:1.6, paddingLeft:8 }}>
+                          {insight.summary}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* HEADLINES */}
+            {current.headlines && current.headlines.length > 0 && (
+              <div>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:10 }}>
+                  <div style={{ fontSize:11, color: T.textMuted, fontWeight:700, letterSpacing:".15em", textTransform:"uppercase" }}>
+                    📰 Notícias da Semana ({filteredHeadlines.length}/{current.headlines.length})
+                  </div>
+                  {categoriesInUse.length > 1 && (
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                      <button onClick={() => setFilter("all")} style={{
+                        padding:"4px 10px", borderRadius:6, fontSize:10, fontWeight:600, cursor:"pointer",
+                        background: filter === "all" ? T.text : "transparent",
+                        color: filter === "all" ? T.bg : T.textMuted,
+                        border: `1px solid ${filter === "all" ? T.text : T.cardBorder}`,
+                        fontFamily:"'Outfit',sans-serif",
+                      }}>Todas</button>
+                      {categoriesInUse.map(cat => {
+                        const sel = filter === cat;
+                        const cs = catStyle(cat, isDark);
+                        return (
+                          <button key={cat} onClick={() => setFilter(cat)} style={{
+                            padding:"4px 10px", borderRadius:6, fontSize:10, fontWeight:600, cursor:"pointer",
+                            background: sel ? cs.background : "transparent",
+                            color: sel ? cs.color : T.textMuted,
+                            border: `1px solid ${sel ? cs.color + "60" : T.cardBorder}`,
+                            fontFamily:"'Outfit',sans-serif",
+                          }}>{cat}</button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(330px, 1fr))", gap:16 }}>
+                  {filteredHeadlines.map((h, i) => {
+                    const cs = catStyle(h.category, isDark);
+                    const featured = i === 0 && filter === "all";
+                    return (
+                      <div key={i} style={{
+                        gridColumn: featured ? "1 / -1" : "auto",
+                        background: T.cardBg, border: `1px solid ${T.cardBorder}`,
+                        borderRadius:14, padding: featured ? 24 : 18,
+                        cursor: h.url ? "pointer" : "default", transition:"all .2s",
+                        boxShadow: T.cardShadow,
+                      }}
+                      onClick={() => h.url && window.open(h.url, "_blank", "noopener,noreferrer")}
+                      onMouseEnter={e => { if (h.url) { e.currentTarget.style.boxShadow = T.cardShadowHover; e.currentTarget.style.transform = "translateY(-2px)"; } }}
+                      onMouseLeave={e => { e.currentTarget.style.boxShadow = T.cardShadow; e.currentTarget.style.transform = "translateY(0)"; }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+                          <span style={{
+                            fontSize:9, padding:"3px 9px", borderRadius:5, fontWeight:700, letterSpacing:".04em",
+                            background: cs.background, color: cs.color,
+                          }}>{h.category || "IA"}</span>
+                          {h.source && <span style={{ fontSize:10, color: T.textMuted, fontWeight:500 }}>{h.source}</span>}
+                          {featured && (
+                            <span style={{
+                              fontSize:9, padding:"3px 9px", borderRadius:5, fontWeight:700, letterSpacing:".04em",
+                              background: `linear-gradient(135deg, ${T.titleAccent}, ${BRAND.navyLight})`, color:"#fff",
+                            }}>⭐ DESTAQUE</span>
+                          )}
+                        </div>
+                        <div style={{
+                          fontFamily:"'Fraunces',serif",
+                          fontSize: featured ? 24 : 17, fontWeight: featured ? 700 : 600, lineHeight:1.3,
+                          color: T.text, marginBottom:10,
+                        }}>{h.title}</div>
+                        <div style={{ fontSize: featured ? 14 : 13, color: T.textMuted, lineHeight:1.6 }}>
+                          {h.summary}
+                        </div>
+                        {h.url && (
+                          <div style={{ marginTop:12, fontSize:11, fontWeight:600, color: T.titleAccent, display:"flex", alignItems:"center", gap:5 }}>
+                            Ler matéria completa →
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* FOOTER */}
+            <div style={{
+              marginTop:60, paddingTop:30,
+              borderTop: `1px solid ${T.cardBorder}`,
+              textAlign:"center", color: T.textMuted, fontSize:11,
+            }}>
+              <div style={{ display:"flex", justifyContent:"center", gap:14, marginBottom:14, flexWrap:"wrap" }}>
+                <button onClick={handleShare} style={{
+                  background: `linear-gradient(135deg, ${T.titleAccent}, ${BRAND.navyLight})`,
+                  border:"none", color:"#fff", padding:"10px 22px", borderRadius:9,
+                  fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"'Outfit',sans-serif",
+                  boxShadow:`0 4px 14px ${T.titleAccent}30`,
+                }}>
+                  {shareCopied ? "✓ Link copiado!" : "🔗 Compartilhar Edição"}
+                </button>
+                <button onClick={copyShareUrl} style={{
+                  background: "transparent", border: `1px solid ${T.cardBorder}`,
+                  color: T.text, padding:"10px 22px", borderRadius:9,
+                  fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"'Outfit',sans-serif",
+                }}>📋 Copiar Link</button>
+              </div>
+              <div style={{ marginTop:14, fontWeight:500, fontFamily:"'Fraunces',serif", fontStyle:"italic", fontSize:13 }}>
+                📡 Syncronize-MI — Atualizações de IA para quem tem pouco tempo
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ADMIN APP
+// ═════════════════════════════════════════════════════════════════════════════
+
+function AdminApp() {
+  const [theme, toggleTheme] = useTheme("user:admin_theme", "dark");
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    document.body.classList.toggle("admin-dark", isDark);
+    return () => document.body.classList.remove("admin-dark");
+  }, [isDark]);
+
+  const T = isDark ? {
+    bg: BRAND.ink,
+    bgAlt: BRAND.navyDeep,
+    text: BRAND.cream,
+    textMuted: "#9ba8b8",
+    cardBg: "rgba(255,255,255,.03)",
+    cardBorder: "rgba(255,255,255,.08)",
+    headerBg: `linear-gradient(180deg,${BRAND.navyDeep},${BRAND.ink})`,
+  } : {
+    bg: BRAND.cream,
+    bgAlt: BRAND.creamSoft,
+    text: BRAND.ink,
+    textMuted: BRAND.muted,
+    cardBg: "#fff",
+    cardBorder: "rgba(31,58,92,.12)",
+    headerBg: `linear-gradient(180deg,${BRAND.creamSoft},${BRAND.cream})`,
+  };
+
+  const [tab, setTab]                   = useState(0);
+  const [done, setDone]                 = useState([]);
+  const [storageReady, setStorageReady] = useState(false);
+
+  const [apiKey, setApiKey]             = useState("");
+  const [keyValidated, setKeyValidated] = useState(false);
+  const [klingApiKey, setKlingApiKey]   = useState(DEFAULT_KLING_KEY);
+  const [klingValidated, setKlingValidated] = useState(false);
+  const [heygenApiKey, setHeygenApiKey] = useState("");
+  const [heygenAvatarId, setHeygenAvatarId] = useState("");
+  const [heygenVoiceId, setHeygenVoiceId]   = useState("d7bbcdd6964c47bdaae26decade4a933");
+  const [heygenValidated, setHeygenValidated] = useState(false);
+  const [teamsWebhook, setTeamsWebhook]   = useState("");
+  const [defaultEmails, setDefaultEmails] = useState("");
+  const [testing, setTesting]             = useState({});
+  const [testResults, setTestResults]     = useState({});
+
+  const [newsletters, setNewsletters]     = useState([]);
+  const [editorDate, setEditorDate]       = useState(today());
+  const [editorTitle, setEditorTitle]     = useState("");
+  const [editorSubtitle, setEditorSubtitle] = useState("");
+  const [editorHeadlines, setEditorHeadlines] = useState([]);
+  const [editorAiSummary, setEditorAiSummary] = useState("");
+  const [editorFocusInsights, setEditorFocusInsights] = useState([]);
+  const [editorPodcastUrl, setEditorPodcastUrl] = useState("");
+  const [editorPodcastBlobRef, setEditorPodcastBlobRef] = useState("");
+  const [editorPodcastTitle, setEditorPodcastTitle] = useState("");
+  const [editorPodcastDuration, setEditorPodcastDuration] = useState(15);
+  const [editorPodcastThumbnail, setEditorPodcastThumbnail] = useState("");
+  const [editorPodcastTtlDays, setEditorPodcastTtlDays] = useState(30);
+  const [isLoadingNl, setIsLoadingNl]     = useState(false);
+  const [isGenSummary, setIsGenSummary]   = useState(false);
+  const [isGenInsights, setIsGenInsights] = useState(false);
+  const [isGenTitle, setIsGenTitle]       = useState(false);
+  const [isGenSubtitle, setIsGenSubtitle] = useState(false);
+  const [nlError, setNlError]             = useState("");
+  const [nlSuccess, setNlSuccess]         = useState("");
+
+  const [podcastName, setPodcastName]   = useState("Syncronize-MI");
+  const [epTitle, setEpTitle]           = useState("");
+  const [duration, setDuration]         = useState(10);
+  const [headlines, setHeadlines]       = useState([]);
+  const [selHL, setSelHL]               = useState([]);
+  const [loadingNews, setLoadingNews]   = useState(false);
+  const [newsError, setNewsError]       = useState("");
+  const [isGenQuick, setIsGenQuick]     = useState(false);
+  const [quickScript, setQuickScript]   = useState("");
+
+  const [kRole, setKRole]               = useState("tech_host");
+  const [avatarFile, setAvatarFile]     = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const fileRef                         = useRef(null);
+
+  const [rawText, setRawText]           = useState("");
+  const [refinedScript, setRefined]     = useState("");
+  const [distEmail, setDistEmail]       = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [isRefining, setIsRefining]     = useState(false);
+  const [isGenEmail, setIsGenEmail]     = useState(false);
+  const [refineError, setRefineError]   = useState("");
+
+  const [renderEngine, setRenderEngine] = useState("kling");
+  const [renderPct, setRenderPct]       = useState(0);
+  const [renderMsg, setRenderMsg]       = useState("");
+  const [isRendering, setIsRendering]   = useState(false);
+  const [renderDone, setRenderDone]     = useState(false);
+  const [renderError, setRenderError]   = useState("");
+  const [videoUrl, setVideoUrl]         = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
+
+  const [teamEmails, setTeamEmails]     = useState("");
+  const [distMsg, setDistMsg]           = useState("");
+  const [isGenMsg, setIsGenMsg]         = useState(false);
+  const [distError, setDistError]       = useState("");
+  const [distSuccess, setDistSuccess]   = useState("");
+  const [copied, setCopied]             = useState(false);
+
+  const [episodes, setEpisodes]         = useState([]);
+  const [selectedEpisode, setSelectedEpisode] = useState(null);
+
+  const markDone = useCallback((i) => setDone(p => p.includes(i) ? p : [...p, i]), []);
+
+  // ─── LOAD ─────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const settings = await db.get("user:settings_v9");
+      if (cancelled) return;
+      if (settings) {
+        if (settings.apiKey) setApiKey(settings.apiKey);
+        if (settings.klingApiKey) setKlingApiKey(settings.klingApiKey);
+        if (settings.heygenApiKey) setHeygenApiKey(settings.heygenApiKey);
+        if (settings.heygenAvatarId) setHeygenAvatarId(settings.heygenAvatarId);
+        if (settings.heygenVoiceId) setHeygenVoiceId(settings.heygenVoiceId);
+        if (settings.teamsWebhook) setTeamsWebhook(settings.teamsWebhook);
+        if (settings.defaultEmails) setDefaultEmails(settings.defaultEmails);
+        if (settings.keyValidated) { setKeyValidated(true); markDone(1); }
+        if (settings.klingValidated) setKlingValidated(true);
+        if (settings.heygenValidated) setHeygenValidated(true);
+        if (settings.podcastName) setPodcastName(settings.podcastName);
+        if (settings.kRole) setKRole(settings.kRole);
+      }
+      setEpisodes(await db.listEpisodes());
+      setNewsletters(await db.listNewsletters());
+      setStorageReady(true);
+    })();
+    return () => { cancelled = true; };
+  }, [markDone]);
+
+  // ─── AUTO-SAVE SETTINGS (NOT newsletters — those are explicit) ────────────
+  useEffect(() => {
+    if (!storageReady) return;
+    const t = setTimeout(() => {
+      db.set("user:settings_v9", {
+        apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId,
+        teamsWebhook, defaultEmails,
+        keyValidated, klingValidated, heygenValidated,
+        podcastName, kRole, updatedAt: Date.now(),
+      });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId, teamsWebhook, defaultEmails, keyValidated, klingValidated, heygenValidated, podcastName, kRole, storageReady]);
+
+  // ─── LOAD EDITOR FROM SELECTED DATE ───────────────────────────────────────
+  useEffect(() => {
+    if (!storageReady) return;
+    (async () => {
+      const existing = await db.get(`newsletter:${editorDate}`);
+      if (existing) {
+        setEditorTitle(existing.title || "");
+        setEditorSubtitle(existing.subtitle || "");
+        setEditorHeadlines(existing.headlines || []);
+        setEditorAiSummary(existing.aiSummary || "");
+        setEditorFocusInsights(existing.focusInsights || []);
+        setEditorPodcastUrl(existing.podcastUrl || "");
+        setEditorPodcastBlobRef(existing.podcastBlobRef || "");
+        setEditorPodcastTitle(existing.podcastTitle || "");
+        setEditorPodcastDuration(existing.podcastDuration || 15);
+        setEditorPodcastThumbnail(existing.podcastThumbnail || "");
+        if (existing.podcastExpiresAt) {
+          const days = Math.max(1, Math.round((existing.podcastExpiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
+          setEditorPodcastTtlDays(days);
+        }
+      } else {
+        setEditorTitle(""); setEditorSubtitle(""); setEditorHeadlines([]);
+        setEditorAiSummary(""); setEditorFocusInsights([]);
+        setEditorPodcastUrl(""); setEditorPodcastBlobRef("");
+        setEditorPodcastTitle(""); setEditorPodcastDuration(15);
+        setEditorPodcastThumbnail("");
+      }
+    })();
+  }, [editorDate, storageReady]);
+
+  // ─── HELPERS ──────────────────────────────────────────────────────────────
+
+  const handleUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const toggleHL = (h) => setSelHL(p => p.find(x => x.title === h.title) ? p.filter(x => x.title !== h.title) : [...p, h]);
+  const copyText = (text) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
+  // ─── CONNECTION TESTS ─────────────────────────────────────────────────────
+
+  const testAnthropic = async () => {
+    setTesting(p => ({ ...p, anthropic: true }));
+    const trimmed = apiKey.trim();
+    if (!trimmed) { setTestResults(p => ({ ...p, anthropic: { status:"err", msg:"Cole sua chave." } })); setTesting(p => ({ ...p, anthropic: false })); return; }
+    if (apiKey !== trimmed) setApiKey(trimmed);
+    if (!trimmed.startsWith("sk-ant-")) { setTestResults(p => ({ ...p, anthropic: { status:"err", msg:'Inválida.' } })); setTesting(p => ({ ...p, anthropic: false })); return; }
+    try {
+      const data = await callAnthropic(trimmed, { model: ANTHROPIC_MODEL, max_tokens: 30, messages: [{ role: "user", content: "OK" }] });
+      const reply = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      setKeyValidated(true); markDone(1);
+      setTestResults(p => ({ ...p, anthropic: { status:"ok", msg:"Conexão OK!", details:`"${reply}"` } }));
+    } catch (err) {
+      let diagnosis = err.message;
+      if (err.status === 401) diagnosis = "Chave inválida.";
+      else if (err.status === 429) diagnosis = "Sem créditos.";
+      setTestResults(p => ({ ...p, anthropic: { status:"err", msg: diagnosis } }));
+    }
+    setTesting(p => ({ ...p, anthropic: false }));
+  };
+
+  const testKling = async () => {
+    setTesting(p => ({ ...p, kling: true }));
+    try {
+      await klingTestConnection(klingApiKey.trim());
+      setKlingValidated(true);
+      setTestResults(p => ({ ...p, kling: { status:"ok", msg:"OK" } }));
+    } catch (err) { setTestResults(p => ({ ...p, kling: { status:"err", msg: err.message } })); }
+    setTesting(p => ({ ...p, kling: false }));
+  };
+
+  const testHeygen = async () => {
+    setTesting(p => ({ ...p, heygen: true }));
+    if (!heygenApiKey.trim()) { setTestResults(p => ({ ...p, heygen: { status:"err", msg:"Cole a chave." } })); setTesting(p => ({ ...p, heygen: false })); return; }
+    try {
+      const data = await heygenTestConnection(heygenApiKey.trim());
+      const voiceCount = data?.data?.voices?.length || 0;
+      setHeygenValidated(true);
+      setTestResults(p => ({ ...p, heygen: { status:"ok", msg:`OK! ${voiceCount} vozes.` } }));
+    } catch (err) { setTestResults(p => ({ ...p, heygen: { status:"err", msg: err.message } })); }
+    setTesting(p => ({ ...p, heygen: false }));
+  };
+
+  const testTeams = async () => {
+    setTesting(p => ({ ...p, teams: true }));
+    if (!teamsWebhook.trim()) { setTestResults(p => ({ ...p, teams: { status:"err", msg:"Cole o webhook." } })); setTesting(p => ({ ...p, teams: false })); return; }
+    try {
+      await sendTeamsWebhook(teamsWebhook.trim(), "🧪 Teste Syncronize-MI", "Teste de conexão.");
+      setTestResults(p => ({ ...p, teams: { status:"ok", msg:"Enviado!" } }));
+    } catch (err) { setTestResults(p => ({ ...p, teams: { status:"err", msg: err.message } })); }
+    setTesting(p => ({ ...p, teams: false }));
+  };
+
+  // ─── NEWSLETTER LOGIC ─────────────────────────────────────────────────────
+
+  const fetchNewsForNewsletter = async () => {
+    if (!keyValidated) { setNlError("Configure a chave Anthropic."); return; }
+    setIsLoadingNl(true); setNlError(""); setNlSuccess("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, e desenvolvimento sistêmico. Responda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,
+        true, 3000
+      );
+      const m = text.match(/\[[\s\S]*\]/);
+      if (m) {
+        const parsed = JSON.parse(m[0]).slice(0, 10);
+        setEditorHeadlines(parsed);
+        setNlSuccess(`${parsed.length} manchetes carregadas`);
+      } else throw new Error("Sem JSON");
+    } catch (err) { setNlError("Erro: " + err.message); }
+    setIsLoadingNl(false);
+  };
+
+  // ─── NEW: Generate compelling TITLE ───────────────────────────────────────
+  const generateTitle = async () => {
+    if (!keyValidated) { setNlError("Configure a chave."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes primeiro."); return; }
+    setIsGenTitle(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Crie um TÍTULO chamativo e magnético para uma newsletter sobre IA, baseado nestas manchetes da semana:
+
+${editorHeadlines.map((h, i) => `${i+1}. ${h.title}`).join("\n")}
+
+REGRAS PARA O TÍTULO:
+- Máximo 7 palavras
+- Use linguagem provocativa, clickbait elegante (não vulgar)
+- Pode ter números, palavras de poder ou paradoxos
+- Deve fazer o leitor PARAR e querer ler
+- Tom editorial, jornalístico, instigante
+- Português brasileiro
+- Identifique a tendência principal da semana e faça disso o título
+
+EXEMPLOS DE BONS TÍTULOS (para inspiração de tom, não copie):
+- "A semana que aposentou os engenheiros"
+- "OpenAI piscou. O Google atacou."
+- "Por que 2026 já não é o futuro"
+- "O fim silencioso dos prompts"
+
+Responda APENAS com o título escolhido. Sem aspas, sem explicação.`,
+        false, 200
+      );
+      setEditorTitle(text.trim().replace(/^["']|["']$/g, ""));
+      setNlSuccess("Título gerado!");
+    } catch (err) { setNlError("Erro: " + err.message); }
+    setIsGenTitle(false);
+  };
+
+  // ─── NEW: Generate compelling IMPACT SUBTITLE ─────────────────────────────
+  const generateSubtitle = async () => {
+    if (!keyValidated) { setNlError("Configure a chave."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes primeiro."); return; }
+    setIsGenSubtitle(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Crie uma FRASE DE IMPACTO (subtítulo) para uma newsletter sobre IA. Ela acompanha o título "${editorTitle || "(título a definir)"}" e prepara o leitor para o conteúdo desta semana.
+
+CONTEXTO (manchetes da semana):
+${editorHeadlines.slice(0, 6).map((h, i) => `- ${h.title}: ${h.summary}`).join("\n")}
+
+REGRAS PARA A FRASE:
+- 1 a 2 frases (máximo 25 palavras total)
+- Tom editorial, sofisticado, com ponto de vista
+- Conecte os temas da semana em uma narrativa única
+- Pode usar contraste, paradoxo ou tensão
+- Português brasileiro elegante
+- Faça o leitor entender O QUE PERDERÁ se não ler
+
+EXEMPLOS DE BONS SUBTÍTULOS (apenas para tom, não copie):
+- "Enquanto debatemos regulação, três startups silenciosamente reescreveram o que IA significa"
+- "Os benchmarks caíram. Os preços também. E ninguém parece ter notado o terceiro movimento."
+- "Não é mais sobre quem tem o melhor modelo — é sobre quem sabe orquestrá-los"
+
+Responda APENAS com a frase escolhida.`,
+        false, 300
+      );
+      setEditorSubtitle(text.trim().replace(/^["']|["']$/g, ""));
+      setNlSuccess("Frase de impacto gerada!");
+    } catch (err) { setNlError("Erro: " + err.message); }
+    setIsGenSubtitle(false);
+  };
+
+  const generateAiSummary = async () => {
+    if (!keyValidated) { setNlError("Configure a chave."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes."); return; }
+    setIsGenSummary(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Curador editorial da newsletter "Syncronize-MI". Resumo executivo (~250 palavras) com PONTO DE VISTA editorial.
+
+FOCO em três eixos:
+1. PRODUTIVIDADE — IA mudando trabalho diário
+2. DESENVOLVIMENTO SISTÊMICO — engenharia, arquitetura, agentes
+3. NOVOS MODELOS LLM/IA — capacidades emergentes
+
+ESTILO: editorial, analítico, conecta pontos, identifica tendências, parágrafos.
+
+MANCHETES (${fmtDateLong(editorDate)}):
+${editorHeadlines.map((h, i) => `${i+1}. ${h.title} — ${h.summary}`).join("\n")}
+
+Retorne APENAS o resumo.`,
+        false, 1200,
+        "Você é editor sênior de newsletter de IA."
+      );
+      setEditorAiSummary(text.trim());
+      setNlSuccess("Resumo gerado!");
+    } catch (err) { setNlError("Erro: " + err.message); }
+    setIsGenSummary(false);
+  };
+
+  const generateFocusInsights = async () => {
+    if (!keyValidated) { setNlError("Configure a chave."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes."); return; }
+    setIsGenInsights(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Insight curto (50-70 palavras) por área. Responda SOMENTE JSON: {"produtividade":"...","sistemico":"...","llm":"..."}
+
+MANCHETES:
+${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
+        false, 1000
+      );
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) {
+        const parsed = JSON.parse(m[0]);
+        setEditorFocusInsights([
+          { area: "produtividade", summary: parsed.produtividade || "" },
+          { area: "sistemico",     summary: parsed.sistemico || "" },
+          { area: "llm",           summary: parsed.llm || "" },
+        ]);
+        setNlSuccess("Insights gerados!");
+      } else throw new Error("Sem JSON");
+    } catch (err) { setNlError("Erro: " + err.message); }
+    setIsGenInsights(false);
+  };
+
+  // ─── PODCAST UPLOAD — separate blob storage so it doesn't break newsletter ─
+  const handlePodcastUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 30 * 1024 * 1024) {
+      setNlError(`Arquivo grande (${(file.size/(1024*1024)).toFixed(1)}MB). Recomendamos URL externa para arquivos > 30MB para garantir persistência.`);
+    }
+    setNlSuccess("Convertendo...");
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const dataUrl = reader.result;
+      const blobKey = `videoblob:${editorDate}:${Date.now()}`;
+      const r = await db.saveVideoBlob(blobKey, dataUrl);
+      if (r.ok) {
+        setEditorPodcastBlobRef(blobKey);
+        setEditorPodcastUrl(""); // priority to blob ref
+        if (!editorPodcastTitle) setEditorPodcastTitle(file.name.replace(/\.[^.]+$/, ""));
+        setNlSuccess(`Vídeo salvo no banco (${(file.size / (1024*1024)).toFixed(1)}MB) ✓`);
+      } else {
+        setNlError(`Não foi possível salvar (${(file.size/(1024*1024)).toFixed(1)}MB). Erro: ${r.error}. Use URL externa.`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ─── SAVE NEWSLETTER — ROBUST ─────────────────────────────────────────────
+  const saveNewsletter = async () => {
+    if (!editorDate) { setNlError("Selecione uma data."); return; }
+    setNlError(""); setNlSuccess("");
+    const expiresAt = (editorPodcastUrl || editorPodcastBlobRef) && editorPodcastTtlDays > 0
+      ? Date.now() + editorPodcastTtlDays * 24 * 60 * 60 * 1000 : null;
+    const nl = {
+      id: `newsletter:${editorDate}`,
+      date: editorDate,
+      title: editorTitle || `Highlights de IA · ${fmtDate(editorDate)}`,
+      subtitle: editorSubtitle,
+      headlines: editorHeadlines,
+      aiSummary: editorAiSummary,
+      focusInsights: editorFocusInsights,
+      podcastUrl: editorPodcastUrl,           // URL externa (HeyGen, etc)
+      podcastBlobRef: editorPodcastBlobRef,   // Reference to separate blob storage
+      podcastTitle: editorPodcastTitle,
+      podcastDuration: editorPodcastDuration,
+      podcastThumbnail: editorPodcastThumbnail,
+      podcastExpiresAt: expiresAt,
+      updatedAt: Date.now(),
+    };
+    const result = await db.set(nl.id, nl);
+    if (result.ok) {
+      setNlSuccess(`✅ Edição publicada em ${fmtDate(editorDate)}!`);
+      setNewsletters(await db.listNewsletters());
+    } else {
+      setNlError(`❌ Falha ao salvar (${result.size} bytes): ${result.error}. Tente reduzir conteúdo ou usar URL externa para vídeo.`);
+    }
+  };
+
+  const deleteNewsletter = async (date) => {
+    if (!confirm(`Apagar edição de ${fmtDate(date)}?`)) return;
+    const existing = await db.get(`newsletter:${date}`);
+    if (existing?.podcastBlobRef) await db.delete(existing.podcastBlobRef);
+    await db.delete(`newsletter:${date}`);
+    setNewsletters(await db.listNewsletters());
+    setNlSuccess(`Apagada`);
+  };
+
+  const fetchNews = async () => {
+    if (!keyValidated) { setNewsError("Configure a chave."); return; }
+    setLoadingNews(true); setNewsError(""); setHeadlines([]);
+    try {
+      const text = await callClaude(apiKey,
+        `10 notícias de IA da semana. JSON: [{"title":"...","summary":"...","source":"...","category":"IA","url":"..."}]`,
+        true, 2500);
+      const m = text.match(/\[[\s\S]*\]/);
+      if (m) setHeadlines(JSON.parse(m[0]).slice(0, 10));
+    } catch (err) { setNewsError("Erro: " + err.message); }
+    setLoadingNews(false);
+  };
+
+  const genQuickScript = async () => {
+    if (headlines.length === 0) { setNewsError("Busque manchetes."); return; }
+    setIsGenQuick(true); setQuickScript("");
+    const items = (selHL.length > 0 ? selHL : headlines).slice(0, 8);
+    try {
+      const text = await callClaude(apiKey,
+        `Roteiro de podcast em ${duration} min, português.\nITENS:\n${items.map((h, i) => `${i+1}. ${h.title}: ${h.summary}`).join("\n")}\n[pausa] entre tópicos, *palavra* para ênfase.`,
+        false, 2500);
+      setQuickScript(text.trim());
+      setRawText(items.map(h => `• ${h.title}: ${h.summary}`).join("\n"));
+    } catch (err) { setQuickScript("Erro: " + err.message); }
+    setIsGenQuick(false);
+  };
+
+  const refineScript = async () => {
+    if (!rawText.trim()) { setRefineError("Escreva conteúdo."); return; }
+    setIsRefining(true); setRefineError(""); setRefined("");
+    try {
+      const text = await callClaude(apiKey,
+        `Refine em roteiro de podcast (${duration} min, português):\n\n${rawText}\n\nRetorne só o roteiro.`,
+        false, 2000);
+      setRefined(text.trim()); markDone(3);
+    } catch (err) { setRefineError("Erro: " + err.message); }
+    setIsRefining(false);
+  };
+
+  const genEmailCopy = async () => {
+    if (!refinedScript.trim() && !rawText.trim()) { setRefineError("Gere o roteiro."); return; }
+    setIsGenEmail(true); setRefineError("");
+    try {
+      const text = await callClaude(apiKey,
+        `ASSUNTO + CORPO. JSON: {"subject":"...","body":"..."}\nPodcast: ${podcastName} · EP: ${epTitle}`,
+        false, 800);
+      const m = text.match(/\{[\s\S]*?\}/);
+      if (m) { const parsed = JSON.parse(m[0]); setEmailSubject(parsed.subject || ""); setDistEmail(parsed.body || ""); }
+    } catch (err) { setRefineError("Erro: " + err.message); }
+    setIsGenEmail(false);
+  };
+
+  const saveEpisode = async (data = {}) => {
+    const ep = {
+      id: `episode:${Date.now()}`, podcastName,
+      title: epTitle || "Sem título", duration,
+      script: refinedScript || rawText, engine: renderEngine,
+      headlines: selHL, emailSubject, emailBody: distEmail,
+      videoUrl: data.videoUrl || "", thumbnailUrl: data.thumbnailUrl || "",
+      videoId: data.videoId || "", status: "completed", createdAt: Date.now(),
+    };
+    await db.set(ep.id, ep);
+    setEpisodes(await db.listEpisodes());
+  };
+
+  const deleteEpisode = async (id) => {
+    await db.delete(id);
+    setEpisodes(await db.listEpisodes());
+  };
+
+  const renderKling = async () => {
+    if (!klingValidated) { setRenderError("Valide Kling."); return; }
+    if (!avatarFile) { setRenderError("Envie a foto."); return; }
+    if (!refinedScript.trim()) { setRenderError("Gere o roteiro."); return; }
+    setIsRendering(true); setRenderDone(false); setRenderError(""); setRenderPct(0);
+    setVideoUrl(""); setThumbnailUrl("");
+    const steps = [
+      { p:20, m:"🖼️ Avatar..." }, { p:40, m:"🗣️ TTS..." }, { p:60, m:"💋 Lipsync..." },
+      { p:80, m:"🎬 Render..." }, { p:95, m:"📦 Export..." },
+    ];
+    try {
+      for (const s of steps) { await new Promise(r => setTimeout(r, 800)); setRenderPct(s.p); setRenderMsg(s.m); }
+      const demoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+      const demoThumb = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg";
+      setRenderPct(100); setRenderMsg("✅ Pronto!");
+      setVideoUrl(demoUrl); setThumbnailUrl(demoThumb);
+      setRenderDone(true); markDone(4);
+      await saveEpisode({ videoUrl: demoUrl, thumbnailUrl: demoThumb });
+    } catch (err) { setRenderError("Erro: " + err.message); }
+    setIsRendering(false);
+  };
+
+  const renderHeyGen = async () => {
+    if (!heygenValidated) { setRenderError("Valide HeyGen."); return; }
+    if (!heygenAvatarId.trim()) { setRenderError("Avatar ID?"); return; }
+    if (!refinedScript.trim()) { setRenderError("Roteiro?"); return; }
+    setIsRendering(true); setRenderDone(false); setRenderError(""); setRenderPct(0);
+    setVideoUrl(""); setThumbnailUrl("");
+    try {
+      setRenderPct(15); setRenderMsg("🔑 Auth...");
+      const cleanScript = refinedScript.replace(/\[pausa\]/g, "...").replace(/\[\?\]/g, "?").replace(/\*([^*]+)\*/g, "$1");
+      const videoId = await heygenGenerateVideo(heygenApiKey.trim(), {
+        avatarId: heygenAvatarId.trim(), voiceId: heygenVoiceId.trim(), scriptText: cleanScript,
+      });
+      setRenderPct(30); setRenderMsg(`🎬 ${videoId.slice(0,12)}...`);
+      let pct = 30; let attempts = 0;
+      while (attempts < 60) {
+        await new Promise(r => setTimeout(r, 5000)); attempts++;
+        const status = await heygenGetStatus(heygenApiKey.trim(), videoId);
+        if (status?.status === "completed") {
+          setRenderPct(100); setRenderMsg("✅");
+          setVideoUrl(status.video_url || ""); setThumbnailUrl(status.thumbnail_url || "");
+          setRenderDone(true); markDone(4);
+          await saveEpisode({ videoUrl: status.video_url, thumbnailUrl: status.thumbnail_url, videoId });
+          break;
+        } else if (status?.status === "failed") throw new Error(status?.error?.message || "Falhou");
+        else { pct = Math.min(95, pct + 3); setRenderPct(pct); setRenderMsg(`🎬 ${status?.status}... (${attempts})`); }
+      }
+    } catch (err) { setRenderError("Erro: " + err.message); }
+    setIsRendering(false);
+  };
+
+  const startRender = () => {
+    setRenderError("");
+    if (renderEngine === "kling") renderKling(); else renderHeyGen();
+  };
+
+  const genDistMsg = async () => {
+    setIsGenMsg(true); setDistError(""); setDistSuccess("");
+    try {
+      const text = await callClaude(apiKey,
+        `Mensagem (max 5 linhas) para distribuir podcast. ${podcastName} · ${epTitle} · ${duration}min ${videoUrl ? "Vídeo: "+videoUrl : ""}`,
+        false, 500);
+      setDistMsg(text.trim()); markDone(5);
+    } catch (err) { setDistError("Erro: " + err.message); }
+    setIsGenMsg(false);
+  };
+
+  const sendByEmail = () => {
+    setDistError(""); setDistSuccess("");
+    const recipients = teamEmails || defaultEmails;
+    if (!recipients.trim()) { setDistError("Adicione destinatários."); return; }
+    if (!distMsg.trim()) { setDistError("Gere a mensagem."); return; }
+    const subject = emailSubject || `🎙️ ${epTitle || podcastName}`;
+    const body = `${distMsg}\n\n${videoUrl ? "▶️ " + videoUrl + "\n\n" : ""}— Syncronize-MI`;
+    openMailto(recipients, subject, body);
+    setDistSuccess(`Cliente aberto.`);
+  };
+
+  const sendToTeams = async () => {
+    setDistError(""); setDistSuccess("");
+    if (!teamsWebhook.trim()) { setDistError("Configure webhook."); return; }
+    if (!distMsg.trim()) { setDistError("Gere a mensagem."); return; }
+    try {
+      await sendTeamsWebhook(teamsWebhook.trim(), emailSubject || `🎙️ ${epTitle}`, distMsg, videoUrl);
+      setDistSuccess("Enviado!");
+    } catch (err) { setDistError("Erro: " + err.message); }
+  };
+
+  const importHeadlinesFromNewsletter = () => {
+    if (editorHeadlines.length > 0) { setHeadlines(editorHeadlines); setNewsError(""); }
+  };
+
+  const useEpisodeAsPodcast = (ep) => {
+    if (ep.videoUrl) {
+      setEditorPodcastUrl(ep.videoUrl);
+      setEditorPodcastBlobRef("");
+      setEditorPodcastThumbnail(ep.thumbnailUrl || "");
+      setEditorPodcastTitle(ep.title);
+      setEditorPodcastDuration(ep.duration);
+      setTab(0);
+      setNlSuccess(`"${ep.title}" carregado`);
+    }
+  };
+
+  const canAccessTab = (i) => i === 0 || i === 1 || keyValidated;
+
+  // ─── ADMIN HEADER ─────────────────────────────────────────────────────────
+
+  return (
+    <div style={{ background: T.bg, minHeight:"100vh", color: T.text, paddingBottom:30 }}>
+      <div style={{
+        background: T.headerBg,
+        borderBottom: `1px solid ${T.cardBorder}`,
+        padding:"16px 24px",
+        display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10,
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{
+            width:42, height:42, borderRadius:11,
+            background: BRAND.navy,
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, color:"#fff",
+            boxShadow:`0 4px 14px ${BRAND.navy}40`,
+          }}>🧠</div>
+          <div>
+            <div style={{ fontSize:18, fontWeight:800, color: T.text, fontFamily:"'Fraunces',serif", letterSpacing:"-.025em" }}>
+              Syncronize-MI · Admin
+            </div>
+            <div style={{ fontSize:9, color: T.textMuted, fontFamily:"'JetBrains Mono',monospace", letterSpacing:".1em" }}>
+              v9 · {keyValidated ? "🟢" : "🔴"}{klingValidated ? "🟢" : "⚫"}{heygenValidated ? "🟢" : "⚫"}
+            </div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
+          {ADMIN_TABS.map((t, i) => {
+            const accessible = canAccessTab(i);
+            return (
+              <button key={i} onClick={() => { if (accessible) setTab(i); }} disabled={!accessible} style={{
+                background: tab === i ? `${BRAND.navy}20` : "transparent",
+                border: `1px solid ${tab === i ? `${BRAND.navy}60` : "transparent"}`,
+                color: !accessible ? T.textMuted + "60" : tab === i ? (isDark ? BRAND.gold : BRAND.navy) : T.textMuted,
+                borderRadius:7, padding:"6px 13px", fontSize:12, fontWeight:500,
+                cursor: accessible ? "pointer" : "not-allowed", display:"flex", alignItems:"center", gap:5,
+                opacity: accessible ? 1 : .55, fontFamily:"'Outfit',sans-serif",
+              }}>
+                {!accessible && i > 1 && <span style={{ fontSize:9 }}>🔒</span>}
+                {done.includes(i) && <span style={{ fontSize:9, color: BRAND.sageDark }}>✓</span>}
+                <span>{t.icon}</span> {t.label}
+              </button>
+            );
+          })}
+          <ThemeToggle theme={theme} onToggle={toggleTheme} style={{ marginLeft:6 }} />
+          <a href="?view=public" target="_blank" style={{
+            fontSize:11, color: BRAND.sageDark, textDecoration:"none",
+            padding:"6px 12px", borderRadius:7,
+            border:`1px solid ${BRAND.sage}40`, background:`${BRAND.sage}15`,
+          }}>
+            👁️ Newsletter →
+          </a>
+        </div>
+      </div>
+
+      <div style={{ padding:"24px", maxWidth:1200, margin:"0 auto" }}>
+        {/* ════ TAB 0 — NEWSLETTER ════ */}
+        {tab === 0 && (
+          <div className="fade">
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text, letterSpacing:"-.02em" }}>📰 Newsletter Editor</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted, fontStyle:"italic" }}>Gerencie edições da NewsLetter Syncronize-MI</p>
+            </div>
+
+            <div style={{ display:"flex", gap:12, alignItems:"flex-end", flexWrap:"wrap" }}>
+              <Field label="Data" mt={0} dark={isDark}>
+                <TextInput type="date" value={editorDate} onChange={e => setEditorDate(e.target.value)} dark={isDark} style={{ width:180 }} />
+              </Field>
+              <div style={{ flex:1, minWidth:200 }}>
+                <div style={{ fontSize:9, fontWeight:700, color: isDark ? BRAND.gold : BRAND.muted, letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>Edições</div>
+                <div style={{ display:"flex", gap:6, flexWrap:"wrap", maxHeight:60, overflowY:"auto" }}>
+                  {newsletters.length === 0 ? <div style={{ fontSize:11, color: T.textMuted }}>Nenhuma</div> :
+                    newsletters.slice(0, 12).map(n => (
+                      <button key={n.date} onClick={() => setEditorDate(n.date)} style={{
+                        background: editorDate === n.date ? `${BRAND.navy}25` : T.cardBg,
+                        border: `1px solid ${editorDate === n.date ? BRAND.navy : T.cardBorder}`,
+                        color: editorDate === n.date ? (isDark ? BRAND.gold : BRAND.navy) : T.text,
+                        borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer", fontFamily:"monospace",
+                      }}>{fmtDate(n.date)} {(n.podcastUrl || n.podcastBlobRef) && "🎙️"}</button>
+                    ))}
+                </div>
+              </div>
+              <Btn onClick={saveNewsletter}>💾 Publicar</Btn>
+              {newsletters.find(n => n.date === editorDate) && (
+                <>
+                  <a href={`?view=public&date=${editorDate}`} target="_blank" rel="noreferrer">
+                    <Btn secondary>👁️ Preview</Btn>
+                  </a>
+                  <Btn danger onClick={() => deleteNewsletter(editorDate)}>🗑️</Btn>
+                </>
+              )}
+            </div>
+
+            <ErrorBox msg={nlError} />
+            <InfoBox msg={nlSuccess} />
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:18 }}>
+              {/* LEFT */}
+              <div>
+                {/* TITLE WITH AI BUTTON */}
+                <div style={{ background: `${BRAND.gold}10`, border:`1px solid ${BRAND.gold}30`, borderRadius:11, padding:14, marginTop:0 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.goldDark }}>✨ Título Magnético</div>
+                    <Btn gold onClick={generateTitle} disabled={isGenTitle || !keyValidated || editorHeadlines.length === 0}>
+                      {isGenTitle ? <><Spinner /> Gerando...</> : "🪄 Gerar com IA"}
+                    </Btn>
+                  </div>
+                  <TextInput dark={isDark} value={editorTitle} onChange={e => setEditorTitle(e.target.value)} placeholder="Ex: A semana que aposentou os engenheiros" />
+                  <div style={{ fontSize:10, color: T.textMuted, marginTop:5, fontStyle:"italic" }}>
+                    💡 Use a IA para criar um título chamativo baseado nas manchetes (max 7 palavras)
+                  </div>
+                </div>
+
+                {/* SUBTITLE WITH AI BUTTON */}
+                <div style={{ background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}30`, borderRadius:11, padding:14, marginTop:14 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.sageDark }}>💥 Frase de Impacto</div>
+                    <Btn sage onClick={generateSubtitle} disabled={isGenSubtitle || !keyValidated || editorHeadlines.length === 0}>
+                      {isGenSubtitle ? <><Spinner /> Gerando...</> : "🪄 Gerar com IA"}
+                    </Btn>
+                  </div>
+                  <TextArea dark={isDark} value={editorSubtitle} onChange={e => setEditorSubtitle(e.target.value)} rows={2} placeholder="Frase editorial provocativa que faz o leitor querer ler tudo..." />
+                  <div style={{ fontSize:10, color: T.textMuted, marginTop:5, fontStyle:"italic" }}>
+                    💡 Subtítulo provocativo (max 25 palavras) que faz o leitor entender o que perderá se não ler
+                  </div>
+                </div>
+
+                {/* HEADLINES */}
+                <div style={{ marginTop:14, padding:14, background: `${BRAND.navy}08`, border:`1px solid ${BRAND.navy}30`, borderRadius:11 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: isDark ? "#a8c8e8" : BRAND.navy }}>📰 Manchetes ({editorHeadlines.length})</div>
+                    <Btn onClick={fetchNewsForNewsletter} disabled={isLoadingNl || !keyValidated}>
+                      {isLoadingNl ? <><Spinner /> Buscando...</> : "🔍 Buscar IA"}
+                    </Btn>
+                  </div>
+                  {editorHeadlines.length > 0 && (
+                    <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:240, overflowY:"auto" }}>
+                      {editorHeadlines.map((h, i) => (
+                        <div key={i} style={{ background: T.cardBg, borderRadius:7, padding:"8px 10px", display:"flex", gap:8 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:11, fontWeight:600, color: T.text }}>{h.title}</div>
+                            <div style={{ fontSize:10, color: T.textMuted, marginTop:2 }}>{h.summary}</div>
+                            <div style={{ fontSize:9, color: T.textMuted, marginTop:3, fontFamily:"monospace" }}>{h.source} · {h.category}</div>
+                          </div>
+                          <button onClick={() => setEditorHeadlines(editorHeadlines.filter((_, idx) => idx !== i))} style={{ background:"transparent", border:"none", color: T.textMuted, cursor:"pointer", fontSize:14 }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* AI SUMMARY */}
+                <div style={{ marginTop:14, padding:14, background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}30`, borderRadius:11 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.sageDark }}>🧠 Resumo Executivo</div>
+                    <Btn sage onClick={generateAiSummary} disabled={isGenSummary || editorHeadlines.length === 0}>
+                      {isGenSummary ? <><Spinner /> ...</> : "✨ Análise IA"}
+                    </Btn>
+                  </div>
+                  <TextArea dark={isDark} value={editorAiSummary} onChange={e => setEditorAiSummary(e.target.value)} rows={6} placeholder="Resumo editorial (~250 palavras)..." />
+                </div>
+
+                {/* FOCUS INSIGHTS */}
+                <div style={{ marginTop:14, padding:14, background: `${BRAND.gold}10`, border:`1px solid ${BRAND.gold}30`, borderRadius:11 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.goldDark }}>🎯 Insights por Área</div>
+                    <Btn gold onClick={generateFocusInsights} disabled={isGenInsights || editorHeadlines.length === 0}>
+                      {isGenInsights ? <><Spinner /> ...</> : "✨ 3 Insights"}
+                    </Btn>
+                  </div>
+                  {FOCUS_AREAS.map(area => {
+                    const insight = editorFocusInsights.find(i => i.area === area.id);
+                    const color = isDark ? area.colorDark : area.colorLight;
+                    return (
+                      <div key={area.id} style={{ marginTop:8 }}>
+                        <div style={{ fontSize:10, color, fontWeight:700, marginBottom:4 }}>{area.icon} {area.label}</div>
+                        <TextArea
+                          dark={isDark}
+                          value={insight?.summary || ""}
+                          onChange={e => {
+                            const newI = editorFocusInsights.filter(i => i.area !== area.id);
+                            newI.push({ area: area.id, summary: e.target.value });
+                            setEditorFocusInsights(newI);
+                          }}
+                          rows={2}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RIGHT — PODCAST */}
+              <div>
+                <div style={{ padding:14, background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}40`, borderRadius:11 }}>
+                  <div style={{ fontWeight:700, fontSize:13, color: BRAND.sageDark, marginBottom:10 }}>🎙️ Podcast da Edição</div>
+
+                  <div style={{ background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:8, padding:10, fontSize:11, color: T.textMuted, marginBottom:10 }}>
+                    💡 <strong>Suportado:</strong> URL HeyGen (app.heygen.com/videos/...), YouTube, Vimeo, MP4 direto, ou upload local (max 30MB recomendado).
+                  </div>
+
+                  <Field label="URL externa do vídeo (recomendado)" mt={0} dark={isDark}>
+                    <TextInput
+                      dark={isDark}
+                      value={editorPodcastUrl}
+                      onChange={e => { setEditorPodcastUrl(e.target.value); if (e.target.value) setEditorPodcastBlobRef(""); }}
+                      placeholder="https://app.heygen.com/videos/..."
+                    />
+                  </Field>
+
+                  <Field label="OU Upload local (salvo no banco)" dark={isDark}>
+                    <input type="file" accept="video/*" onChange={handlePodcastUpload}
+                      style={{ width:"100%", padding:"8px", background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:7, color: T.text, fontSize:11 }} />
+                    {editorPodcastBlobRef && (
+                      <div style={{ marginTop:6, fontSize:10, color: BRAND.sageDark, background: `${BRAND.sage}15`, padding:"5px 8px", borderRadius:5 }}>
+                        ✓ Vídeo salvo no banco · ref: {editorPodcastBlobRef.slice(-12)}
+                      </div>
+                    )}
+                  </Field>
+
+                  {(editorPodcastUrl || editorPodcastBlobRef) && (
+                    <div style={{ marginTop:10 }}>
+                      <PodcastPreview blobRef={editorPodcastBlobRef} url={editorPodcastUrl} />
+                    </div>
+                  )}
+
+                  <Field label="Título do Episódio" dark={isDark}>
+                    <TextInput dark={isDark} value={editorPodcastTitle} onChange={e => setEditorPodcastTitle(e.target.value)} placeholder="Syncronize-MI #042" />
+                  </Field>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                    <Field label="Duração (min)" dark={isDark}>
+                      <TextInput dark={isDark} type="number" value={editorPodcastDuration} onChange={e => setEditorPodcastDuration(parseInt(e.target.value) || 0)} />
+                    </Field>
+                    <Field label="Disponível (dias)" dark={isDark}>
+                      <TextInput dark={isDark} type="number" value={editorPodcastTtlDays} onChange={e => setEditorPodcastTtlDays(parseInt(e.target.value) || 0)} />
+                    </Field>
+                  </div>
+
+                  <Field label="Thumbnail URL (opcional)" dark={isDark}>
+                    <TextInput dark={isDark} value={editorPodcastThumbnail} onChange={e => setEditorPodcastThumbnail(e.target.value)} />
+                  </Field>
+
+                  {editorPodcastTtlDays > 0 && (editorPodcastUrl || editorPodcastBlobRef) && (
+                    <div style={{ fontSize:10, color: T.textMuted, marginTop:8, padding:8, background: T.cardBg, borderRadius:6, border:`1px solid ${T.cardBorder}` }}>
+                      ⏰ Expira: {new Date(Date.now() + editorPodcastTtlDays * 24*60*60*1000).toLocaleDateString("pt-BR")}
+                    </div>
+                  )}
+                </div>
+
+                {episodes.filter(e => e.videoUrl).length > 0 && (
+                  <div style={{ marginTop:14, padding:14, background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:11 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: T.text, marginBottom:8 }}>📚 Usar episódio gerado</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:160, overflowY:"auto" }}>
+                      {episodes.filter(e => e.videoUrl).slice(0, 6).map(ep => (
+                        <div key={ep.id} style={{ display:"flex", alignItems:"center", gap:8, background: T.cardBg, borderRadius:6, padding:"6px 10px", border:`1px solid ${T.cardBorder}` }}>
+                          <div style={{ flex:1, fontSize:11 }}>
+                            <div style={{ color: T.text }}>{ep.title}</div>
+                            <div style={{ color: T.textMuted, fontSize:9, fontFamily:"monospace" }}>{ep.engine} · {ep.duration}min</div>
+                          </div>
+                          <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background: `${BRAND.sage}25`, border:`1px solid ${BRAND.sage}50`, color: BRAND.sageDark, borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer", fontWeight:600 }}>↓ Usar</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {newsletters.find(n => n.date === editorDate) && (
+                  <div style={{ marginTop:14, padding:12, background: `linear-gradient(135deg, ${BRAND.navy}15, ${BRAND.gold}10)`, border:`1px solid ${BRAND.navy}30`, borderRadius:10 }}>
+                    <div style={{ fontSize:11, fontWeight:700, color: isDark ? BRAND.gold : BRAND.navy, marginBottom:6 }}>🔗 Link compartilhável</div>
+                    <div style={{ fontSize:10, color: T.textMuted, fontFamily:"monospace", wordBreak:"break-all", marginBottom:8 }}>
+                      ?view=public&date={editorDate}
+                    </div>
+                    <button onClick={() => copyText(`${window.location.origin}${window.location.pathname}?view=public&date=${editorDate}`)} style={{ background: BRAND.navy, border:"none", color:"#fff", padding:"5px 12px", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>
+                      {copied ? "✓ Copiado" : "📋 Copiar"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ TAB 1 — DIAGNÓSTICO ════ */}
+        {tab === 1 && (
+          <div className="fade">
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>🔬 Diagnóstico</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted, fontStyle:"italic" }}>Configure todas as APIs</p>
+            </div>
+
+            <div style={{ marginTop:16, marginBottom:18,
+              background: keyValidated ? `${BRAND.sage}15` : `${BRAND.gold}15`,
+              border: `1px solid ${keyValidated ? BRAND.sage : BRAND.gold}50`,
+              borderRadius:11, padding:14, display:"flex", alignItems:"center", gap:14 }}>
+              <div style={{ fontSize:28 }}>{keyValidated ? "✅" : "⚠️"}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:700, color: keyValidated ? BRAND.sageDark : BRAND.goldDark, fontSize:13 }}>
+                  {keyValidated ? "Sistema OK" : "Configure"}
+                </div>
+                <div style={{ fontSize:10, color: T.textMuted, marginTop:3 }}>
+                  Anthropic {keyValidated ? "✓" : "✗"} · Kling {klingValidated ? "✓" : "✗"} · HeyGen {heygenValidated ? "✓" : "✗"} · Teams {teamsWebhook ? "✓" : "—"}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+              <div style={{ background: `${BRAND.gold}15`, border:`1px solid ${BRAND.gold}40`, borderRadius:11, padding:16 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <span>🧠</span>
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: BRAND.goldDark }}>Anthropic Claude</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: keyValidated ? `${BRAND.sage}30` : `${BRAND.gold}30`, color: keyValidated ? BRAND.sageDark : BRAND.goldDark, fontWeight:700 }}>
+                    {keyValidated ? "✓" : "OBRIGATÓRIO"}
+                  </span>
+                </div>
+                <TextInput dark={isDark} type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="sk-ant-..." />
+                <Btn onClick={testAnthropic} disabled={testing.anthropic || !apiKey.trim()} style={{ marginTop:10, width:"100%" }}>
+                  {testing.anthropic ? <><Spinner /> Testando...</> : "▶️ Testar"}
+                </Btn>
+                {testResults.anthropic && (
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.anthropic.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.anthropic.status === "ok" ? BRAND.sageDark : "#c84545" }}>
+                    {testResults.anthropic.msg}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: `${BRAND.navy}15`, border:`1px solid ${BRAND.navy}40`, borderRadius:11, padding:16 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <span>⚡</span>
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: isDark ? "#a8c8e8" : BRAND.navy }}>Kling AI</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: klingValidated ? `${BRAND.sage}30` : T.cardBg, color: klingValidated ? BRAND.sageDark : T.textMuted, fontWeight:700 }}>
+                    {klingValidated ? "✓" : "OPCIONAL"}
+                  </span>
+                </div>
+                <TextInput dark={isDark} type="password" value={klingApiKey} onChange={e => setKlingApiKey(e.target.value)} />
+                <Btn onClick={testKling} disabled={testing.kling || !klingApiKey.trim()} style={{ marginTop:10, width:"100%" }}>
+                  {testing.kling ? <><Spinner /> ...</> : "▶️ Validar"}
+                </Btn>
+                {testResults.kling && (
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.kling.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.kling.status === "ok" ? BRAND.sageDark : "#c84545" }}>
+                    {testResults.kling.msg}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: `${BRAND.sage}15`, border:`1px solid ${BRAND.sage}40`, borderRadius:11, padding:16 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <span>🎥</span>
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: BRAND.sageDark }}>HeyGen</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: heygenValidated ? `${BRAND.sage}30` : T.cardBg, color: heygenValidated ? BRAND.sageDark : T.textMuted, fontWeight:700 }}>
+                    {heygenValidated ? "✓" : "OPCIONAL"}
+                  </span>
+                </div>
+                <TextInput dark={isDark} type="password" value={heygenApiKey} onChange={e => setHeygenApiKey(e.target.value)} />
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
+                  <TextInput dark={isDark} value={heygenAvatarId} onChange={e => setHeygenAvatarId(e.target.value)} placeholder="Avatar ID" />
+                  <TextInput dark={isDark} value={heygenVoiceId} onChange={e => setHeygenVoiceId(e.target.value)} placeholder="Voice ID" />
+                </div>
+                <Btn onClick={testHeygen} disabled={testing.heygen || !heygenApiKey.trim()} style={{ marginTop:10, width:"100%" }}>
+                  {testing.heygen ? <><Spinner /> ...</> : "▶️ Testar"}
+                </Btn>
+                {testResults.heygen && (
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.heygen.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.heygen.status === "ok" ? BRAND.sageDark : "#c84545" }}>
+                    {testResults.heygen.msg}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: `${BRAND.navyLight}15`, border:`1px solid ${BRAND.navyLight}40`, borderRadius:11, padding:16 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <span>📤</span>
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: isDark ? "#a8c8e8" : BRAND.navy }}>Distribuição</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: teamsWebhook ? `${BRAND.sage}30` : T.cardBg, color: teamsWebhook ? BRAND.sageDark : T.textMuted, fontWeight:700 }}>
+                    {teamsWebhook ? "✓" : "OPCIONAL"}
+                  </span>
+                </div>
+                <TextInput dark={isDark} type="password" value={teamsWebhook} onChange={e => setTeamsWebhook(e.target.value)} placeholder="Teams Webhook" />
+                <TextArea dark={isDark} value={defaultEmails} onChange={e => setDefaultEmails(e.target.value)} rows={2} placeholder="E-mails padrão" style={{ marginTop:8 }} />
+                <Btn onClick={testTeams} disabled={testing.teams || !teamsWebhook.trim()} style={{ marginTop:10, width:"100%" }}>
+                  {testing.teams ? <><Spinner /> ...</> : "▶️ Testar"}
+                </Btn>
+                {testResults.teams && (
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.teams.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.teams.status === "ok" ? BRAND.sageDark : "#c84545" }}>
+                    {testResults.teams.msg}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ TAB 2 — PAUTA ════ */}
+        {tab === 2 && keyValidated && (
+          <div className="fade">
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>📡 Pauta</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted, fontStyle:"italic" }}>Para episódios de podcast</p>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+              <div>
+                <Field label="Podcast" mt={0} dark={isDark}><TextInput dark={isDark} value={podcastName} onChange={e => setPodcastName(e.target.value)} /></Field>
+                <Field label="Episódio" dark={isDark}><TextInput dark={isDark} value={epTitle} onChange={e => setEpTitle(e.target.value)} /></Field>
+                <Field label="Duração" dark={isDark}>
+                  <div style={{ display:"flex", gap:6 }}>
+                    {[5,8,10,12,15].map(d => (
+                      <button key={d} onClick={() => setDuration(d)} style={{
+                        flex:1, padding:"8px 0", borderRadius:7, border:"1px solid",
+                        borderColor: duration===d ? BRAND.navy : T.cardBorder,
+                        background: duration===d ? `${BRAND.navy}20` : T.cardBg,
+                        color: duration===d ? (isDark ? BRAND.gold : BRAND.navy) : T.textMuted,
+                        cursor:"pointer", fontWeight:700, fontSize:12,
+                      }}>{d}m</button>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Avatar" dark={isDark}>
+                  <div onClick={() => fileRef.current?.click()} style={{ border:`2px dashed ${BRAND.navy}40`, borderRadius:10, padding:16, textAlign:"center", cursor:"pointer", background: T.cardBg }}>
+                    {avatarPreview ? <img src={avatarPreview} alt="" style={{ width:60, height:60, borderRadius:"50%", objectFit:"cover" }} /> : <>🤳 Foto</>}
+                    <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={handleUpload} />
+                  </div>
+                </Field>
+              </div>
+              <div>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                  <div style={{ fontSize:9, fontWeight:700, color: isDark ? BRAND.gold : BRAND.muted, letterSpacing:".1em", textTransform:"uppercase" }}>Manchetes</div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    {editorHeadlines.length > 0 && <Btn secondary onClick={importHeadlinesFromNewsletter}>📥 Newsletter</Btn>}
+                    <Btn onClick={fetchNews} disabled={loadingNews}>{loadingNews ? <><Spinner /> ...</> : "🔍"}</Btn>
+                  </div>
+                </div>
+                <ErrorBox msg={newsError} />
+                <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:380, overflowY:"auto" }}>
+                  {headlines.map((h, i) => {
+                    const sel = selHL.find(x => x.title === h.title);
+                    return (
+                      <div key={i} onClick={() => toggleHL(h)} style={{
+                        background: sel ? `${BRAND.navy}15` : T.cardBg,
+                        border: `1px solid ${sel ? BRAND.navy : T.cardBorder}`,
+                        borderRadius:9, padding:"10px 12px", cursor:"pointer",
+                      }}>
+                        <div style={{ fontSize:12, fontWeight:600, color: sel ? (isDark ? BRAND.gold : BRAND.navy) : T.text }}>{h.title}</div>
+                        <div style={{ fontSize:10, color: T.textMuted, marginTop:3 }}>{h.summary}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {headlines.length > 0 && (
+                  <Btn onClick={genQuickScript} disabled={isGenQuick} style={{ width:"100%", marginTop:8 }}>
+                    {isGenQuick ? <><Spinner /> ...</> : "📖 Roteiro"}
+                  </Btn>
+                )}
+              </div>
+            </div>
+            {quickScript && (
+              <div style={{ marginTop:18, background: `${BRAND.sage}15`, border:`1px solid ${BRAND.sage}40`, borderRadius:11, padding:16 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                  <div style={{ fontWeight:700, color: BRAND.sageDark }}>📖 Roteiro</div>
+                  <Btn onClick={() => { setRefined(quickScript); markDone(2); setTab(3); }}>✍️ Usar →</Btn>
+                </div>
+                <div style={{ fontSize:12, color: T.text, whiteSpace:"pre-wrap", maxHeight:300, overflowY:"auto" }}>{quickScript}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════ TAB 3 — ROTEIRO ════ */}
+        {tab === 3 && keyValidated && (
+          <div className="fade">
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>✍️ Roteiro</h2>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+              <div>
+                <Field label="Conteúdo" mt={0} dark={isDark}>
+                  <TextArea dark={isDark} value={rawText} onChange={e => setRawText(e.target.value)} rows={10} />
+                  <Btn onClick={refineScript} disabled={isRefining || !rawText.trim()} style={{ marginTop:8 }}>
+                    {isRefining ? <><Spinner /> ...</> : "✨ Refinar"}
+                  </Btn>
+                  <ErrorBox msg={refineError} />
+                </Field>
+                <Field label="E-mail" dark={isDark}>
+                  <TextInput dark={isDark} value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
+                  <div style={{ marginTop:6 }}><TextArea dark={isDark} value={distEmail} onChange={e => setDistEmail(e.target.value)} rows={4} /></div>
+                  <Btn onClick={genEmailCopy} disabled={isGenEmail} style={{ marginTop:8, width:"100%" }}>
+                    {isGenEmail ? <><Spinner /> ...</> : "🤖 Gerar"}
+                  </Btn>
+                </Field>
+              </div>
+              <div>
+                <Field label="Roteiro" mt={0} dark={isDark}>
+                  {!refinedScript ? <div style={{ border:`1px dashed ${T.cardBorder}`, borderRadius:9, padding:40, textAlign:"center", color: T.textMuted }}>Refine primeiro</div> : <TextArea dark={isDark} value={refinedScript} onChange={e => setRefined(e.target.value)} rows={16} />}
+                </Field>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ TAB 4 — RENDER ════ */}
+        {tab === 4 && keyValidated && (
+          <div className="fade">
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>🎬 Render</h2>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+              <div>
+                <Field label="Motor" mt={0} dark={isDark}>
+                  <div style={{ display:"flex", gap:10 }}>
+                    <div onClick={() => setRenderEngine("kling")} style={{ flex:1, padding:"11px 14px", borderRadius:9, cursor:"pointer", background: renderEngine==="kling" ? `${BRAND.navy}20` : T.cardBg, border: `1px solid ${renderEngine==="kling" ? BRAND.navy : T.cardBorder}`, color: T.text }}>⚡ Kling</div>
+                    <div onClick={() => setRenderEngine("heygen")} style={{ flex:1, padding:"11px 14px", borderRadius:9, cursor:"pointer", background: renderEngine==="heygen" ? `${BRAND.navy}20` : T.cardBg, border: `1px solid ${renderEngine==="heygen" ? BRAND.navy : T.cardBorder}`, color: T.text }}>🎥 HeyGen</div>
+                  </div>
+                </Field>
+                <Btn onClick={startRender} disabled={isRendering || !refinedScript} style={{ width:"100%", marginTop:14 }}>
+                  {isRendering ? <><Spinner /> ...</> : "🚀 Iniciar"}
+                </Btn>
+                <ErrorBox msg={renderError} />
+              </div>
+              <div>
+                <Field label="Pipeline" mt={0} dark={isDark}>
+                  {(isRendering || renderDone) && (
+                    <div style={{ background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:10, padding:14, marginBottom:12 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                        <span style={{ fontSize:11, color: T.textMuted }}>{renderMsg}</span>
+                        <span style={{ fontFamily:"monospace", color: renderDone ? BRAND.sageDark : BRAND.navy }}>{renderPct}%</span>
+                      </div>
+                      <div style={{ background: T.cardBorder, borderRadius:99, height:7 }}>
+                        <div style={{ width:`${renderPct}%`, height:"100%", borderRadius:99, transition:"width .6s", background: renderDone ? BRAND.sage : `linear-gradient(90deg,${BRAND.navy},${BRAND.navyLight})` }} />
+                      </div>
+                    </div>
+                  )}
+                  {renderDone && videoUrl && (
+                    <div style={{ background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}40`, borderRadius:10, padding:14 }}>
+                      <div style={{ fontWeight:700, color: BRAND.sageDark, marginBottom:10 }}>🎉 Pronto</div>
+                      <VideoPlayer url={videoUrl} poster={thumbnailUrl} maxHeight={300} />
+                      <div style={{ display:"flex", gap:8, marginTop:10 }}>
+                        <Btn success onClick={() => window.open(videoUrl, "_blank")}>⬇️</Btn>
+                        <Btn secondary onClick={() => copyText(videoUrl)}>{copied ? "✓" : "📋"}</Btn>
+                        <Btn onClick={() => setTab(5)}>📤 →</Btn>
+                      </div>
+                    </div>
+                  )}
+                </Field>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ TAB 5 — DISTRIBUIÇÃO ════ */}
+        {tab === 5 && keyValidated && (
+          <div className="fade">
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>📤 Distribuição</h2>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+              <div>
+                <Field label="Para" mt={0} dark={isDark}><TextArea dark={isDark} value={teamEmails} onChange={e => setTeamEmails(e.target.value)} rows={3} /></Field>
+                <Field label="Mensagem" dark={isDark}>
+                  <TextInput dark={isDark} value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
+                  <div style={{ marginTop:6 }}><TextArea dark={isDark} value={distMsg} onChange={e => setDistMsg(e.target.value)} rows={6} /></div>
+                  <Btn onClick={genDistMsg} disabled={isGenMsg} style={{ marginTop:8, width:"100%" }}>{isGenMsg ? <><Spinner /> ...</> : "🤖"}</Btn>
+                </Field>
+              </div>
+              <div>
+                <Field label="Canais" mt={0} dark={isDark}>
+                  <Btn success onClick={sendByEmail} style={{ width:"100%", marginBottom:8 }}>📨 E-mail</Btn>
+                  <Btn onClick={sendToTeams} disabled={!teamsWebhook} style={{ width:"100%", marginBottom:8 }}>💬 Teams</Btn>
+                  <Btn secondary onClick={() => copyText(`${emailSubject}\n\n${distMsg}\n\n${videoUrl}`)} style={{ width:"100%" }}>{copied ? "✓" : "📋"}</Btn>
+                </Field>
+                <ErrorBox msg={distError} />
+                <InfoBox msg={distSuccess} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ TAB 6 — HISTÓRICO ════ */}
+        {tab === 6 && keyValidated && (
+          <div className="fade">
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>📚 Histórico</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted }}>{episodes.length} eps · {newsletters.length} edições</p>
+            </div>
+            <div style={{ marginTop:18, marginBottom:24 }}>
+              <div style={{ fontSize:11, color: BRAND.goldDark, fontWeight:700, marginBottom:10 }}>📰 Newsletters</div>
+              {newsletters.length === 0 ? <div style={{ color: T.textMuted }}>Nenhuma</div> :
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:10 }}>
+                  {newsletters.map(n => (
+                    <div key={n.id} style={{ background: `${BRAND.gold}10`, border:`1px solid ${BRAND.gold}30`, borderRadius:10, padding:12 }}>
+                      <div style={{ fontSize:11, color: BRAND.goldDark, fontFamily:"monospace", fontWeight:700 }}>{fmtDate(n.date)}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color: T.text, margin:"4px 0", fontFamily:"'Fraunces',serif" }}>{n.title}</div>
+                      <div style={{ fontSize:10, color: T.textMuted, marginBottom:8 }}>{n.headlines?.length || 0} manchetes {(n.podcastUrl || n.podcastBlobRef) && "· 🎙️"}</div>
+                      <div style={{ display:"flex", gap:5 }}>
+                        <button onClick={() => { setEditorDate(n.date); setTab(0); }} style={{ flex:1, background: `${BRAND.gold}25`, border:`1px solid ${BRAND.gold}50`, color: BRAND.goldDark, borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer", fontWeight:600 }}>📝</button>
+                        <a href={`?view=public&date=${n.date}`} target="_blank" rel="noreferrer" style={{ flex:1, background: `${BRAND.sage}25`, border:`1px solid ${BRAND.sage}50`, color: BRAND.sageDark, borderRadius:5, padding:"4px", fontSize:10, textAlign:"center", textDecoration:"none", fontWeight:600 }}>👁️</a>
+                        <button onClick={() => deleteNewsletter(n.date)} style={{ background:"rgba(200,69,69,.1)", border:"1px solid rgba(200,69,69,.3)", color:"#c84545", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              }
+            </div>
+            <div>
+              <div style={{ fontSize:11, color: isDark ? "#a8c8e8" : BRAND.navy, fontWeight:700, marginBottom:10 }}>🎬 Episódios</div>
+              {selectedEpisode && (
+                <div style={{ background: `${BRAND.navy}10`, border:`1px solid ${BRAND.navy}40`, borderRadius:11, padding:16, marginBottom:14 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, color: isDark ? BRAND.gold : BRAND.navy, fontFamily:"'Fraunces',serif" }}>{selectedEpisode.title}</div>
+                    <Btn secondary onClick={() => setSelectedEpisode(null)}>✕</Btn>
+                  </div>
+                  {selectedEpisode.videoUrl && <VideoPlayer url={selectedEpisode.videoUrl} poster={selectedEpisode.thumbnailUrl} maxHeight={400} />}
+                </div>
+              )}
+              {episodes.length === 0 ? <div style={{ color: T.textMuted }}>Nenhum</div> :
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:10 }}>
+                  {episodes.map(ep => (
+                    <div key={ep.id} style={{ background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:10, overflow:"hidden" }}>
+                      {ep.thumbnailUrl ? <img src={ep.thumbnailUrl} alt="" style={{ width:"100%", height:120, objectFit:"cover" }} /> : <div style={{ height:80, background:`linear-gradient(135deg,${BRAND.navy},${BRAND.navyDeep})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, color:"#fff" }}>{ep.engine === "kling" ? "⚡" : "🎥"}</div>}
+                      <div style={{ padding:12 }}>
+                        <div style={{ fontWeight:700, color: T.text }}>{ep.title}</div>
+                        <div style={{ fontSize:10, color: T.textMuted, fontFamily:"monospace", marginTop:3 }}>{new Date(ep.createdAt).toLocaleDateString("pt-BR")}</div>
+                        <div style={{ display:"flex", gap:5, marginTop:8 }}>
+                          <button onClick={() => setSelectedEpisode(ep)} style={{ flex:1, background: `${BRAND.navy}20`, border:`1px solid ${BRAND.navy}40`, color: isDark ? BRAND.gold : BRAND.navy, borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer" }}>👁️</button>
+                          {ep.videoUrl && <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background: `${BRAND.sage}25`, border:`1px solid ${BRAND.sage}50`, color: BRAND.sageDark, borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer" }}>📰</button>}
+                          <button onClick={() => { if(confirm("Deletar?")) deleteEpisode(ep.id); }} style={{ background:"rgba(200,69,69,.1)", border:"1px solid rgba(200,69,69,.3)", color:"#c84545", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              }
+            </div>
+          </div>
+        )}
+
+        {tab > 1 && !keyValidated && (
+          <div className="fade" style={{ textAlign:"center", padding:80 }}>
+            <div style={{ fontSize:48 }}>🔒</div>
+            <div style={{ fontSize:18, fontWeight:700, color: BRAND.goldDark, marginTop:14 }}>Bloqueado</div>
+            <Btn onClick={() => setTab(1)} style={{ marginTop:14 }}>← Diagnóstico</Btn>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── PODCAST PREVIEW (loads blob from db if needed) ──────────────────────────
+
+function PodcastPreview({ blobRef, url }) {
+  const [resolvedUrl, setResolvedUrl] = useState(url);
+  useEffect(() => {
+    if (blobRef) {
+      db.getVideoBlob(blobRef).then(d => setResolvedUrl(d || ""));
+    } else {
+      setResolvedUrl(url);
+    }
+  }, [blobRef, url]);
+  if (!resolvedUrl) return null;
+  return <VideoPlayer url={resolvedUrl} maxHeight={200} />;
+}
+
+// ─── ROUTER ──────────────────────────────────────────────────────────────────
+
+function App() {
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get("view");
+  if (view === "public") return <PublicNewsletter />;
+  return <AdminApp />;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
