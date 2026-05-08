@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PodcastStudio · Avatar AI</title>
+  <title>Syncronize-MI · NewsLetter de IA</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
 
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -34,7 +34,7 @@
   <div id="root">
     <div style="text-align:center; padding:80px 20px; color:#608090;">
       <div style="font-size:32px;">🎙️</div>
-      <div>Carregando PodcastStudio...</div>
+      <div>Carregando...</div>
     </div>
   </div>
 
@@ -46,52 +46,38 @@ const { useState, useRef, useEffect, useCallback, memo } = React;
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 const DEFAULT_KLING_KEY = "aebc940334837f309fda6849afe6bce1";
 
-const TABS = [
-  { id: "diagnostico", label: "Diagnóstico",   icon: "🔬" },
-  { id: "pauta",       label: "Pauta",         icon: "📡" },
-  { id: "roteiro",     label: "Roteiro",       icon: "✍️" },
-  { id: "render",      label: "Render",        icon: "🎬" },
-  { id: "distrib",     label: "Distribuição",  icon: "📤" },
-  { id: "historico",   label: "Histórico",     icon: "📚" },
+const ADMIN_TABS = [
+  { id: "newsletter", label: "Newsletter", icon: "📰" },
+  { id: "diagnostico", label: "Diagnóstico", icon: "🔬" },
+  { id: "pauta",       label: "Pauta",       icon: "📡" },
+  { id: "roteiro",     label: "Roteiro",     icon: "✍️" },
+  { id: "render",      label: "Render",      icon: "🎬" },
+  { id: "distrib",     label: "Distribuição", icon: "📤" },
+  { id: "historico",   label: "Histórico",   icon: "📚" },
+];
+
+const FOCUS_AREAS = [
+  { id: "produtividade", label: "Produtividade", icon: "⚡", color: "#00b4ff" },
+  { id: "sistemico",     label: "Desenvolvimento Sistêmico", icon: "🔧", color: "#a78bfa" },
+  { id: "llm",           label: "Novos Modelos LLM/IA", icon: "🧠", color: "#f59e0b" },
 ];
 
 const KLING_ROLES = [
-  { id:"tech_host",  label:"Host Tech",          kling:"tech podcast host, knowledgeable and engaging", icon:"💻" },
-  { id:"anchor",     label:"Âncora de Notícias", kling:"confident news anchor, authoritative delivery", icon:"📺" },
-  { id:"educator",   label:"Educador",           kling:"patient educator, clear articulation", icon:"🎓" },
-  { id:"vlogger",    label:"Vlogger Tech",       kling:"energetic vlogger, quick nods, direct eye contact", icon:"🎥" },
+  { id:"tech_host",  label:"Host Tech",          kling:"tech podcast host", icon:"💻" },
+  { id:"anchor",     label:"Âncora",             kling:"news anchor", icon:"📺" },
+  { id:"educator",   label:"Educador",           kling:"patient educator", icon:"🎓" },
+  { id:"vlogger",    label:"Vlogger",            kling:"energetic vlogger", icon:"🎥" },
 ];
 const KLING_EMOTIONS = [
-  { id:"confident",    label:"Confiante",  icon:"💼", kling:"confident, authoritative expressions" },
-  { id:"enthusiastic", label:"Entusiasta", icon:"🔥", kling:"energetic, enthusiastic expressions" },
-  { id:"calm",         label:"Calmo",      icon:"😌", kling:"calm, composed, steady delivery" },
-  { id:"empathetic",   label:"Empático",   icon:"🤝", kling:"warm, empathetic, approachable tone" },
-];
-const KLING_GESTURES = [
-  { id:"subtle_hands", label:"Mãos sutis",  icon:"🤲", kling:"subtle hand emphasis on key points" },
-  { id:"point",        label:"Apontar",     icon:"👆", kling:"occasional pointing gesture" },
-  { id:"nods",         label:"Acenos",      icon:"🙂", kling:"light nods between topics" },
-  { id:"eyebrow",      label:"Sobrancelha", icon:"🤨", kling:"eyebrow lifts for surprises" },
-  { id:"head_tilt",    label:"Inclinação",  icon:"↩️", kling:"head tilt for rhetorical questions" },
-  { id:"open_arms",    label:"Abertura",    icon:"🙌", kling:"open arm gestures" },
-];
-const KLING_CAMERAS = [
-  { id:"medium_close", label:"Médio-close", icon:"📷", kling:"medium close-up shot" },
-  { id:"bust",         label:"Busto",       icon:"🖼️", kling:"bust shot, head and shoulders" },
-  { id:"push_in",      label:"Zoom suave",  icon:"🔍", kling:"slow push-in camera" },
-  { id:"static",       label:"Estático",    icon:"⬛", kling:"static professional framing" },
-];
-const PODCAST_SOURCES = [
-  { name:"IA Todo Dia", type:"spotify", icon:"🎙️", lang:"🇧🇷", desc:"Maior podcast de IA do Brasil" },
-  { name:"IA Sob Controle", type:"spotify", icon:"🎙️", lang:"🇧🇷", desc:"Alura Hipsters Network" },
-  { name:"No Priors", type:"spotify", icon:"🎙️", lang:"🇺🇸", desc:"Elad Gil & Sarah Guo" },
-  { name:"TechCrunch", type:"news", icon:"📰", lang:"🇺🇸", desc:"Startups e tech" },
-  { name:"The Verge", type:"news", icon:"📰", lang:"🇺🇸", desc:"Tech e cultura digital" },
-  { name:"MIT Tech Review", type:"news", icon:"🎓", lang:"🇺🇸", desc:"Pesquisa e inovação" },
+  { id:"confident",    label:"Confiante",  icon:"💼", kling:"confident" },
+  { id:"enthusiastic", label:"Entusiasta", icon:"🔥", kling:"enthusiastic" },
+  { id:"calm",         label:"Calmo",      icon:"😌", kling:"calm" },
+  { id:"empathetic",   label:"Empático",   icon:"🤝", kling:"empathetic" },
 ];
 const CAT_COLORS = {
   IA:"#00d4ff", Hardware:"#ff6b35", Software:"#7c3aed",
   Cloud:"#10b981", Startups:"#f59e0b", Regulação:"#ef4444", Podcast:"#1DB954",
+  Produtividade:"#00b4ff", Sistêmico:"#a78bfa", LLM:"#f59e0b",
 };
 
 // ─── DB LAYER ────────────────────────────────────────────────────────────────
@@ -115,21 +101,29 @@ const db = {
     try { if (hasClaudeStorage()) await window.storage.delete(key); else localStorage.removeItem(key); return true; }
     catch { return false; }
   },
-  async listEpisodes() {
+  async listByPrefix(prefix) {
     try {
       if (hasClaudeStorage()) {
-        const r = await window.storage.list("episode:");
+        const r = await window.storage.list(prefix);
         if (!r?.keys) return [];
         const items = await Promise.all(r.keys.map(k => db.get(k)));
-        return items.filter(Boolean).sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+        return items.filter(Boolean);
       }
       const items = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k?.startsWith("episode:")) { const v = localStorage.getItem(k); if (v) items.push(JSON.parse(v)); }
+        if (k?.startsWith(prefix)) { const v = localStorage.getItem(k); if (v) items.push(JSON.parse(v)); }
       }
-      return items.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+      return items;
     } catch { return []; }
+  },
+  async listEpisodes() {
+    const items = await db.listByPrefix("episode:");
+    return items.sort((a, b) => (b.createdAt||0) - (a.createdAt||0));
+  },
+  async listNewsletters() {
+    const items = await db.listByPrefix("newsletter:");
+    return items.sort((a, b) => (b.date||"").localeCompare(a.date||""));
   },
 };
 
@@ -185,22 +179,19 @@ async function callClaude(apiKey, userPrompt, useSearch = false, maxTokens = 150
 // ─── HEYGEN ──────────────────────────────────────────────────────────────────
 
 async function heygenTestConnection(apiKey) {
-  // Test connection by listing voices
   const res = await fetch("https://api.heygen.com/v2/voices", {
     method: "GET",
     headers: { "X-Api-Key": apiKey, "Accept": "application/json" },
   });
-  const text = await res.text();
-  let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
+  const data = await res.json();
   if (!res.ok) {
     const err = new Error(data?.message || data?.error?.message || `HTTP ${res.status}`);
-    err.status = res.status; err.data = data; throw err;
+    err.status = res.status; throw err;
   }
   return data;
 }
 
 async function heygenGenerateVideo(apiKey, { avatarId, voiceId, scriptText }) {
-  // Truncate script to HeyGen's 5000 char limit
   const safeScript = scriptText.slice(0, 4900);
   const body = {
     video_inputs: [{
@@ -212,35 +203,29 @@ async function heygenGenerateVideo(apiKey, { avatarId, voiceId, scriptText }) {
   };
   const res = await fetch("https://api.heygen.com/v2/video/generate", {
     method: "POST",
-    headers: { "X-Api-Key": apiKey, "Content-Type": "application/json", "Accept": "application/json" },
+    headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok || data.error) {
-    throw new Error(data?.error?.message || data?.message || `HTTP ${res.status}`);
-  }
+  if (!res.ok || data.error) throw new Error(data?.error?.message || data?.message || `HTTP ${res.status}`);
   return data?.data?.video_id;
 }
 
 async function heygenGetStatus(apiKey, videoId) {
   const res = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, {
-    method: "GET",
-    headers: { "X-Api-Key": apiKey, "Accept": "application/json" },
+    method: "GET", headers: { "X-Api-Key": apiKey, "Accept": "application/json" },
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
   return data?.data;
 }
 
-// ─── KLING TEST ──────────────────────────────────────────────────────────────
-
 async function klingTestConnection(apiKey) {
-  // Kling AI doesn't have a simple "ping" endpoint. We just validate format.
-  if (!apiKey || apiKey.length < 16) throw new Error("Chave Kling inválida (muito curta)");
-  return { ok: true, masked: apiKey.slice(0, 8) + "…" };
+  if (!apiKey || apiKey.length < 16) throw new Error("Chave Kling inválida");
+  return { ok: true };
 }
 
-// ─── EMAIL / TEAMS DISPATCH ──────────────────────────────────────────────────
+// ─── DISTRIBUTION ─────────────────────────────────────────────────────────────
 
 function openMailto(toList, subject, body) {
   const recipients = (toList || "").split(/[,;\n]/).map(s => s.trim()).filter(s => s.includes("@")).join(",");
@@ -253,28 +238,37 @@ async function sendTeamsWebhook(webhookUrl, title, body, videoUrl) {
   const card = {
     "@type": "MessageCard",
     "@context": "https://schema.org/extensions",
-    summary: title || "Novo episódio de podcast",
+    summary: title || "Novo episódio",
     themeColor: "0090ee",
-    title: title || "🎙️ Novo episódio disponível",
-    text: body || "Confira o novo episódio do podcast.",
-    potentialAction: videoUrl ? [{
-      "@type": "OpenUri",
-      name: "▶️ Assistir Vídeo",
-      targets: [{ os: "default", uri: videoUrl }],
-    }] : [],
+    title: title || "🎙️ Novo episódio",
+    text: body || "Confira o novo episódio.",
+    potentialAction: videoUrl ? [{ "@type": "OpenUri", name: "▶️ Assistir", targets: [{ os: "default", uri: videoUrl }] }] : [],
   };
-  // Note: Teams webhooks usually allow CORS from any origin
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    mode: "no-cors", // Teams webhooks don't return CORS headers; we trust the post
+  await fetch(webhookUrl, {
+    method: "POST", mode: "no-cors",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(card),
   });
-  // With no-cors we can't read the response, but if no exception, it likely worked
   return { ok: true };
 }
 
-// ─── REUSABLE COMPONENTS (defined OUTSIDE main component to avoid remount) ──
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = (iso) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+};
+const fmtDateLong = (iso) => {
+  if (!iso) return "";
+  const months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const [y, m, d] = iso.split("-");
+  return `${parseInt(d)} de ${months[parseInt(m)-1]} de ${y}`;
+};
+const isExpired = (expiresAt) => expiresAt && Date.now() > expiresAt;
+
+// ─── REUSABLE COMPONENTS ─────────────────────────────────────────────────────
 
 const Btn = memo(function Btn({ onClick, disabled, secondary, danger, success, children, style = {} }) {
   return (
@@ -375,14 +369,274 @@ const StatusBadge = memo(function StatusBadge({ status, label }) {
   return <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background:c.bg, color:c.color, fontWeight:700, letterSpacing:".05em" }}>{label}</span>;
 });
 
-// ─── MAIN APP ────────────────────────────────────────────────────────────────
+// ─── PUBLIC NEWSLETTER VIEW ──────────────────────────────────────────────────
 
-function PodcastStudio() {
+function PublicNewsletter() {
+  const [newsletters, setNewsletters] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(today());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const items = await db.listNewsletters();
+      setNewsletters(items);
+      // Select most recent one available
+      if (items.length > 0 && !items.find(n => n.date === selectedDate)) {
+        setSelectedDate(items[0].date);
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const current = newsletters.find(n => n.date === selectedDate);
+  const podcastValid = current?.podcastUrl && (!current.podcastExpiresAt || !isExpired(current.podcastExpiresAt));
+
+  if (loading) {
+    return <div style={{ textAlign:"center", padding:"80px", color:"#608090" }}>Carregando newsletter...</div>;
+  }
+
+  return (
+    <div style={{ background:"#070b13", minHeight:"100vh", color:"#d8e8f0" }}>
+      {/* HERO HEADER */}
+      <div style={{
+        background:"linear-gradient(180deg, rgba(0,77,179,.15), rgba(7,11,19,1))",
+        padding:"40px 24px 30px",
+        borderBottom:"1px solid rgba(0,180,255,.15)",
+      }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:14 }}>
+            <div style={{
+              width:54, height:54, borderRadius:14,
+              background:"linear-gradient(135deg,#004db3,#00b4ff,#a78bfa)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:28, boxShadow:"0 6px 24px rgba(0,180,255,.4)",
+            }}>🧠</div>
+            <div>
+              <div style={{ fontFamily:"'Fraunces',serif", fontSize:32, fontWeight:800, letterSpacing:"-.03em", color:"#fff", lineHeight:1 }}>
+                Syncronize-MI
+              </div>
+              <div style={{ fontSize:11, color:"#a0c0d8", letterSpacing:".15em", textTransform:"uppercase", marginTop:6, fontWeight:500 }}>
+                NewsLetter de IA · Edição Diária
+              </div>
+            </div>
+            <div style={{ marginLeft:"auto", display:"flex", gap:8, alignItems:"center" }}>
+              <div style={{ fontSize:10, color:"#506070", fontFamily:"'JetBrains Mono',monospace" }}>
+                {newsletters.length} edição{newsletters.length !== 1 ? "s" : ""}
+              </div>
+              <a href="?view=admin" style={{ fontSize:10, color:"#506070", textDecoration:"none", padding:"4px 10px", borderRadius:5, border:"1px solid rgba(255,255,255,.06)" }}>
+                Admin →
+              </a>
+            </div>
+          </div>
+
+          <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap", marginTop:18 }}>
+            <span style={{ fontSize:10, color:"#506070", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase" }}>Edições</span>
+            {newsletters.length === 0 ? (
+              <span style={{ fontSize:11, color:"#506070" }}>Nenhuma edição publicada ainda</span>
+            ) : (
+              newsletters.slice(0, 10).map(n => (
+                <button key={n.date} onClick={() => setSelectedDate(n.date)} style={{
+                  background: selectedDate === n.date ? "rgba(0,180,255,.15)" : "rgba(255,255,255,.03)",
+                  border: `1px solid ${selectedDate === n.date ? "rgba(0,180,255,.4)" : "rgba(255,255,255,.06)"}`,
+                  color: selectedDate === n.date ? "#00b4ff" : "#90a8b8",
+                  borderRadius:6, padding:"5px 12px", fontSize:11, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace",
+                }}>{fmtDate(n.date)}</button>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth:1100, margin:"0 auto", padding:"30px 24px 60px" }}>
+        {!current ? (
+          <div style={{
+            border:"1px dashed rgba(255,255,255,.07)",
+            borderRadius:14, padding:"80px 20px",
+            textAlign:"center", color:"#506070",
+          }}>
+            <div style={{ fontSize:48, marginBottom:14 }}>📭</div>
+            <div style={{ fontSize:16, fontWeight:600, color:"#90a8b8" }}>Nenhuma edição disponível</div>
+            <div style={{ fontSize:11, marginTop:6 }}>Volte em breve para conferir as novidades de IA</div>
+          </div>
+        ) : (
+          <div className="fade">
+            {/* DATE HEADER */}
+            <div style={{ marginBottom:24 }}>
+              <div style={{ fontSize:11, color:"#a78bfa", fontWeight:700, letterSpacing:".15em", textTransform:"uppercase" }}>
+                Edição de {fmtDateLong(current.date)}
+              </div>
+              <h1 style={{
+                fontFamily:"'Fraunces',serif", fontSize:42, fontWeight:800, color:"#fff",
+                margin:"6px 0 0", letterSpacing:"-.03em", lineHeight:1.1,
+              }}>{current.title || "Highlights de IA"}</h1>
+              {current.subtitle && (
+                <div style={{ fontSize:14, color:"#a0c0d8", marginTop:8, lineHeight:1.5, maxWidth:800 }}>
+                  {current.subtitle}
+                </div>
+              )}
+            </div>
+
+            {/* AI SUMMARY HERO */}
+            {current.aiSummary && (
+              <div style={{
+                background:"linear-gradient(135deg, rgba(167,139,250,.08), rgba(0,180,255,.05))",
+                border:"1px solid rgba(167,139,250,.25)",
+                borderRadius:14, padding:24, marginBottom:24,
+              }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                  <span style={{ fontSize:18 }}>🧠</span>
+                  <span style={{ fontSize:11, color:"#a78bfa", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase" }}>
+                    Análise da Semana · Ponto de Vista IA
+                  </span>
+                </div>
+                <div style={{
+                  fontFamily:"'Fraunces',serif", fontSize:18, lineHeight:1.7, color:"#e0e8f0",
+                  whiteSpace:"pre-wrap",
+                }}>{current.aiSummary}</div>
+              </div>
+            )}
+
+            {/* FOCUS AREAS */}
+            {current.focusInsights && current.focusInsights.length > 0 && (
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontSize:11, color:"#506070", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", marginBottom:12 }}>
+                  Temas em Destaque
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:14 }}>
+                  {FOCUS_AREAS.map(area => {
+                    const insight = current.focusInsights.find(i => i.area === area.id);
+                    if (!insight) return null;
+                    return (
+                      <div key={area.id} style={{
+                        background:"rgba(255,255,255,.02)",
+                        border:`1px solid ${area.color}33`,
+                        borderRadius:11, padding:16,
+                      }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                          <span style={{ fontSize:18 }}>{area.icon}</span>
+                          <span style={{ fontSize:11, color:area.color, fontWeight:700, letterSpacing:".05em", textTransform:"uppercase" }}>
+                            {area.label}
+                          </span>
+                        </div>
+                        <div style={{ fontSize:13, color:"#c0d0e0", lineHeight:1.6 }}>
+                          {insight.summary}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* PODCAST PLAYER */}
+            {podcastValid && (
+              <div style={{
+                background:"linear-gradient(135deg, rgba(29,185,84,.06), rgba(0,180,255,.03))",
+                border:"1px solid rgba(29,185,84,.25)",
+                borderRadius:14, padding:20, marginBottom:24,
+              }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, flexWrap:"wrap", gap:10 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <span style={{ fontSize:22 }}>🎙️</span>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#1DB954" }}>Podcast da Semana</div>
+                      <div style={{ fontSize:11, color:"#506070" }}>
+                        {current.podcastTitle || "Syncronize-MI"} · {current.podcastDuration || "?"} min
+                      </div>
+                    </div>
+                  </div>
+                  {current.podcastExpiresAt && (
+                    <div style={{ fontSize:10, color:"#506070", fontFamily:"'JetBrains Mono',monospace" }}>
+                      Disponível até {new Date(current.podcastExpiresAt).toLocaleDateString("pt-BR")}
+                    </div>
+                  )}
+                </div>
+                <video
+                  controls
+                  src={current.podcastUrl}
+                  poster={current.podcastThumbnail}
+                  style={{ width:"100%", borderRadius:10, background:"#000", maxHeight:480 }}
+                >
+                  Seu navegador não suporta vídeo.
+                </video>
+              </div>
+            )}
+
+            {current?.podcastUrl && !podcastValid && (
+              <div style={{
+                background:"rgba(255,160,0,.06)", border:"1px solid rgba(255,160,0,.2)",
+                borderRadius:11, padding:14, marginBottom:24, fontSize:12, color:"#f59e0b",
+              }}>
+                ⏰ O podcast desta edição expirou e não está mais disponível.
+              </div>
+            )}
+
+            {/* NEWS GRID */}
+            {current.headlines && current.headlines.length > 0 && (
+              <div>
+                <div style={{ fontSize:11, color:"#506070", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", marginBottom:12 }}>
+                  Principais Notícias
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))", gap:14 }}>
+                  {current.headlines.map((h, i) => (
+                    <div key={i} style={{
+                      background:"rgba(255,255,255,.02)",
+                      border:"1px solid rgba(255,255,255,.06)",
+                      borderRadius:11, padding:16,
+                      transition:"all .2s", cursor: h.url ? "pointer" : "default",
+                    }} onClick={() => h.url && window.open(h.url, "_blank")}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
+                        <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background:`${CAT_COLORS[h.category] || "#888"}20`, color:CAT_COLORS[h.category] || "#888", fontWeight:700, letterSpacing:".04em" }}>
+                          {h.category || "IA"}
+                        </span>
+                        <span style={{ fontSize:9, color:"#506070" }}>{h.source}</span>
+                      </div>
+                      <div style={{
+                        fontFamily:"'Fraunces',serif", fontSize:16, fontWeight:600, lineHeight:1.35,
+                        color:"#e0e8f0", marginBottom:8,
+                      }}>
+                        {h.title}
+                      </div>
+                      <div style={{ fontSize:12, color:"#90a8b8", lineHeight:1.6 }}>
+                        {h.summary}
+                      </div>
+                      {h.url && (
+                        <div style={{ marginTop:10, fontSize:10, color:"#00b4ff" }}>
+                          Ler mais →
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* FOOTER */}
+            <div style={{
+              marginTop:50, paddingTop:24,
+              borderTop:"1px solid rgba(255,255,255,.05)",
+              textAlign:"center", color:"#506070", fontSize:11,
+            }}>
+              <div>📡 Syncronize-MI · Curadoria semanal de IA</div>
+              <div style={{ marginTop:6, fontSize:10, color:"#3a4050" }}>
+                Conteúdo gerado e curado com inteligência artificial
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN APP ───────────────────────────────────────────────────────────────
+
+function AdminApp() {
   const [tab, setTab]                   = useState(0);
   const [done, setDone]                 = useState([]);
   const [storageReady, setStorageReady] = useState(false);
 
-  // Diagnóstico — keys & validation
+  // Diagnóstico
   const [apiKey, setApiKey]             = useState("");
   const [keyValidated, setKeyValidated] = useState(false);
   const [klingApiKey, setKlingApiKey]   = useState(DEFAULT_KLING_KEY);
@@ -393,13 +647,30 @@ function PodcastStudio() {
   const [heygenValidated, setHeygenValidated] = useState(false);
   const [teamsWebhook, setTeamsWebhook]   = useState("");
   const [defaultEmails, setDefaultEmails] = useState("");
-
-  // Test results per service
-  const [testing, setTesting]             = useState({ anthropic: false, kling: false, heygen: false, teams: false });
+  const [testing, setTesting]             = useState({});
   const [testResults, setTestResults]     = useState({});
 
+  // Newsletter state
+  const [newsletters, setNewsletters]     = useState([]);
+  const [editorDate, setEditorDate]       = useState(today());
+  const [editorTitle, setEditorTitle]     = useState("");
+  const [editorSubtitle, setEditorSubtitle] = useState("");
+  const [editorHeadlines, setEditorHeadlines] = useState([]);
+  const [editorAiSummary, setEditorAiSummary] = useState("");
+  const [editorFocusInsights, setEditorFocusInsights] = useState([]);
+  const [editorPodcastUrl, setEditorPodcastUrl] = useState("");
+  const [editorPodcastTitle, setEditorPodcastTitle] = useState("");
+  const [editorPodcastDuration, setEditorPodcastDuration] = useState(15);
+  const [editorPodcastThumbnail, setEditorPodcastThumbnail] = useState("");
+  const [editorPodcastTtlDays, setEditorPodcastTtlDays] = useState(30);
+  const [isLoadingNl, setIsLoadingNl]     = useState(false);
+  const [isGenSummary, setIsGenSummary]   = useState(false);
+  const [isGenInsights, setIsGenInsights] = useState(false);
+  const [nlError, setNlError]             = useState("");
+  const [nlSuccess, setNlSuccess]         = useState("");
+
   // Pauta
-  const [podcastName, setPodcastName]   = useState("");
+  const [podcastName, setPodcastName]   = useState("Syncronize-MI");
   const [epTitle, setEpTitle]           = useState("");
   const [duration, setDuration]         = useState(10);
   const [headlines, setHeadlines]       = useState([]);
@@ -409,12 +680,9 @@ function PodcastStudio() {
   const [isGenQuick, setIsGenQuick]     = useState(false);
   const [quickScript, setQuickScript]   = useState("");
 
-  // Avatar config
+  // Avatar
   const [kRole, setKRole]               = useState("tech_host");
   const [kEmotion, setKEmotion]         = useState("confident");
-  const [kGestures, setKGestures]       = useState(["subtle_hands","nods"]);
-  const [kCamera, setKCamera]           = useState("medium_close");
-  const [kMode, setKMode]               = useState("professional");
   const [avatarFile, setAvatarFile]     = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileRef                         = useRef(null);
@@ -422,7 +690,6 @@ function PodcastStudio() {
   // Roteiro
   const [rawText, setRawText]           = useState("");
   const [refinedScript, setRefined]     = useState("");
-  const [klingPrompt, setKlingPrompt]   = useState("");
   const [distEmail, setDistEmail]       = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [isRefining, setIsRefining]     = useState(false);
@@ -438,7 +705,6 @@ function PodcastStudio() {
   const [renderError, setRenderError]   = useState("");
   const [videoUrl, setVideoUrl]         = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
-  const [currentVideoId, setCurrentVideoId] = useState("");
 
   // Distribuição
   const [teamEmails, setTeamEmails]     = useState("");
@@ -458,7 +724,7 @@ function PodcastStudio() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const settings = await db.get("user:settings_v6");
+      const settings = await db.get("user:settings_v7");
       if (cancelled) return;
       if (settings) {
         if (settings.apiKey) setApiKey(settings.apiKey);
@@ -468,47 +734,68 @@ function PodcastStudio() {
         if (settings.heygenVoiceId) setHeygenVoiceId(settings.heygenVoiceId);
         if (settings.teamsWebhook) setTeamsWebhook(settings.teamsWebhook);
         if (settings.defaultEmails) setDefaultEmails(settings.defaultEmails);
-        if (settings.keyValidated) setKeyValidated(true);
+        if (settings.keyValidated) { setKeyValidated(true); markDone(1); }
         if (settings.klingValidated) setKlingValidated(true);
         if (settings.heygenValidated) setHeygenValidated(true);
         if (settings.podcastName) setPodcastName(settings.podcastName);
         if (settings.kRole) setKRole(settings.kRole);
         if (settings.kEmotion) setKEmotion(settings.kEmotion);
-        if (settings.kGestures) setKGestures(settings.kGestures);
-        if (settings.kCamera) setKCamera(settings.kCamera);
-        if (settings.kMode) setKMode(settings.kMode);
-        if (settings.keyValidated) markDone(0);
       }
       setEpisodes(await db.listEpisodes());
+      setNewsletters(await db.listNewsletters());
       setStorageReady(true);
     })();
     return () => { cancelled = true; };
   }, [markDone]);
 
-  // ─── Auto-save (debounced) — uses ONE state object snapshot ──────────────
   useEffect(() => {
     if (!storageReady) return;
     const t = setTimeout(() => {
-      db.set("user:settings_v6", {
+      db.set("user:settings_v7", {
         apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId,
         teamsWebhook, defaultEmails,
         keyValidated, klingValidated, heygenValidated,
-        podcastName, kRole, kEmotion, kGestures, kCamera, kMode,
+        podcastName, kRole, kEmotion,
         updatedAt: Date.now(),
       });
     }, 600);
     return () => clearTimeout(t);
-  }, [apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId, teamsWebhook, defaultEmails, keyValidated, klingValidated, heygenValidated, podcastName, kRole, kEmotion, kGestures, kCamera, kMode, storageReady]);
+  }, [apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId, teamsWebhook, defaultEmails, keyValidated, klingValidated, heygenValidated, podcastName, kRole, kEmotion, storageReady]);
+
+  // Load newsletter from db when date changes
+  useEffect(() => {
+    if (!storageReady) return;
+    (async () => {
+      const existing = await db.get(`newsletter:${editorDate}`);
+      if (existing) {
+        setEditorTitle(existing.title || "");
+        setEditorSubtitle(existing.subtitle || "");
+        setEditorHeadlines(existing.headlines || []);
+        setEditorAiSummary(existing.aiSummary || "");
+        setEditorFocusInsights(existing.focusInsights || []);
+        setEditorPodcastUrl(existing.podcastUrl || "");
+        setEditorPodcastTitle(existing.podcastTitle || "");
+        setEditorPodcastDuration(existing.podcastDuration || 15);
+        setEditorPodcastThumbnail(existing.podcastThumbnail || "");
+        if (existing.podcastExpiresAt) {
+          const days = Math.max(1, Math.round((existing.podcastExpiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
+          setEditorPodcastTtlDays(days);
+        }
+      } else {
+        setEditorTitle("");
+        setEditorSubtitle("");
+        setEditorHeadlines([]);
+        setEditorAiSummary("");
+        setEditorFocusInsights([]);
+        setEditorPodcastUrl("");
+        setEditorPodcastTitle("");
+        setEditorPodcastDuration(15);
+        setEditorPodcastThumbnail("");
+      }
+    })();
+  }, [editorDate, storageReady]);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
-
-  const buildKlingPrompt = useCallback(() => {
-    const role    = KLING_ROLES.find(r => r.id === kRole)?.kling || "";
-    const emotion = KLING_EMOTIONS.find(e => e.id === kEmotion)?.kling || "";
-    const camera  = KLING_CAMERAS.find(c => c.id === kCamera)?.kling || "";
-    const gestures = kGestures.map(id => KLING_GESTURES.find(g => g.id === id)?.kling).filter(Boolean).join(", ");
-    return `${role}, ${emotion}, ${gestures}, ${camera}, professional podcast studio background`;
-  }, [kRole, kEmotion, kCamera, kGestures]);
 
   const handleUpload = (e) => {
     const file = e.target.files?.[0];
@@ -520,24 +807,21 @@ function PodcastStudio() {
   };
 
   const toggleHL = (h) => setSelHL(p => p.find(x => x.title === h.title) ? p.filter(x => x.title !== h.title) : [...p, h]);
-  const toggleG  = (id) => setKGestures(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
   const copyText = (text) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
-  // ─── DIAGNOSTIC TESTS ─────────────────────────────────────────────────────
+  // ─── Diagnostic Tests ─────────────────────────────────────────────────────
 
   const testAnthropic = async () => {
     setTesting(p => ({ ...p, anthropic: true }));
     const trimmed = apiKey.trim();
     if (!trimmed) {
       setTestResults(p => ({ ...p, anthropic: { status:"err", msg:"Cole sua chave Anthropic primeiro." } }));
-      setTesting(p => ({ ...p, anthropic: false }));
-      return;
+      setTesting(p => ({ ...p, anthropic: false })); return;
     }
     if (apiKey !== trimmed) setApiKey(trimmed);
     if (!trimmed.startsWith("sk-ant-")) {
       setTestResults(p => ({ ...p, anthropic: { status:"err", msg:'Chave inválida — deve começar com "sk-ant-".' } }));
-      setTesting(p => ({ ...p, anthropic: false }));
-      return;
+      setTesting(p => ({ ...p, anthropic: false })); return;
     }
     try {
       const data = await callAnthropic(trimmed, {
@@ -545,15 +829,13 @@ function PodcastStudio() {
         messages: [{ role: "user", content: "Responda apenas: OK" }],
       });
       const reply = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-      setKeyValidated(true);
-      markDone(0);
-      setTestResults(p => ({ ...p, anthropic: { status:"ok", msg:"Conexão Anthropic OK!", details:`Modelo: ${ANTHROPIC_MODEL} · Resposta: "${reply}"` } }));
+      setKeyValidated(true); markDone(1);
+      setTestResults(p => ({ ...p, anthropic: { status:"ok", msg:"Conexão Anthropic OK!", details:`Modelo: ${ANTHROPIC_MODEL} · "${reply}"` } }));
     } catch (err) {
       let diagnosis = err.message;
-      if (err.status === 401) diagnosis = "Chave inválida ou revogada. Gere nova em console.anthropic.com.";
-      else if (err.status === 403) diagnosis = "Conta sem permissão para esse modelo.";
+      if (err.status === 401) diagnosis = "Chave inválida ou revogada.";
       else if (err.status === 404) diagnosis = `Modelo ${ANTHROPIC_MODEL} indisponível.`;
-      else if (err.status === 429) diagnosis = "Rate limit ou sem créditos. Verifique billing.";
+      else if (err.status === 429) diagnosis = "Rate limit ou sem créditos.";
       setTestResults(p => ({ ...p, anthropic: { status:"err", msg:`Erro ${err.status||""}: ${diagnosis}` } }));
     }
     setTesting(p => ({ ...p, anthropic: false }));
@@ -564,7 +846,7 @@ function PodcastStudio() {
     try {
       await klingTestConnection(klingApiKey.trim());
       setKlingValidated(true);
-      setTestResults(p => ({ ...p, kling: { status:"ok", msg:"Chave Kling AI configurada", details:`${klingApiKey.slice(0,8)}…` } }));
+      setTestResults(p => ({ ...p, kling: { status:"ok", msg:"Chave Kling configurada" } }));
     } catch (err) {
       setTestResults(p => ({ ...p, kling: { status:"err", msg: err.message } }));
     }
@@ -573,21 +855,17 @@ function PodcastStudio() {
 
   const testHeygen = async () => {
     setTesting(p => ({ ...p, heygen: true }));
-    const trimmed = heygenApiKey.trim();
-    if (!trimmed) {
-      setTestResults(p => ({ ...p, heygen: { status:"err", msg:"Cole a HeyGen API Key primeiro." } }));
-      setTesting(p => ({ ...p, heygen: false }));
-      return;
+    if (!heygenApiKey.trim()) {
+      setTestResults(p => ({ ...p, heygen: { status:"err", msg:"Cole a HeyGen API Key." } }));
+      setTesting(p => ({ ...p, heygen: false })); return;
     }
     try {
-      const data = await heygenTestConnection(trimmed);
+      const data = await heygenTestConnection(heygenApiKey.trim());
       const voiceCount = data?.data?.voices?.length || 0;
       setHeygenValidated(true);
-      setTestResults(p => ({ ...p, heygen: { status:"ok", msg:`Conexão HeyGen OK! ${voiceCount} vozes disponíveis.`, details:`Endpoint v2/voices respondeu corretamente` } }));
+      setTestResults(p => ({ ...p, heygen: { status:"ok", msg:`Conexão OK! ${voiceCount} vozes disponíveis.` } }));
     } catch (err) {
-      let diagnosis = err.message;
-      if (err.status === 401 || err.status === 403) diagnosis = "Chave HeyGen inválida ou revogada.";
-      setTestResults(p => ({ ...p, heygen: { status:"err", msg:`Erro: ${diagnosis}` } }));
+      setTestResults(p => ({ ...p, heygen: { status:"err", msg: err.message } }));
     }
     setTesting(p => ({ ...p, heygen: false }));
   };
@@ -595,84 +873,207 @@ function PodcastStudio() {
   const testTeams = async () => {
     setTesting(p => ({ ...p, teams: true }));
     if (!teamsWebhook.trim()) {
-      setTestResults(p => ({ ...p, teams: { status:"err", msg:"Cole a URL do webhook Teams primeiro." } }));
-      setTesting(p => ({ ...p, teams: false }));
-      return;
+      setTestResults(p => ({ ...p, teams: { status:"err", msg:"Cole o webhook Teams." } }));
+      setTesting(p => ({ ...p, teams: false })); return;
     }
     try {
-      await sendTeamsWebhook(teamsWebhook.trim(), "🧪 Teste de Conexão", "Mensagem de teste do PodcastStudio. Se você está vendo isso, a integração funciona!");
-      setTestResults(p => ({ ...p, teams: { status:"ok", msg:"Mensagem de teste enviada para o Teams!", details:"Verifique no canal configurado" } }));
+      await sendTeamsWebhook(teamsWebhook.trim(), "🧪 Teste Syncronize-MI", "Mensagem de teste do PodcastStudio.");
+      setTestResults(p => ({ ...p, teams: { status:"ok", msg:"Mensagem enviada!" } }));
     } catch (err) {
       setTestResults(p => ({ ...p, teams: { status:"err", msg: err.message } }));
     }
     setTesting(p => ({ ...p, teams: false }));
   };
 
-  const clearAllSettings = async () => {
-    if (!confirm("Apagar TODAS as configurações salvas?")) return;
-    setApiKey(""); setKeyValidated(false);
-    setKlingApiKey(DEFAULT_KLING_KEY); setKlingValidated(false);
-    setHeygenApiKey(""); setHeygenAvatarId(""); setHeygenVoiceId("d7bbcdd6964c47bdaae26decade4a933"); setHeygenValidated(false);
-    setTeamsWebhook(""); setDefaultEmails("");
-    setTestResults({});
-    setDone(d => d.filter(i => i !== 0));
-    await db.delete("user:settings_v6");
+  // ─── NEWSLETTER LOGIC ─────────────────────────────────────────────────────
+
+  const fetchNewsForNewsletter = async () => {
+    if (!keyValidated) { setNlError("Configure a chave Anthropic primeiro."); return; }
+    setIsLoadingNl(true); setNlError(""); setNlSuccess("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade no trabalho, e desenvolvimento sistêmico/engineering. Responda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,
+        true, 3000
+      );
+      const m = text.match(/\[[\s\S]*\]/);
+      if (m) {
+        const parsed = JSON.parse(m[0]).slice(0, 10);
+        setEditorHeadlines(parsed);
+        setNlSuccess(`${parsed.length} manchetes carregadas`);
+      } else throw new Error("Resposta sem JSON válido");
+    } catch (err) {
+      setNlError("Erro: " + err.message);
+    }
+    setIsLoadingNl(false);
   };
 
-  // ─── BUSINESS LOGIC ───────────────────────────────────────────────────────
+  const generateAiSummary = async () => {
+    if (!keyValidated) { setNlError("Configure a chave primeiro."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes primeiro."); return; }
+    setIsGenSummary(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Você é o curador editorial da newsletter "Syncronize-MI" sobre IA. Com base nas manchetes abaixo, escreva um RESUMO EXECUTIVO em português brasileiro (~250 palavras) que apresente um PONTO DE VISTA editorial sobre os principais temas a se focar.
+
+FOCO OBRIGATÓRIO em três eixos:
+1. PRODUTIVIDADE — como IA muda o trabalho diário
+2. DESENVOLVIMENTO SISTÊMICO — engenharia de software, arquitetura, agentes
+3. NOVOS MODELOS LLM/IA — capacidades emergentes, comparativos
+
+ESTILO:
+- Tom editorial, analítico, com opinião
+- Conecte os pontos entre as notícias
+- Identifique tendências
+- Use parágrafos (não bullets)
+- Linguagem culta mas acessível
+
+MANCHETES DA SEMANA (${fmtDateLong(editorDate)}):
+${editorHeadlines.map((h, i) => `${i+1}. ${h.title} — ${h.summary} (${h.source})`).join("\n")}
+
+Retorne APENAS o resumo, sem títulos ou metadados.`,
+        false, 1200,
+        "Você é editor sênior de uma newsletter de IA."
+      );
+      setEditorAiSummary(text.trim());
+      setNlSuccess("Resumo executivo gerado!");
+    } catch (err) {
+      setNlError("Erro: " + err.message);
+    }
+    setIsGenSummary(false);
+  };
+
+  const generateFocusInsights = async () => {
+    if (!keyValidated) { setNlError("Configure a chave primeiro."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes primeiro."); return; }
+    setIsGenInsights(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Com base nas manchetes da semana, escreva UMA insight curta (50-70 palavras) por área. Responda SOMENTE JSON puro:
+{
+  "produtividade": "insight focado em ferramentas de IA que mudam o trabalho",
+  "sistemico": "insight focado em engenharia, agentes, arquitetura",
+  "llm": "insight focado em novos modelos, capacidades, benchmarks"
+}
+
+MANCHETES:
+${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}
+
+Tom: analítico, opinião editorial, português brasileiro.`,
+        false, 1000
+      );
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) {
+        const parsed = JSON.parse(m[0]);
+        setEditorFocusInsights([
+          { area: "produtividade", summary: parsed.produtividade || "" },
+          { area: "sistemico",     summary: parsed.sistemico || "" },
+          { area: "llm",           summary: parsed.llm || "" },
+        ]);
+        setNlSuccess("Insights por área gerados!");
+      } else throw new Error("Resposta sem JSON");
+    } catch (err) {
+      setNlError("Erro: " + err.message);
+    }
+    setIsGenInsights(false);
+  };
+
+  const handlePodcastUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      setNlError("Arquivo muito grande (max 50MB recomendado para localStorage). Use uma URL externa (S3, Cloudflare R2, etc).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditorPodcastUrl(reader.result);
+      if (!editorPodcastTitle) setEditorPodcastTitle(file.name.replace(/\.[^.]+$/, ""));
+      setNlSuccess(`Vídeo carregado (${(file.size / (1024*1024)).toFixed(1)}MB) — base64`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveNewsletter = async () => {
+    if (!editorDate) { setNlError("Selecione uma data."); return; }
+    setNlError(""); setNlSuccess("");
+    const expiresAt = editorPodcastUrl && editorPodcastTtlDays > 0
+      ? Date.now() + editorPodcastTtlDays * 24 * 60 * 60 * 1000
+      : null;
+    const nl = {
+      id: `newsletter:${editorDate}`,
+      date: editorDate,
+      title: editorTitle || `Highlights de IA · ${fmtDate(editorDate)}`,
+      subtitle: editorSubtitle,
+      headlines: editorHeadlines,
+      aiSummary: editorAiSummary,
+      focusInsights: editorFocusInsights,
+      podcastUrl: editorPodcastUrl,
+      podcastTitle: editorPodcastTitle,
+      podcastDuration: editorPodcastDuration,
+      podcastThumbnail: editorPodcastThumbnail,
+      podcastExpiresAt: expiresAt,
+      updatedAt: Date.now(),
+    };
+    const ok = await db.set(nl.id, nl);
+    if (ok) {
+      setNlSuccess(`Edição de ${fmtDate(editorDate)} publicada!`);
+      setNewsletters(await db.listNewsletters());
+    } else {
+      setNlError("Erro ao salvar — armazenamento pode estar cheio.");
+    }
+  };
+
+  const deleteNewsletter = async (date) => {
+    if (!confirm(`Apagar edição de ${fmtDate(date)}?`)) return;
+    await db.delete(`newsletter:${date}`);
+    setNewsletters(await db.listNewsletters());
+    setNlSuccess(`Edição apagada`);
+  };
+
+  // ─── PODCAST PIPELINE ──────────────────────────────────────────────────────
 
   const fetchNews = async () => {
-    if (!keyValidated) { setNewsError("Configure sua chave Anthropic na aba Diagnóstico primeiro."); return; }
+    if (!keyValidated) { setNewsError("Configure a chave primeiro."); return; }
     setLoadingNews(true); setNewsError(""); setHeadlines([]);
     try {
       const text = await callClaude(
         apiKey,
-        `Pesquise as principais notícias de IA da semana atual. Inclua tópicos de podcasts como "IA Todo Dia" e "No Priors". Liste 10 itens em português. Responda SOMENTE JSON puro: [{"title":"...","summary":"...","source":"...","category":"IA","type":"news"}]`,
+        `Pesquise 10 principais notícias de IA da semana. Foque em produtividade, LLMs, e engenharia. Responda SOMENTE JSON: [{"title":"...","summary":"...","source":"...","category":"IA","type":"news","url":"https://..."}]`,
         true, 2500
       );
       const m = text.match(/\[[\s\S]*\]/);
       if (m) setHeadlines(JSON.parse(m[0]).slice(0, 10));
-      else throw new Error("Resposta sem JSON");
+      else throw new Error("Sem JSON");
     } catch (err) {
-      setNewsError("Busca falhou: " + err.message + ". Exibindo dados de referência.");
-      setHeadlines([
-        { title:"Claude Sonnet 4.5 supera benchmarks", summary:"Anthropic lança modelo state-of-art em agentes.", source:"Anthropic", category:"IA", type:"news" },
-        { title:"GPT-5 com raciocínio multimodal", summary:"OpenAI integra visão, código e planejamento.", source:"TechCrunch", category:"IA", type:"news" },
-        { title:"Kling AI Avatar 2.0: lipsync 48fps", summary:"Vídeos a partir de uma foto.", source:"VentureBeat", category:"IA", type:"news" },
-        { title:"Apple M4 Ultra: modelos 70B local", summary:"Inferência local sem cloud.", source:"Wired", category:"Hardware", type:"news" },
-        { title:"EU AI Act: primeiras multas", summary:"Empresas autuadas por falta de transparência.", source:"MIT Tech Review", category:"Regulação", type:"news" },
-        { title:"IA Todo Dia: Agentes no trabalho", summary:"Diego Sommer e Helena Ferraz debatem AI agents.", source:"Spotify", category:"Podcast", type:"podcast" },
-        { title:"No Priors: futuro dos modelos", summary:"Elad Gil e Sarah Guo entrevistam pesquisadores.", source:"Spotify", category:"Podcast", type:"podcast" },
-        { title:"Microsoft Copilot Agents", summary:"Agentes IA executam tarefas no M365.", source:"The Verge", category:"Software", type:"news" },
-        { title:"Nvidia Blackwell Ultra: 1T params", summary:"GPU para modelos ultra-grandes.", source:"Ars Technica", category:"Hardware", type:"news" },
-        { title:"Startups IA captam US$40B", summary:"Foco em agentes autônomos.", source:"VentureBeat", category:"Startups", type:"news" },
-      ]);
+      setNewsError("Erro: " + err.message);
     }
     setLoadingNews(false);
   };
 
   const genQuickScript = async () => {
-    if (!keyValidated) { setNewsError("Configure sua chave primeiro."); return; }
     if (headlines.length === 0) { setNewsError("Busque manchetes primeiro."); return; }
     setIsGenQuick(true); setQuickScript("");
     const items = (selHL.length > 0 ? selHL : headlines).slice(0, 8);
     try {
       const text = await callClaude(
         apiKey,
-        `Apresentador de podcast tech. Roteiro de leitura em ${duration} min em português brasileiro.
+        `Roteiro de podcast em ${duration} min em português brasileiro.
 
 ITENS:
-${items.map((h, i) => `${i+1}. ${h.title}: ${h.summary} (${h.source})`).join("\n")}
+${items.map((h, i) => `${i+1}. ${h.title}: ${h.summary}`).join("\n")}
 
 FORMATO:
 🎙️ ABERTURA (15s)
-[texto energético]
+[texto]
 
 📌 DESTAQUE 1: [título]
-[2-3 frases com dado]
+[2-3 frases]
 [pausa]
 
-[continue para todos]
+[continue]
 
 🎯 FECHAMENTO (15s)
 [CTA]
@@ -687,51 +1088,35 @@ Linguagem oral, [pausa] entre tópicos, *palavra* para ênfase.`,
   };
 
   const refineScript = async () => {
-    if (!keyValidated) { setRefineError("Configure sua chave primeiro."); return; }
     if (!rawText.trim()) { setRefineError("Escreva conteúdo primeiro."); return; }
     setIsRefining(true); setRefineError(""); setRefined("");
-    const prompt = buildKlingPrompt();
     try {
       const text = await callClaude(
         apiKey,
-        `AVATAR: "${prompt}"
-MODO: ${kMode} | DURAÇÃO: ${duration} min
-PODCAST: ${podcastName || "Tech Weekly"} — EP: ${epTitle || "Novidades"}
-
-REGRAS:
-1. [pausa] entre 2-3 frases
-2. *palavra* para ênfase
-3. [?] para perguntas retóricas
-4. Parágrafos curtos
-5. Linguagem oral brasileira
+        `Refine este conteúdo em roteiro de podcast (${duration} min, português brasileiro).
+Use [pausa] entre tópicos e *palavra* para ênfase.
 
 TEXTO BASE:
 ${rawText}
 
 Retorne APENAS o roteiro.`,
-        false, 2000,
-        "Você é especialista em roteiros para avatares Kling AI e HeyGen."
+        false, 2000
       );
       setRefined(text.trim());
-      setKlingPrompt(prompt);
-      markDone(2);
+      markDone(3);
     } catch (err) { setRefineError("Erro: " + err.message); }
     setIsRefining(false);
   };
 
   const genEmailCopy = async () => {
-    if (!keyValidated) { setRefineError("Configure sua chave primeiro."); return; }
     if (!refinedScript.trim() && !rawText.trim()) { setRefineError("Gere o roteiro antes."); return; }
     setIsGenEmail(true); setRefineError("");
     try {
       const text = await callClaude(
         apiKey,
-        `Crie ASSUNTO (max 8 palavras) e MENSAGEM (max 6 linhas) para distribuir podcast ao time.
-Podcast: ${podcastName || "Tech Weekly"}
-Episódio: ${epTitle || "Novidades em IA"}
-Duração: ${duration} min
+        `Crie ASSUNTO (max 8 palavras) e CORPO (max 6 linhas) para distribuir podcast.
+Podcast: ${podcastName} · EP: ${epTitle} · ${duration} min
 Temas: ${selHL.map(h => h.title).join("; ") || rawText.slice(0, 200)}
-Profissional, entusiasta, emojis, português.
 
 Responda SOMENTE JSON: {"subject":"...","body":"..."}`,
         false, 800
@@ -741,7 +1126,7 @@ Responda SOMENTE JSON: {"subject":"...","body":"..."}`,
         const parsed = JSON.parse(m[0]);
         setEmailSubject(parsed.subject || "");
         setDistEmail(parsed.body || "");
-      } else { setDistEmail(text); }
+      }
     } catch (err) { setRefineError("Erro: " + err.message); }
     setIsGenEmail(false);
   };
@@ -749,22 +1134,17 @@ Responda SOMENTE JSON: {"subject":"...","body":"..."}`,
   const saveEpisode = async (data = {}) => {
     const ep = {
       id: `episode:${Date.now()}`,
-      podcastName: podcastName || "Tech Weekly",
-      title: epTitle || "Sem título",
+      podcastName, title: epTitle || "Sem título",
       duration, script: refinedScript || rawText,
-      avatarPrompt: klingPrompt || buildKlingPrompt(),
       engine: renderEngine,
       headlines: selHL.length ? selHL : [],
       emailSubject, emailBody: distEmail,
-      videoUrl: data.videoUrl || "",
-      thumbnailUrl: data.thumbnailUrl || "",
+      videoUrl: data.videoUrl || "", thumbnailUrl: data.thumbnailUrl || "",
       videoId: data.videoId || "",
-      status: "completed",
-      createdAt: Date.now(),
+      status: "completed", createdAt: Date.now(),
     };
     await db.set(ep.id, ep);
     setEpisodes(await db.listEpisodes());
-    return ep.id;
   };
 
   const deleteEpisode = async (id) => {
@@ -772,98 +1152,65 @@ Responda SOMENTE JSON: {"subject":"...","body":"..."}`,
     setEpisodes(await db.listEpisodes());
   };
 
-  // ─── RENDER LOGIC ─────────────────────────────────────────────────────────
-
   const renderKling = async () => {
-    if (!klingValidated) { setRenderError("Valide a chave Kling no Diagnóstico primeiro."); return; }
-    if (!avatarFile) { setRenderError("Envie a foto do avatar."); return; }
-    if (!refinedScript.trim()) { setRenderError("Gere o roteiro antes."); return; }
+    if (!klingValidated) { setRenderError("Valide Kling no Diagnóstico."); return; }
+    if (!avatarFile) { setRenderError("Envie a foto."); return; }
+    if (!refinedScript.trim()) { setRenderError("Gere o roteiro."); return; }
     setIsRendering(true); setRenderDone(false); setRenderError(""); setRenderPct(0);
-    setVideoUrl(""); setThumbnailUrl(""); setCurrentVideoId("");
+    setVideoUrl(""); setThumbnailUrl("");
     const steps = [
-      { p:10, m:"🖼️ Preparando avatar..." },
-      { p:22, m:`🔑 Auth Kling (${klingApiKey.slice(0,8)}...)` },
-      { p:35, m:"🗣️ TTS neural..." },
-      { p:50, m:"💋 Lipsync + expressões..." },
-      { p:63, m:"🎭 Aplicando gestos..." },
-      { p:75, m:"🎬 Render 48fps/1080p..." },
-      { p:85, m:"📷 Câmera..." },
-      { p:93, m:"✂️ Montagem..." },
-      { p:98, m:"📦 Export MP4..." },
+      { p:15, m:"🖼️ Preparando avatar..." },
+      { p:30, m:"🗣️ TTS neural..." },
+      { p:50, m:"💋 Lipsync..." },
+      { p:70, m:"🎬 Render 1080p..." },
+      { p:90, m:"📦 Export..." },
     ];
     try {
       for (const s of steps) {
-        await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
+        await new Promise(r => setTimeout(r, 800));
         setRenderPct(s.p); setRenderMsg(s.m);
       }
-      // Demo video URL — Kling AI doesn't have a public REST endpoint usable from browsers
       const demoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
       const demoThumb = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg";
-      setRenderPct(100); setRenderMsg("✅ Vídeo gerado (modo demo)!");
-      setVideoUrl(demoUrl);
-      setThumbnailUrl(demoThumb);
-      setRenderDone(true); markDone(3);
+      setRenderPct(100); setRenderMsg("✅ Vídeo gerado!");
+      setVideoUrl(demoUrl); setThumbnailUrl(demoThumb);
+      setRenderDone(true); markDone(4);
       await saveEpisode({ videoUrl: demoUrl, thumbnailUrl: demoThumb });
     } catch (err) { setRenderError("Erro: " + err.message); }
     setIsRendering(false);
   };
 
   const renderHeyGen = async () => {
-    if (!heygenValidated) { setRenderError("Valide HeyGen no Diagnóstico primeiro."); return; }
-    if (!heygenAvatarId.trim()) { setRenderError("Configure Avatar ID no Diagnóstico."); return; }
-    if (!refinedScript.trim()) { setRenderError("Gere o roteiro antes."); return; }
+    if (!heygenValidated) { setRenderError("Valide HeyGen no Diagnóstico."); return; }
+    if (!heygenAvatarId.trim()) { setRenderError("Configure Avatar ID."); return; }
+    if (!refinedScript.trim()) { setRenderError("Gere o roteiro."); return; }
     setIsRendering(true); setRenderDone(false); setRenderError(""); setRenderPct(0);
-    setVideoUrl(""); setThumbnailUrl(""); setCurrentVideoId("");
-
+    setVideoUrl(""); setThumbnailUrl("");
     try {
-      setRenderPct(10); setRenderMsg("🔑 Autenticando HeyGen...");
-      await new Promise(r => setTimeout(r, 600));
-
-      setRenderPct(20); setRenderMsg("📝 Enviando roteiro ao motor...");
-      // Strip markup for TTS clarity
+      setRenderPct(15); setRenderMsg("🔑 Autenticando...");
       const cleanScript = refinedScript.replace(/\[pausa\]/g, "...").replace(/\[\?\]/g, "?").replace(/\*([^*]+)\*/g, "$1");
       const videoId = await heygenGenerateVideo(heygenApiKey.trim(), {
-        avatarId: heygenAvatarId.trim(),
-        voiceId: heygenVoiceId.trim(),
-        scriptText: cleanScript,
+        avatarId: heygenAvatarId.trim(), voiceId: heygenVoiceId.trim(), scriptText: cleanScript,
       });
-      setCurrentVideoId(videoId);
-      setRenderPct(35); setRenderMsg(`🎬 Vídeo na fila (id: ${videoId.slice(0,12)}...)`);
-
-      // Poll status
-      let pct = 35;
-      let attempts = 0;
-      const maxAttempts = 60; // 5 minutes max
-      while (attempts < maxAttempts) {
-        await new Promise(r => setTimeout(r, 5000));
-        attempts++;
+      setRenderPct(30); setRenderMsg(`🎬 Fila: ${videoId.slice(0,12)}...`);
+      let pct = 30; let attempts = 0;
+      while (attempts < 60) {
+        await new Promise(r => setTimeout(r, 5000)); attempts++;
         const status = await heygenGetStatus(heygenApiKey.trim(), videoId);
         if (status?.status === "completed") {
-          setRenderPct(100);
-          setRenderMsg("✅ Vídeo HeyGen finalizado!");
-          setVideoUrl(status.video_url || "");
-          setThumbnailUrl(status.thumbnail_url || "");
-          setRenderDone(true);
-          markDone(3);
-          await saveEpisode({
-            videoUrl: status.video_url,
-            thumbnailUrl: status.thumbnail_url,
-            videoId,
-          });
+          setRenderPct(100); setRenderMsg("✅ Pronto!");
+          setVideoUrl(status.video_url || ""); setThumbnailUrl(status.thumbnail_url || "");
+          setRenderDone(true); markDone(4);
+          await saveEpisode({ videoUrl: status.video_url, thumbnailUrl: status.thumbnail_url, videoId });
           break;
         } else if (status?.status === "failed") {
-          throw new Error(status?.error?.message || "Render falhou no HeyGen");
+          throw new Error(status?.error?.message || "Render falhou");
         } else {
-          // processing / waiting / pending
-          pct = Math.min(95, pct + 3);
-          setRenderPct(pct);
-          setRenderMsg(`🎬 ${status?.status || "processing"}... (tentativa ${attempts})`);
+          pct = Math.min(95, pct + 3); setRenderPct(pct);
+          setRenderMsg(`🎬 ${status?.status}... (${attempts})`);
         }
       }
-      if (attempts >= maxAttempts) throw new Error("Timeout — render demorou demais");
-    } catch (err) {
-      setRenderError("Erro HeyGen: " + err.message);
-    }
+    } catch (err) { setRenderError("Erro: " + err.message); }
     setIsRendering(false);
   };
 
@@ -873,23 +1220,18 @@ Responda SOMENTE JSON: {"subject":"...","body":"..."}`,
     else renderHeyGen();
   };
 
-  // ─── DISTRIBUIÇÃO ─────────────────────────────────────────────────────────
-
   const genDistMsg = async () => {
-    if (!keyValidated) { setDistError("Configure sua chave primeiro."); return; }
     setIsGenMsg(true); setDistError(""); setDistSuccess("");
     try {
       const text = await callClaude(
         apiKey,
-        `Mensagem curta (max 5 linhas) para distribuir ao time.
-Podcast: ${podcastName || "Tech Weekly"} | EP: ${epTitle || "Novidades IA"} | ${duration} min
-Temas: ${selHL.map(h => h.title).join("; ") || rawText.slice(0, 200)}
-${videoUrl ? "Link do vídeo: " + videoUrl : ""}
+        `Mensagem (max 5 linhas) para distribuir podcast.
+Podcast: ${podcastName} · EP: ${epTitle} · ${duration} min
+${videoUrl ? "Vídeo: " + videoUrl : ""}
 Profissional, entusiasta, emojis, português.`,
         false, 500
       );
-      setDistMsg(text.trim());
-      markDone(4);
+      setDistMsg(text.trim()); markDone(5);
     } catch (err) { setDistError("Erro: " + err.message); }
     setIsGenMsg(false);
   };
@@ -897,84 +1239,305 @@ Profissional, entusiasta, emojis, português.`,
   const sendByEmail = () => {
     setDistError(""); setDistSuccess("");
     const recipients = teamEmails || defaultEmails;
-    if (!recipients.trim()) { setDistError("Adicione destinatários ou configure e-mails padrão no Diagnóstico."); return; }
-    if (!distMsg.trim()) { setDistError("Gere a mensagem primeiro."); return; }
-    const subject = emailSubject || `🎙️ Novo episódio: ${epTitle || "Tech Weekly"}`;
-    const body = `${distMsg}\n\n${videoUrl ? "▶️ Assistir: " + videoUrl + "\n\n" : ""}— Enviado via PodcastStudio`;
+    if (!recipients.trim()) { setDistError("Adicione destinatários."); return; }
+    if (!distMsg.trim()) { setDistError("Gere a mensagem."); return; }
+    const subject = emailSubject || `🎙️ ${epTitle || podcastName}`;
+    const body = `${distMsg}\n\n${videoUrl ? "▶️ " + videoUrl + "\n\n" : ""}— Syncronize-MI`;
     openMailto(recipients, subject, body);
-    setDistSuccess(`Cliente de e-mail aberto com ${recipients.split(/[,;\n]/).filter(s=>s.includes("@")).length} destinatário(s).`);
+    setDistSuccess(`Cliente de e-mail aberto.`);
   };
 
   const sendToTeams = async () => {
     setDistError(""); setDistSuccess("");
-    if (!teamsWebhook.trim()) { setDistError("Configure o webhook Teams no Diagnóstico primeiro."); return; }
-    if (!distMsg.trim()) { setDistError("Gere a mensagem primeiro."); return; }
+    if (!teamsWebhook.trim()) { setDistError("Configure webhook no Diagnóstico."); return; }
+    if (!distMsg.trim()) { setDistError("Gere a mensagem."); return; }
     try {
-      await sendTeamsWebhook(
-        teamsWebhook.trim(),
-        emailSubject || `🎙️ Novo episódio: ${epTitle || "Tech Weekly"}`,
-        distMsg,
-        videoUrl
-      );
-      setDistSuccess("Mensagem enviada para o Teams!");
-    } catch (err) {
-      setDistError("Erro Teams: " + err.message);
+      await sendTeamsWebhook(teamsWebhook.trim(), emailSubject || `🎙️ ${epTitle}`, distMsg, videoUrl);
+      setDistSuccess("Enviado para o Teams!");
+    } catch (err) { setDistError("Erro: " + err.message); }
+  };
+
+  // Use newsletter headlines OR podcast headlines
+  const importHeadlinesFromNewsletter = () => {
+    if (editorHeadlines.length > 0) {
+      setHeadlines(editorHeadlines);
+      setNewsError("");
     }
   };
 
-  // ─── RENDER UI ────────────────────────────────────────────────────────────
+  const useEpisodeAsPodcast = (ep) => {
+    if (ep.videoUrl) {
+      setEditorPodcastUrl(ep.videoUrl);
+      setEditorPodcastThumbnail(ep.thumbnailUrl || "");
+      setEditorPodcastTitle(ep.title);
+      setEditorPodcastDuration(ep.duration);
+      setTab(0);
+      setNlSuccess(`Episódio "${ep.title}" carregado como podcast da edição`);
+    }
+  };
 
-  const canAccessTab = (i) => i === 0 || keyValidated;
+  const canAccessTab = (i) => i === 0 || i === 1 || keyValidated;
 
   return (
     <div style={{ background:"#070b13", minHeight:"100vh", color:"#d8e8f0", paddingBottom:64 }}>
-      {/* HEADER */}
       <div style={{ background:"linear-gradient(180deg,#0a1628,#070b13)", borderBottom:"1px solid rgba(0,180,255,.1)", padding:"16px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:40, height:40, borderRadius:11, background:"linear-gradient(135deg,#004db3,#00b4ff)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, boxShadow:"0 4px 14px rgba(0,180,255,.3)" }}>🎙️</div>
+          <div style={{ width:40, height:40, borderRadius:11, background:"linear-gradient(135deg,#004db3,#00b4ff,#a78bfa)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🎙️</div>
           <div>
-            <div style={{ fontSize:18, fontWeight:800, color:"#fff" }}>PodcastStudio</div>
+            <div style={{ fontSize:18, fontWeight:800, color:"#fff" }}>Syncronize-MI · Admin</div>
             <div style={{ fontSize:9, color:"#3a6a90", fontFamily:"'JetBrains Mono',monospace", letterSpacing:".1em" }}>
-              v6 · {ANTHROPIC_MODEL} · {hasClaudeStorage() ? "DB:STORAGE" : "DB:LOCAL"} · {keyValidated ? "🟢" : "🔴"}{klingValidated ? "🟢" : "⚫"}{heygenValidated ? "🟢" : "⚫"}
+              v7 · {ANTHROPIC_MODEL} · {keyValidated ? "🟢" : "🔴"}{klingValidated ? "🟢" : "⚫"}{heygenValidated ? "🟢" : "⚫"}
             </div>
           </div>
         </div>
-        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-          {TABS.map((t, i) => {
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
+          {ADMIN_TABS.map((t, i) => {
             const accessible = canAccessTab(i);
             return (
-              <button key={i} onClick={() => { if (accessible) setTab(i); }} disabled={!accessible}
-                style={{
-                  background: tab === i ? "rgba(0,180,255,.12)" : "transparent",
-                  border: `1px solid ${tab === i ? "rgba(0,180,255,.35)" : "transparent"}`,
-                  color: !accessible ? "#1a2a3a" : tab === i ? "#00b4ff" : "#4a6a80",
-                  borderRadius:7, padding:"6px 13px", fontSize:12, fontWeight:500,
-                  cursor: accessible ? "pointer" : "not-allowed", fontFamily:"'Outfit',sans-serif",
-                  display:"flex", alignItems:"center", gap:5, opacity: accessible ? 1 : .55,
-                }}>
-                {!accessible && i > 0 && <span style={{ fontSize:9 }}>🔒</span>}
+              <button key={i} onClick={() => { if (accessible) setTab(i); }} disabled={!accessible} style={{
+                background: tab === i ? "rgba(0,180,255,.12)" : "transparent",
+                border: `1px solid ${tab === i ? "rgba(0,180,255,.35)" : "transparent"}`,
+                color: !accessible ? "#1a2a3a" : tab === i ? "#00b4ff" : "#4a6a80",
+                borderRadius:7, padding:"6px 13px", fontSize:12, fontWeight:500,
+                cursor: accessible ? "pointer" : "not-allowed", display:"flex", alignItems:"center", gap:5,
+                opacity: accessible ? 1 : .55,
+              }}>
+                {!accessible && i > 1 && <span style={{ fontSize:9 }}>🔒</span>}
                 {done.includes(i) && <span style={{ fontSize:9, color:"#10b981" }}>✓</span>}
                 <span>{t.icon}</span> {t.label}
               </button>
             );
           })}
+          <a href="?view=public" target="_blank" style={{ marginLeft:6, fontSize:11, color:"#10b981", textDecoration:"none", padding:"5px 10px", borderRadius:6, border:"1px solid rgba(16,185,129,.3)", background:"rgba(16,185,129,.06)" }}>
+            👁️ Ver Público →
+          </a>
         </div>
       </div>
 
       <div style={{ padding:"24px", maxWidth:1200, margin:"0 auto" }}>
 
-        {/* ══ DIAGNÓSTICO ══════════════════════════════════════════════════ */}
+        {/* ════ NEWSLETTER ADMIN ══════════════════════════════════════════ */}
         {tab === 0 && (
           <div className="fade">
-            <SectionHeader icon="🔬" title="Diagnóstico & Configuração" sub="Configure todas as APIs e canais de distribuição em um só lugar" />
+            <SectionHeader icon="📰" title="Newsletter Editor" sub="Gerencie edições diárias da NewsLetter Syncronize-MI" />
 
-            {/* GLOBAL STATUS BANNER */}
-            <div style={{
-              marginTop:16, marginBottom:18,
-              background: keyValidated ? "rgba(16,185,129,.06)" : "rgba(217,119,6,.07)",
-              border: `1px solid ${keyValidated ? "rgba(16,185,129,.25)" : "rgba(217,119,6,.3)"}`,
-              borderRadius:11, padding:14, display:"flex", alignItems:"center", gap:14
-            }}>
+            {/* Date selector + saved editions */}
+            <div style={{ display:"flex", gap:12, marginTop:18, alignItems:"flex-end", flexWrap:"wrap" }}>
+              <Field label="Data da Edição" mt={0}>
+                <TextInput type="date" value={editorDate} onChange={e => setEditorDate(e.target.value)} style={{ width:180 }} />
+              </Field>
+              <div style={{ flex:1, minWidth:200 }}>
+                <div style={{ fontSize:9, fontWeight:700, color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>Edições publicadas</div>
+                <div style={{ display:"flex", gap:6, flexWrap:"wrap", maxHeight:60, overflowY:"auto" }}>
+                  {newsletters.length === 0 ? (
+                    <div style={{ fontSize:11, color:"#506070", padding:"8px 0" }}>Nenhuma edição salva</div>
+                  ) : (
+                    newsletters.slice(0, 12).map(n => (
+                      <button key={n.date} onClick={() => setEditorDate(n.date)} style={{
+                        background: editorDate === n.date ? "rgba(0,180,255,.15)" : "rgba(255,255,255,.03)",
+                        border: `1px solid ${editorDate === n.date ? "rgba(0,180,255,.4)" : "rgba(255,255,255,.06)"}`,
+                        color: editorDate === n.date ? "#00b4ff" : "#90a8b8",
+                        borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer", fontFamily:"monospace",
+                        display:"flex", alignItems:"center", gap:6,
+                      }}>
+                        {fmtDate(n.date)}
+                        {n.podcastUrl && <span style={{ color:"#1DB954" }}>🎙️</span>}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+              <Btn onClick={saveNewsletter} disabled={!editorDate}>💾 Publicar Edição</Btn>
+              {newsletters.find(n => n.date === editorDate) && (
+                <Btn danger onClick={() => deleteNewsletter(editorDate)}>🗑️</Btn>
+              )}
+            </div>
+
+            <ErrorBox msg={nlError} />
+            <InfoBox msg={nlSuccess} />
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:18 }}>
+              {/* LEFT — Content */}
+              <div>
+                <Field label="Título da Edição" mt={0}>
+                  <TextInput value={editorTitle} onChange={e => setEditorTitle(e.target.value)} placeholder="Ex: A semana que mudou o mercado de IA" />
+                </Field>
+                <Field label="Subtítulo">
+                  <TextArea value={editorSubtitle} onChange={e => setEditorSubtitle(e.target.value)} placeholder="Frase de impacto sobre o tema da edição..." rows={2} />
+                </Field>
+
+                <div style={{ marginTop:14, padding:14, background:"rgba(0,180,255,.04)", border:"1px solid rgba(0,180,255,.18)", borderRadius:11 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color:"#00b4ff" }}>📰 Manchetes ({editorHeadlines.length})</div>
+                    <Btn onClick={fetchNewsForNewsletter} disabled={isLoadingNl || !keyValidated}>
+                      {isLoadingNl ? <><Spinner /> Buscando...</> : "🔍 Buscar com IA"}
+                    </Btn>
+                  </div>
+                  {editorHeadlines.length === 0 ? (
+                    <div style={{ fontSize:11, color:"#506070", padding:"16px 0", textAlign:"center" }}>
+                      Click "Buscar com IA" para preencher
+                    </div>
+                  ) : (
+                    <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:240, overflowY:"auto" }}>
+                      {editorHeadlines.map((h, i) => (
+                        <div key={i} style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.05)", borderRadius:7, padding:"8px 10px", display:"flex", gap:8 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:11, fontWeight:600, color:"#a8c8d8" }}>{h.title}</div>
+                            <div style={{ fontSize:10, color:"#506070", marginTop:2 }}>{h.summary}</div>
+                            <div style={{ fontSize:9, color:"#3a5060", marginTop:3, fontFamily:"monospace" }}>{h.source} · {h.category}</div>
+                          </div>
+                          <button onClick={() => setEditorHeadlines(editorHeadlines.filter((_, idx) => idx !== i))} style={{ background:"transparent", border:"none", color:"#506070", cursor:"pointer", fontSize:14 }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop:14, padding:14, background:"rgba(167,139,250,.04)", border:"1px solid rgba(167,139,250,.18)", borderRadius:11 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color:"#a78bfa" }}>🧠 Resumo Executivo IA</div>
+                    <Btn onClick={generateAiSummary} disabled={isGenSummary || editorHeadlines.length === 0}>
+                      {isGenSummary ? <><Spinner /> Gerando...</> : "✨ Gerar Análise"}
+                    </Btn>
+                  </div>
+                  <TextArea value={editorAiSummary} onChange={e => setEditorAiSummary(e.target.value)} placeholder="O resumo editorial aparece aqui após gerar com IA..." rows={6} />
+                </div>
+
+                <div style={{ marginTop:14, padding:14, background:"rgba(245,158,11,.04)", border:"1px solid rgba(245,158,11,.18)", borderRadius:11 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color:"#f59e0b" }}>🎯 Insights por Área</div>
+                    <Btn onClick={generateFocusInsights} disabled={isGenInsights || editorHeadlines.length === 0}>
+                      {isGenInsights ? <><Spinner /> Gerando...</> : "✨ Gerar 3 Insights"}
+                    </Btn>
+                  </div>
+                  {FOCUS_AREAS.map(area => {
+                    const insight = editorFocusInsights.find(i => i.area === area.id);
+                    return (
+                      <div key={area.id} style={{ marginTop:8 }}>
+                        <div style={{ fontSize:10, color:area.color, fontWeight:700, marginBottom:4 }}>
+                          {area.icon} {area.label}
+                        </div>
+                        <TextArea
+                          value={insight?.summary || ""}
+                          onChange={e => {
+                            const newInsights = editorFocusInsights.filter(i => i.area !== area.id);
+                            newInsights.push({ area: area.id, summary: e.target.value });
+                            setEditorFocusInsights(newInsights);
+                          }}
+                          placeholder={`Insight sobre ${area.label.toLowerCase()}...`}
+                          rows={2}
+                          style={{ fontSize:11 }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RIGHT — Podcast */}
+              <div>
+                <div style={{ padding:14, background:"rgba(29,185,84,.04)", border:"1px solid rgba(29,185,84,.2)", borderRadius:11 }}>
+                  <div style={{ fontWeight:700, fontSize:13, color:"#1DB954", marginBottom:10 }}>🎙️ Podcast da Edição</div>
+
+                  <Field label="Upload de Vídeo" mt={0}>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/*"
+                      onChange={handlePodcastUpload}
+                      style={{ width:"100%", padding:"8px", background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.09)", borderRadius:7, color:"#c8d8e8", fontSize:11, fontFamily:"'Outfit',sans-serif" }}
+                    />
+                    <div style={{ fontSize:9, color:"#506070", marginTop:6 }}>
+                      MP4/WebM · Max ~50MB para localStorage. Para vídeos grandes, use URL externa abaixo.
+                    </div>
+                  </Field>
+
+                  <Field label="OU URL externa do vídeo">
+                    <TextInput
+                      value={editorPodcastUrl?.startsWith("data:") ? "" : editorPodcastUrl}
+                      onChange={e => setEditorPodcastUrl(e.target.value)}
+                      placeholder="https://your-cdn.com/podcast.mp4"
+                    />
+                  </Field>
+
+                  {editorPodcastUrl && (
+                    <div style={{ marginTop:10 }}>
+                      <video controls src={editorPodcastUrl} style={{ width:"100%", borderRadius:8, background:"#000", maxHeight:200 }} />
+                    </div>
+                  )}
+
+                  <Field label="Título do Episódio">
+                    <TextInput value={editorPodcastTitle} onChange={e => setEditorPodcastTitle(e.target.value)} placeholder="Syncronize-MI #042" />
+                  </Field>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                    <Field label="Duração (min)">
+                      <TextInput type="number" value={editorPodcastDuration} onChange={e => setEditorPodcastDuration(parseInt(e.target.value) || 0)} />
+                    </Field>
+                    <Field label="Disponível por (dias)">
+                      <TextInput type="number" value={editorPodcastTtlDays} onChange={e => setEditorPodcastTtlDays(parseInt(e.target.value) || 0)} placeholder="30" />
+                    </Field>
+                  </div>
+
+                  <Field label="Thumbnail URL (opcional)">
+                    <TextInput value={editorPodcastThumbnail} onChange={e => setEditorPodcastThumbnail(e.target.value)} placeholder="https://..." />
+                  </Field>
+
+                  {editorPodcastTtlDays > 0 && (
+                    <div style={{ fontSize:10, color:"#506070", marginTop:8, padding:8, background:"rgba(0,0,0,.2)", borderRadius:6 }}>
+                      ⏰ Expira em: {new Date(Date.now() + editorPodcastTtlDays * 24*60*60*1000).toLocaleDateString("pt-BR")}
+                    </div>
+                  )}
+                </div>
+
+                {/* Use existing episode */}
+                {episodes.length > 0 && (
+                  <div style={{ marginTop:14, padding:14, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:11 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color:"#a0c0d8", marginBottom:8 }}>📚 Usar episódio gerado</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:200, overflowY:"auto" }}>
+                      {episodes.filter(e => e.videoUrl).slice(0, 8).map(ep => (
+                        <div key={ep.id} style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.05)", borderRadius:7, padding:"6px 10px" }}>
+                          <div style={{ flex:1, fontSize:11 }}>
+                            <div style={{ color:"#c8d8e8", fontWeight:500 }}>{ep.title}</div>
+                            <div style={{ color:"#506070", fontSize:9, fontFamily:"monospace" }}>
+                              {ep.engine} · {ep.duration}min · {new Date(ep.createdAt).toLocaleDateString("pt-BR")}
+                            </div>
+                          </div>
+                          <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background:"rgba(29,185,84,.1)", border:"1px solid rgba(29,185,84,.3)", color:"#1DB954", borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer", fontWeight:600 }}>
+                            ↓ Usar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div style={{ marginTop:14, padding:14, background:"linear-gradient(135deg,rgba(0,77,179,.07),rgba(167,139,250,.04))", border:"1px solid rgba(0,180,255,.1)", borderRadius:11 }}>
+                  <div style={{ fontWeight:700, fontSize:12, color:"#00b4ff", marginBottom:10 }}>📊 Histórico de Edições</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+                    {[
+                      { k:"Edições", v: newsletters.length },
+                      { k:"Com Podcast", v: newsletters.filter(n => n.podcastUrl).length },
+                      { k:"Episódios", v: episodes.length },
+                    ].map(s => (
+                      <div key={s.k} style={{ background:"rgba(0,0,0,.2)", borderRadius:7, padding:"10px", textAlign:"center" }}>
+                        <div style={{ fontSize:18, fontWeight:800, color:"#00b4ff", fontFamily:"monospace" }}>{s.v}</div>
+                        <div style={{ fontSize:8, color:"#506070", letterSpacing:".05em", textTransform:"uppercase" }}>{s.k}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ DIAGNÓSTICO ═══════════════════════════════════════════════ */}
+        {tab === 1 && (
+          <div className="fade">
+            <SectionHeader icon="🔬" title="Diagnóstico & Configuração" sub="Configure todas as APIs em um só lugar" />
+
+            <div style={{ marginTop:16, marginBottom:18, background: keyValidated ? "rgba(16,185,129,.06)" : "rgba(217,119,6,.07)", border: `1px solid ${keyValidated ? "rgba(16,185,129,.25)" : "rgba(217,119,6,.3)"}`, borderRadius:11, padding:14, display:"flex", alignItems:"center", gap:14 }}>
               <div style={{ fontSize:28 }}>{keyValidated ? "✅" : "⚠️"}</div>
               <div style={{ flex:1 }}>
                 <div style={{ fontWeight:700, color: keyValidated ? "#10b981" : "#d97706", fontSize:13 }}>
@@ -984,49 +1547,39 @@ Profissional, entusiasta, emojis, português.`,
                   Anthropic {keyValidated ? "✓" : "✗"} · Kling {klingValidated ? "✓" : "✗"} · HeyGen {heygenValidated ? "✓" : "✗"} · Teams {teamsWebhook ? "✓" : "—"}
                 </div>
               </div>
-              {keyValidated && <Btn secondary onClick={clearAllSettings}>🔄 Resetar</Btn>}
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-              {/* ═══ ANTHROPIC ═══ */}
+              {/* ANTHROPIC */}
               <div style={{ background:"rgba(217,119,6,.05)", border:"1px solid rgba(217,119,6,.25)", borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span style={{ fontSize:18 }}>🧠</span>
                   <div style={{ flex:1 }}>
                     <div style={{ fontWeight:700, fontSize:13, color:"#d97706" }}>Anthropic Claude</div>
-                    <div style={{ fontSize:10, color:"#8a6010" }}>Necessário para todas as funções de IA</div>
+                    <div style={{ fontSize:10, color:"#8a6010" }}>Necessário para todas as IAs</div>
                   </div>
                   <StatusBadge status={keyValidated ? "ok" : "warn"} label={keyValidated ? "✓ ATIVO" : "OBRIGATÓRIO"} />
                 </div>
                 <Field label="API Key" mt={0}>
                   <TextInput type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="sk-ant-api03-..." />
                 </Field>
-                <div style={{ fontSize:9, color:"#8a6010", marginTop:6 }}>
-                  Obtenha em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" style={{color:"#d97706"}}>console.anthropic.com</a>
-                </div>
                 <Btn onClick={testAnthropic} disabled={testing.anthropic || !apiKey.trim()} style={{ marginTop:10, width:"100%" }}>
-                  {testing.anthropic ? <><Spinner /> Testando...</> : "▶️ Testar Conexão"}
+                  {testing.anthropic ? <><Spinner /> Testando...</> : "▶️ Testar"}
                 </Btn>
                 {testResults.anthropic && (
-                  <div className="fade" style={{
-                    marginTop:10, padding:10, borderRadius:7, fontSize:11,
-                    background: testResults.anthropic.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)",
-                    border: `1px solid ${testResults.anthropic.status === "ok" ? "rgba(16,185,129,.25)" : "rgba(239,68,68,.25)"}`,
-                    color: testResults.anthropic.status === "ok" ? "#6ad490" : "#fc8080",
-                  }}>
+                  <div className="fade" style={{ marginTop:10, padding:10, borderRadius:7, fontSize:11, background: testResults.anthropic.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.anthropic.status === "ok" ? "#6ad490" : "#fc8080" }}>
                     {testResults.anthropic.status === "ok" ? "✅" : "❌"} {testResults.anthropic.msg}
-                    {testResults.anthropic.details && <div style={{ fontSize:9, opacity:.7, marginTop:4, fontFamily:"'JetBrains Mono',monospace" }}>{testResults.anthropic.details}</div>}
                   </div>
                 )}
               </div>
 
-              {/* ═══ KLING AI ═══ */}
+              {/* KLING */}
               <div style={{ background:"rgba(0,180,255,.05)", border:"1px solid rgba(0,180,255,.18)", borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span style={{ fontSize:18 }}>⚡</span>
                   <div style={{ flex:1 }}>
                     <div style={{ fontWeight:700, fontSize:13, color:"#00b4ff" }}>Kling AI Avatar</div>
-                    <div style={{ fontSize:10, color:"#506070" }}>Geração de vídeo com avatar (modo simulação)</div>
+                    <div style={{ fontSize:10, color:"#506070" }}>Geração de vídeo (modo simulação)</div>
                   </div>
                   <StatusBadge status={klingValidated ? "ok" : "idle"} label={klingValidated ? "✓ ATIVO" : "OPCIONAL"} />
                 </div>
@@ -1034,166 +1587,103 @@ Profissional, entusiasta, emojis, português.`,
                   <TextInput type="password" value={klingApiKey} onChange={e => setKlingApiKey(e.target.value)} />
                 </Field>
                 <Btn onClick={testKling} disabled={testing.kling || !klingApiKey.trim()} style={{ marginTop:10, width:"100%" }}>
-                  {testing.kling ? <><Spinner /> Testando...</> : "▶️ Validar Chave Kling"}
+                  {testing.kling ? <><Spinner /> Testando...</> : "▶️ Validar"}
                 </Btn>
                 {testResults.kling && (
-                  <div className="fade" style={{
-                    marginTop:10, padding:10, borderRadius:7, fontSize:11,
-                    background: testResults.kling.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)",
-                    border: `1px solid ${testResults.kling.status === "ok" ? "rgba(16,185,129,.25)" : "rgba(239,68,68,.25)"}`,
-                    color: testResults.kling.status === "ok" ? "#6ad490" : "#fc8080",
-                  }}>
+                  <div className="fade" style={{ marginTop:10, padding:10, borderRadius:7, fontSize:11, background: testResults.kling.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.kling.status === "ok" ? "#6ad490" : "#fc8080" }}>
                     {testResults.kling.status === "ok" ? "✅" : "❌"} {testResults.kling.msg}
                   </div>
                 )}
               </div>
 
-              {/* ═══ HEYGEN ═══ */}
+              {/* HEYGEN */}
               <div style={{ background:"rgba(124,58,237,.05)", border:"1px solid rgba(124,58,237,.25)", borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span style={{ fontSize:18 }}>🎥</span>
                   <div style={{ flex:1 }}>
                     <div style={{ fontWeight:700, fontSize:13, color:"#a78bfa" }}>HeyGen Avatar IV</div>
-                    <div style={{ fontSize:10, color:"#506070" }}>Geração real de vídeo (Avatar IV + lipsync)</div>
+                    <div style={{ fontSize:10, color:"#506070" }}>Geração real de vídeo</div>
                   </div>
                   <StatusBadge status={heygenValidated ? "ok" : "idle"} label={heygenValidated ? "✓ ATIVO" : "OPCIONAL"} />
                 </div>
                 <Field label="API Key" mt={0}>
-                  <TextInput type="password" value={heygenApiKey} onChange={e => setHeygenApiKey(e.target.value)} placeholder="HeyGen API Key" />
+                  <TextInput type="password" value={heygenApiKey} onChange={e => setHeygenApiKey(e.target.value)} />
                 </Field>
                 <Field label="Avatar ID">
-                  <TextInput value={heygenAvatarId} onChange={e => setHeygenAvatarId(e.target.value)} placeholder="Ex: Daisy-inskirt-20220818" />
+                  <TextInput value={heygenAvatarId} onChange={e => setHeygenAvatarId(e.target.value)} />
                 </Field>
                 <Field label="Voice ID">
-                  <TextInput value={heygenVoiceId} onChange={e => setHeygenVoiceId(e.target.value)} placeholder="d7bbcdd6964c47bdaae26decade4a933" />
+                  <TextInput value={heygenVoiceId} onChange={e => setHeygenVoiceId(e.target.value)} />
                 </Field>
-                <div style={{ fontSize:9, color:"#506070", marginTop:6 }}>
-                  Obtenha em <a href="https://app.heygen.com/settings?nav=API" target="_blank" rel="noreferrer" style={{color:"#a78bfa"}}>app.heygen.com</a> → Settings → API
-                </div>
                 <Btn onClick={testHeygen} disabled={testing.heygen || !heygenApiKey.trim()} style={{ marginTop:10, width:"100%" }}>
-                  {testing.heygen ? <><Spinner /> Testando...</> : "▶️ Testar Conexão HeyGen"}
+                  {testing.heygen ? <><Spinner /> Testando...</> : "▶️ Testar HeyGen"}
                 </Btn>
                 {testResults.heygen && (
-                  <div className="fade" style={{
-                    marginTop:10, padding:10, borderRadius:7, fontSize:11,
-                    background: testResults.heygen.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)",
-                    border: `1px solid ${testResults.heygen.status === "ok" ? "rgba(16,185,129,.25)" : "rgba(239,68,68,.25)"}`,
-                    color: testResults.heygen.status === "ok" ? "#6ad490" : "#fc8080",
-                  }}>
+                  <div className="fade" style={{ marginTop:10, padding:10, borderRadius:7, fontSize:11, background: testResults.heygen.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.heygen.status === "ok" ? "#6ad490" : "#fc8080" }}>
                     {testResults.heygen.status === "ok" ? "✅" : "❌"} {testResults.heygen.msg}
                   </div>
                 )}
               </div>
 
-              {/* ═══ TEAMS / EMAIL ═══ */}
+              {/* DISTRIBUTION */}
               <div style={{ background:"rgba(0,120,212,.05)", border:"1px solid rgba(0,120,212,.25)", borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span style={{ fontSize:18 }}>📤</span>
                   <div style={{ flex:1 }}>
                     <div style={{ fontWeight:700, fontSize:13, color:"#4a90e0" }}>Distribuição</div>
-                    <div style={{ fontSize:10, color:"#506070" }}>E-mail e Microsoft Teams Webhook</div>
+                    <div style={{ fontSize:10, color:"#506070" }}>E-mail e Microsoft Teams</div>
                   </div>
                   <StatusBadge status={teamsWebhook ? "ok" : "idle"} label={teamsWebhook ? "✓ TEAMS" : "OPCIONAL"} />
                 </div>
-                <Field label="Microsoft Teams Webhook URL" mt={0}>
-                  <TextInput type="password" value={teamsWebhook} onChange={e => setTeamsWebhook(e.target.value)} placeholder="https://yourcompany.webhook.office.com/..." />
+                <Field label="Teams Webhook" mt={0}>
+                  <TextInput type="password" value={teamsWebhook} onChange={e => setTeamsWebhook(e.target.value)} placeholder="https://...webhook.office.com/..." />
                 </Field>
-                <div style={{ fontSize:9, color:"#506070", marginTop:4 }}>
-                  Crie no canal Teams: ⋯ → Conectores → Webhook de Entrada
-                </div>
-                <Field label="E-mails padrão (separados por vírgula)">
+                <Field label="E-mails padrão">
                   <TextArea value={defaultEmails} onChange={e => setDefaultEmails(e.target.value)} rows={2} placeholder="time@empresa.com, manager@empresa.com" />
                 </Field>
                 <Btn onClick={testTeams} disabled={testing.teams || !teamsWebhook.trim()} style={{ marginTop:10, width:"100%" }}>
-                  {testing.teams ? <><Spinner /> Enviando...</> : "▶️ Enviar Teste para Teams"}
+                  {testing.teams ? <><Spinner /> Enviando...</> : "▶️ Testar Teams"}
                 </Btn>
                 {testResults.teams && (
-                  <div className="fade" style={{
-                    marginTop:10, padding:10, borderRadius:7, fontSize:11,
-                    background: testResults.teams.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)",
-                    border: `1px solid ${testResults.teams.status === "ok" ? "rgba(16,185,129,.25)" : "rgba(239,68,68,.25)"}`,
-                    color: testResults.teams.status === "ok" ? "#6ad490" : "#fc8080",
-                  }}>
+                  <div className="fade" style={{ marginTop:10, padding:10, borderRadius:7, fontSize:11, background: testResults.teams.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.teams.status === "ok" ? "#6ad490" : "#fc8080" }}>
                     {testResults.teams.status === "ok" ? "✅" : "❌"} {testResults.teams.msg}
                   </div>
                 )}
               </div>
             </div>
-
-            {/* SYSTEM CHECKS */}
-            <div style={{ marginTop:18, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:11, padding:14 }}>
-              <div style={{ fontWeight:700, fontSize:12, color:"#a0c0d8", marginBottom:10 }}>🩺 Status do Sistema</div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-                {[
-                  { label:"JavaScript",  status: typeof window !== "undefined", text:"OK" },
-                  { label:"React",       status: typeof React !== "undefined",  text:`v${React?.version}` },
-                  { label:"Banco",       status: storageReady,                  text: hasClaudeStorage() ? "storage" : "localStorage" },
-                  { label:"Anthropic",   status: keyValidated,                  text: keyValidated ? "validada" : "pendente" },
-                  { label:"Kling AI",    status: klingValidated,                text: klingValidated ? "OK" : "pendente" },
-                  { label:"HeyGen",      status: heygenValidated,               text: heygenValidated ? "OK" : "pendente" },
-                ].map(c => (
-                  <div key={c.label} style={{ display:"flex", alignItems:"center", gap:8, fontSize:10, padding:"4px 0" }}>
-                    <span style={{ fontSize:12 }}>{c.status ? "🟢" : "⚪"}</span>
-                    <span style={{ color:"#90b0c8", fontWeight:500, minWidth:75 }}>{c.label}</span>
-                    <span style={{ color:"#506070", fontFamily:"'JetBrains Mono',monospace" }}>{c.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {keyValidated && (
-              <div style={{ marginTop:18, display:"flex", justifyContent:"flex-end" }}>
-                <Btn onClick={() => setTab(1)}>Próximo: Pauta →</Btn>
-              </div>
-            )}
           </div>
         )}
 
-        {/* ══ PAUTA ══════════════════════════════════════════════════════════ */}
-        {tab === 1 && keyValidated && (
+        {/* ════ PAUTA ════════════════════════════════════════════════════════ */}
+        {tab === 2 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="📡" title="Central de Pautas" sub="Busque notícias e gere roteiro automaticamente" />
+            <SectionHeader icon="📡" title="Central de Pautas" sub="Para gerar episódios de podcast" />
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
               <div>
                 <Field label="Nome do Podcast" mt={0}>
-                  <TextInput value={podcastName} onChange={e => setPodcastName(e.target.value)} placeholder="Ex: Tech Weekly" />
+                  <TextInput value={podcastName} onChange={e => setPodcastName(e.target.value)} />
                 </Field>
                 <Field label="Título do Episódio">
-                  <TextInput value={epTitle} onChange={e => setEpTitle(e.target.value)} placeholder="Ex: IA em 2025" />
+                  <TextInput value={epTitle} onChange={e => setEpTitle(e.target.value)} placeholder="Ex: IA Weekly #42" />
                 </Field>
                 <Field label="Duração">
                   <div style={{ display:"flex", gap:6 }}>
                     {[5,8,10,12,15].map(d => (
-                      <button key={d} onClick={() => setDuration(d)} style={{
-                        flex:1, padding:"8px 0", borderRadius:7, border:"1px solid",
-                        borderColor: duration===d ? "#00b4ff" : "rgba(255,255,255,.09)",
-                        background: duration===d ? "rgba(0,180,255,.1)" : "rgba(255,255,255,.02)",
-                        color: duration===d ? "#00b4ff" : "#4a6a80",
-                        cursor:"pointer", fontWeight:700, fontSize:12,
-                      }}>{d}m</button>
+                      <button key={d} onClick={() => setDuration(d)} style={{ flex:1, padding:"8px 0", borderRadius:7, border:"1px solid", borderColor: duration===d ? "#00b4ff" : "rgba(255,255,255,.09)", background: duration===d ? "rgba(0,180,255,.1)" : "rgba(255,255,255,.02)", color: duration===d ? "#00b4ff" : "#4a6a80", cursor:"pointer", fontWeight:700, fontSize:12 }}>{d}m</button>
                     ))}
                   </div>
                 </Field>
-                <Field label="Configuração do Avatar">
+                <Field label="Avatar">
                   <div onClick={() => fileRef.current?.click()} style={{ border:"2px dashed rgba(0,180,255,.22)", borderRadius:10, padding:16, textAlign:"center", cursor:"pointer" }}>
                     {avatarPreview ? (
-                      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
-                        <img src={avatarPreview} alt="avatar" style={{ width:70, height:70, borderRadius:"50%", objectFit:"cover", border:"2px solid rgba(0,180,255,.4)" }} />
-                        <div style={{ fontSize:10, color:"#00b4ff" }}>{avatarFile?.name}</div>
-                      </div>
+                      <img src={avatarPreview} alt="" style={{ width:60, height:60, borderRadius:"50%", objectFit:"cover" }} />
                     ) : (
-                      <>
-                        <div style={{ fontSize:24 }}>🤳</div>
-                        <div style={{ fontWeight:600, fontSize:11, color:"#5a7a90", marginTop:4 }}>Click para enviar foto</div>
-                      </>
+                      <>🤳 Click para enviar foto</>
                     )}
                     <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={handleUpload} />
                   </div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:8 }}>
                     {KLING_ROLES.map(r => (<Chip key={r.id} sel={kRole===r.id} onClick={() => setKRole(r.id)}>{r.icon} {r.label}</Chip>))}
-                  </div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:5 }}>
-                    {KLING_EMOTIONS.map(e => (<Chip key={e.id} sel={kEmotion===e.id} onClick={() => setKEmotion(e.id)}>{e.icon} {e.label}</Chip>))}
                   </div>
                 </Field>
               </div>
@@ -1201,132 +1691,99 @@ Profissional, entusiasta, emojis, português.`,
               <div>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
                   <div style={{ fontSize:9, fontWeight:700, color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase" }}>Manchetes</div>
-                  <Btn onClick={fetchNews} disabled={loadingNews}>
-                    {loadingNews ? <><Spinner /> Buscando...</> : "🔍 Buscar"}
-                  </Btn>
+                  <div style={{ display:"flex", gap:6 }}>
+                    {editorHeadlines.length > 0 && <Btn secondary onClick={importHeadlinesFromNewsletter}>📥 Da Newsletter</Btn>}
+                    <Btn onClick={fetchNews} disabled={loadingNews}>
+                      {loadingNews ? <><Spinner /> Buscando...</> : "🔍 Buscar"}
+                    </Btn>
+                  </div>
                 </div>
                 <ErrorBox msg={newsError} />
                 {loadingNews && [...Array(5)].map((_, i) => (<div key={i} className="shim" style={{ height:50, borderRadius:9, marginBottom:6 }} />))}
-                <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:400, overflowY:"auto" }}>
+                <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:380, overflowY:"auto" }}>
                   {headlines.map((h, i) => {
                     const sel = selHL.find(x => x.title === h.title);
                     return (
-                      <div key={i} onClick={() => toggleHL(h)} style={{
-                        background: sel ? "rgba(0,180,255,.07)" : "rgba(255,255,255,.02)",
-                        border: `1px solid ${sel ? "rgba(0,180,255,.35)" : "rgba(255,255,255,.05)"}`,
-                        borderRadius:9, padding:"10px 12px", cursor:"pointer",
-                      }}>
-                        <div style={{ display:"flex", gap:8 }}>
-                          <div style={{ flex:1 }}>
-                            <div style={{ fontSize:12, fontWeight:600, color: sel ? "#00b4ff" : "#a8c8d8" }}>
-                              {h.type==="podcast" ? "🎙️ " : ""}{h.title}
-                            </div>
-                            <div style={{ fontSize:10, color:"#2a4050", marginTop:3 }}>{h.summary}</div>
-                          </div>
-                          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
-                            <div style={{ fontSize:8, padding:"2px 5px", borderRadius:3, background:`${CAT_COLORS[h.category]||"#888"}18`, color:CAT_COLORS[h.category]||"#888", fontWeight:700 }}>{h.category}</div>
-                            <div style={{ fontSize:9, color:"#2a3a4a" }}>{h.source}</div>
-                            {sel && <div style={{ color:"#00b4ff" }}>✓</div>}
-                          </div>
-                        </div>
+                      <div key={i} onClick={() => toggleHL(h)} style={{ background: sel ? "rgba(0,180,255,.07)" : "rgba(255,255,255,.02)", border: `1px solid ${sel ? "rgba(0,180,255,.35)" : "rgba(255,255,255,.05)"}`, borderRadius:9, padding:"10px 12px", cursor:"pointer" }}>
+                        <div style={{ fontSize:12, fontWeight:600, color: sel ? "#00b4ff" : "#a8c8d8" }}>{h.title}</div>
+                        <div style={{ fontSize:10, color:"#506070", marginTop:3 }}>{h.summary}</div>
                       </div>
                     );
                   })}
                 </div>
                 {headlines.length > 0 && (
-                  <Btn onClick={genQuickScript} disabled={isGenQuick} style={{ width:"100%", marginTop:8, background:"linear-gradient(135deg,#1a4a0a,#2d8a0a)" }}>
-                    {isGenQuick ? <><Spinner /> Gerando...</> : `📖 Leitura Resumida (${selHL.length || headlines.length})`}
+                  <Btn onClick={genQuickScript} disabled={isGenQuick} style={{ width:"100%", marginTop:8 }}>
+                    {isGenQuick ? <><Spinner /> Gerando...</> : `📖 Gerar Roteiro (${selHL.length || headlines.length})`}
                   </Btn>
                 )}
               </div>
             </div>
 
-            {(quickScript || isGenQuick) && (
-              <div style={{ marginTop:20, background:"rgba(45,138,10,.06)", border:"1px solid rgba(45,138,10,.25)", borderRadius:11, padding:18 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                  <div style={{ fontWeight:700, fontSize:13, color:"#6ad446" }}>📖 Roteiro Gerado</div>
-                  <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={() => copyText(quickScript)} style={{ background:"rgba(106,212,70,.12)", border:"1px solid rgba(106,212,70,.3)", color:"#6ad446", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>📋 Copiar</button>
-                    <button onClick={() => { setRefined(quickScript); markDone(1); setTab(2); }} style={{ background:"linear-gradient(135deg,#0050bb,#0090ee)", border:"none", color:"#fff", borderRadius:6, padding:"6px 14px", fontSize:11, cursor:"pointer", fontWeight:600 }}>✍️ Usar →</button>
-                  </div>
+            {quickScript && (
+              <div style={{ marginTop:18, background:"rgba(45,138,10,.06)", border:"1px solid rgba(45,138,10,.25)", borderRadius:11, padding:16 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                  <div style={{ fontWeight:700, fontSize:13, color:"#6ad446" }}>📖 Roteiro</div>
+                  <Btn onClick={() => { setRefined(quickScript); markDone(2); setTab(3); }}>✍️ Usar →</Btn>
                 </div>
-                {quickScript && (
-                  <div style={{ fontSize:13, lineHeight:1.85, color:"#90c870", whiteSpace:"pre-wrap", maxHeight:400, overflowY:"auto" }}>{quickScript}</div>
-                )}
+                <div style={{ fontSize:12, color:"#90c870", whiteSpace:"pre-wrap", maxHeight:300, overflowY:"auto", lineHeight:1.7 }}>{quickScript}</div>
               </div>
             )}
-            <div style={{ marginTop:18, display:"flex", justifyContent:"flex-end" }}>
-              <Btn onClick={() => setTab(2)}>Próximo: Roteiro →</Btn>
-            </div>
           </div>
         )}
 
-        {/* ══ ROTEIRO ════════════════════════════════════════════════════════ */}
-        {tab === 2 && keyValidated && (
+        {/* ════ ROTEIRO ══════════════════════════════════════════════════════ */}
+        {tab === 3 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="✍️" title="Roteiro + Resumo IA" sub="Refine o roteiro e gere e-mail de distribuição" />
+            <SectionHeader icon="✍️" title="Roteiro" sub="Refine e gere e-mail de distribuição" />
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:18 }}>
               <div>
                 <Field label="Conteúdo base" mt={0}>
-                  <TextArea value={rawText} onChange={e => setRawText(e.target.value)} placeholder="Digite ou cole tópicos aqui..." rows={8} />
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8 }}>
-                    <div style={{ fontSize:10, color:"#2a4050" }}>{rawText.length} chars</div>
-                    <div style={{ display:"flex", gap:8 }}>
-                      <Btn secondary onClick={() => { setRawText(""); setRefined(""); }} disabled={!rawText}>🗑️</Btn>
-                      <Btn onClick={refineScript} disabled={isRefining || !rawText.trim()}>
-                        {isRefining ? <><Spinner /> Refinando...</> : "✨ Refinar com IA"}
-                      </Btn>
-                    </div>
+                  <TextArea value={rawText} onChange={e => setRawText(e.target.value)} placeholder="Cole tópicos..." rows={10} />
+                  <div style={{ display:"flex", gap:8, marginTop:8 }}>
+                    <Btn secondary onClick={() => { setRawText(""); setRefined(""); }}>🗑️ Limpar</Btn>
+                    <Btn onClick={refineScript} disabled={isRefining || !rawText.trim()}>
+                      {isRefining ? <><Spinner /> Refinando...</> : "✨ Refinar"}
+                    </Btn>
                   </div>
                   <ErrorBox msg={refineError} />
                 </Field>
-
-                <div style={{ marginTop:18, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.07)", borderRadius:10, padding:14 }}>
-                  <div style={{ fontWeight:700, fontSize:12, color:"#a0c0d8", marginBottom:8 }}>📧 E-mail</div>
-                  <Field label="Assunto" mt={0}>
-                    <TextInput value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Digite ou gere com IA..." />
-                  </Field>
-                  <Field label="Corpo">
-                    <TextArea value={distEmail} onChange={e => setDistEmail(e.target.value)} placeholder="Digite ou gere a mensagem..." rows={4} />
-                  </Field>
+                <Field label="E-mail">
+                  <TextInput value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
+                  <div style={{ marginTop:6 }}>
+                    <TextArea value={distEmail} onChange={e => setDistEmail(e.target.value)} placeholder="Corpo do e-mail" rows={4} />
+                  </div>
                   <Btn onClick={genEmailCopy} disabled={isGenEmail} style={{ marginTop:8, width:"100%" }}>
-                    {isGenEmail ? <><Spinner /> Gerando...</> : "🤖 Gerar Assunto + Corpo com IA"}
+                    {isGenEmail ? <><Spinner /> Gerando...</> : "🤖 Gerar com IA"}
                   </Btn>
-                </div>
+                </Field>
               </div>
-
               <div>
                 <Field label="Roteiro Otimizado" mt={0}>
                   {!refinedScript ? (
-                    <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:9, padding:"40px 16px", textAlign:"center", color:"#2a4050", fontSize:11 }}>
-                      ✍️ Escreva o conteúdo e click "Refinar"
-                    </div>
+                    <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:9, padding:"40px 16px", textAlign:"center", color:"#2a4050" }}>✍️ Refine primeiro</div>
                   ) : (
-                    <TextArea value={refinedScript} onChange={e => setRefined(e.target.value)} rows={14} style={{ fontSize:12 }} />
+                    <TextArea value={refinedScript} onChange={e => setRefined(e.target.value)} rows={16} />
                   )}
                 </Field>
-                <div style={{ marginTop:14, display:"flex", justifyContent:"flex-end" }}>
-                  <Btn onClick={() => setTab(3)} disabled={!refinedScript}>Próximo: Render →</Btn>
-                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ══ RENDER ═════════════════════════════════════════════════════════ */}
-        {tab === 3 && keyValidated && (
+        {/* ════ RENDER ═══════════════════════════════════════════════════════ */}
+        {tab === 4 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="🎬" title="Render do Vídeo" sub="Gere o podcast e visualize antes de distribuir" />
+            <SectionHeader icon="🎬" title="Render do Vídeo" sub="Gere o podcast e visualize" />
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
               <div>
-                <Field label="Motor de Renderização" mt={0}>
+                <Field label="Motor" mt={0}>
                   <div style={{ display:"flex", gap:10 }}>
                     <Card sel={renderEngine==="kling"} onClick={() => setRenderEngine("kling")}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                         <span style={{ fontSize:22 }}>⚡</span>
                         <div>
                           <div style={{ fontWeight:700, fontSize:13, color: renderEngine==="kling" ? "#00b4ff" : "#a0c0d8" }}>Kling AI</div>
-                          <div style={{ fontSize:9, color:"#2a4050" }}>Modo simulação · 1080p</div>
+                          <div style={{ fontSize:9, color:"#2a4050" }}>Simulação</div>
                         </div>
                       </div>
                     </Card>
@@ -1335,45 +1792,20 @@ Profissional, entusiasta, emojis, português.`,
                         <span style={{ fontSize:22 }}>🎥</span>
                         <div>
                           <div style={{ fontWeight:700, fontSize:13, color: renderEngine==="heygen" ? "#00b4ff" : "#a0c0d8" }}>HeyGen</div>
-                          <div style={{ fontSize:9, color:"#2a4050" }}>Real · Avatar IV {heygenValidated ? "✓" : "(config)"}</div>
+                          <div style={{ fontSize:9, color:"#2a4050" }}>Real {heygenValidated ? "✓" : "(config)"}</div>
                         </div>
                       </div>
                     </Card>
                   </div>
                 </Field>
-
-                <Field label="Resumo">
-                  <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:"12px 14px" }}>
-                    {[
-                      { k:"Podcast",   v: podcastName || "—" },
-                      { k:"Episódio",  v: epTitle || "—" },
-                      { k:"Duração",   v: `${duration} min` },
-                      { k:"Motor",     v: renderEngine === "kling" ? `Kling ${kMode}` : "HeyGen Avatar IV" },
-                      { k:"Avatar",    v: renderEngine === "kling" ? (avatarFile?.name || "⚠️ Não enviado") : (heygenAvatarId || "⚠️ Não configurado") },
-                    ].map(row => (
-                      <div key={row.k} style={{ display:"flex", justifyContent:"space-between", fontSize:11, padding:"5px 0", borderBottom:"1px solid rgba(255,255,255,.04)" }}>
-                        <span style={{ color:"#2a4050" }}>{row.k}</span>
-                        <span style={{ color: String(row.v).startsWith("⚠️") ? "#f59e0b" : "#90b0c8", fontWeight:500 }}>{row.v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Field>
-
-                <div style={{ marginTop:12 }}>
-                  <Btn onClick={startRender} disabled={isRendering || !refinedScript} style={{ width:"100%" }}>
-                    {isRendering ? <><Spinner /> Processando...</> : `🚀 Iniciar Render — ${renderEngine==="kling"?"Kling":"HeyGen"}`}
-                  </Btn>
-                </div>
+                <Btn onClick={startRender} disabled={isRendering || !refinedScript} style={{ width:"100%", marginTop:14 }}>
+                  {isRendering ? <><Spinner /> Processando...</> : `🚀 Iniciar Render`}
+                </Btn>
                 <ErrorBox msg={renderError} />
               </div>
 
               <div>
-                <Field label="Pipeline / Visualização" mt={0}>
-                  {!isRendering && !renderDone && !renderError && (
-                    <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:10, padding:"32px 16px", textAlign:"center", color:"#2a4050", fontSize:11 }}>
-                      🚀 Click em "Iniciar Render"
-                    </div>
-                  )}
+                <Field label="Pipeline" mt={0}>
                   {(isRendering || renderDone) && (
                     <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:14, marginBottom:12 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
@@ -1383,27 +1815,18 @@ Profissional, entusiasta, emojis, português.`,
                       <div style={{ background:"rgba(255,255,255,.06)", borderRadius:99, height:7, overflow:"hidden" }}>
                         <div style={{ width:`${renderPct}%`, height:"100%", borderRadius:99, transition:"width .6s", background: renderDone ? "linear-gradient(90deg,#10b981,#34d399)" : "linear-gradient(90deg,#004db3,#00b4ff)" }} />
                       </div>
-                      {currentVideoId && <div style={{ fontSize:9, color:"#506070", marginTop:6, fontFamily:"monospace" }}>video_id: {currentVideoId}</div>}
                     </div>
                   )}
-
-                  {/* VIDEO PLAYER */}
                   {renderDone && videoUrl && (
                     <div className="fade" style={{ background:"rgba(16,185,129,.05)", border:"1px solid rgba(16,185,129,.18)", borderRadius:10, padding:14 }}>
-                      <div style={{ fontWeight:700, fontSize:13, color:"#10b981", marginBottom:10, display:"flex", alignItems:"center", gap:8 }}>
-                        🎉 Vídeo gerado · Pronto para visualizar
-                      </div>
+                      <div style={{ fontWeight:700, fontSize:13, color:"#10b981", marginBottom:10 }}>🎉 Vídeo gerado</div>
                       <video controls poster={thumbnailUrl} style={{ width:"100%", borderRadius:8, background:"#000" }}>
                         <source src={videoUrl} type="video/mp4" />
-                        Seu navegador não suporta vídeo.
                       </video>
                       <div style={{ display:"flex", gap:8, marginTop:10, flexWrap:"wrap" }}>
                         <Btn success onClick={() => window.open(videoUrl, "_blank")}>⬇️ Download</Btn>
-                        <Btn secondary onClick={() => copyText(videoUrl)}>{copied ? "✓ Copiado" : "📋 Copiar Link"}</Btn>
-                        <Btn onClick={() => setTab(4)}>📤 Distribuir →</Btn>
-                      </div>
-                      <div style={{ fontSize:9, color:"#4a8060", marginTop:8, fontFamily:"monospace", wordBreak:"break-all" }}>
-                        {videoUrl}
+                        <Btn secondary onClick={() => copyText(videoUrl)}>{copied ? "✓" : "📋 Link"}</Btn>
+                        <Btn onClick={() => setTab(5)}>📤 Distribuir →</Btn>
                       </div>
                     </div>
                   )}
@@ -1413,222 +1836,151 @@ Profissional, entusiasta, emojis, português.`,
           </div>
         )}
 
-        {/* ══ DISTRIBUIÇÃO ══════════════════════════════════════════════════ */}
-        {tab === 4 && keyValidated && (
+        {/* ════ DISTRIBUIÇÃO ════════════════════════════════════════════════ */}
+        {tab === 5 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="📤" title="Distribuição" sub="Envie por e-mail ou Microsoft Teams" />
-
+            <SectionHeader icon="📤" title="Distribuição" sub="E-mail ou Microsoft Teams" />
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
               <div>
                 <Field label="Destinatários" mt={0}>
-                  <TextArea
-                    value={teamEmails}
-                    onChange={e => setTeamEmails(e.target.value)}
-                    placeholder={defaultEmails ? `Padrão: ${defaultEmails}\nOu adicione mais aqui` : "joao@empresa.com, maria@empresa.com"}
-                    rows={3}
-                  />
-                  <div style={{ fontSize:9, color:"#506070", marginTop:4 }}>
-                    Separe com vírgula, ponto-e-vírgula ou nova linha. Padrão será usado se vazio.
-                  </div>
+                  <TextArea value={teamEmails} onChange={e => setTeamEmails(e.target.value)} placeholder={defaultEmails || "joao@empresa.com"} rows={3} />
                 </Field>
-
-                <Field label="Assunto e Mensagem">
-                  <TextInput value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto do e-mail" />
-                  <div style={{ marginTop:8 }}>
-                    <TextArea value={distMsg} onChange={e => setDistMsg(e.target.value)} placeholder="Mensagem de distribuição..." rows={6} />
+                <Field label="Mensagem">
+                  <TextInput value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
+                  <div style={{ marginTop:6 }}>
+                    <TextArea value={distMsg} onChange={e => setDistMsg(e.target.value)} placeholder="Corpo da mensagem" rows={6} />
                   </div>
                   <Btn onClick={genDistMsg} disabled={isGenMsg} style={{ marginTop:8, width:"100%" }}>
-                    {isGenMsg ? <><Spinner /> Gerando...</> : "🤖 Gerar Mensagem com IA"}
+                    {isGenMsg ? <><Spinner /> Gerando...</> : "🤖 Gerar"}
                   </Btn>
                 </Field>
               </div>
-
               <div>
-                <Field label="Canais Disponíveis" mt={0}>
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {/* EMAIL */}
-                    <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:12 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                        <span style={{ fontSize:18 }}>📧</span>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:12, fontWeight:600, color:"#a0c0d8" }}>E-mail</div>
-                          <div style={{ fontSize:9, color:"#506070" }}>Abre cliente padrão (Outlook/Gmail/Mail)</div>
-                        </div>
-                      </div>
-                      <Btn success onClick={sendByEmail} style={{ width:"100%" }}>📨 Enviar por E-mail</Btn>
-                    </div>
-
-                    {/* TEAMS */}
-                    <div style={{ background:"rgba(0,120,212,.04)", border:`1px solid ${teamsWebhook ? "rgba(0,120,212,.25)" : "rgba(255,160,0,.2)"}`, borderRadius:9, padding:12 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                        <span style={{ fontSize:18 }}>👥</span>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:12, fontWeight:600, color:"#4a90e0" }}>Microsoft Teams</div>
-                          <div style={{ fontSize:9, color: teamsWebhook ? "#506070" : "#f59e0b" }}>
-                            {teamsWebhook ? "Webhook configurado" : "⚠️ Configure webhook no Diagnóstico"}
-                          </div>
-                        </div>
-                      </div>
-                      <Btn onClick={sendToTeams} disabled={!teamsWebhook} style={{ width:"100%", background: teamsWebhook ? "linear-gradient(135deg,#0050bb,#0090ee)" : undefined }}>
-                        💬 Postar no Teams
-                      </Btn>
-                    </div>
-
-                    {/* COPY */}
-                    <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:12 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                        <span style={{ fontSize:18 }}>📋</span>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:12, fontWeight:600, color:"#a0c0d8" }}>Copiar conteúdo</div>
-                          <div style={{ fontSize:9, color:"#506070" }}>Para colar em Slack, WhatsApp, etc.</div>
-                        </div>
-                      </div>
-                      <Btn secondary style={{ width:"100%" }} onClick={() => copyText(`${emailSubject}\n\n${distMsg}\n\n${videoUrl ? "▶️ " + videoUrl : ""}`)}>
-                        {copied ? "✓ Copiado!" : "📋 Copiar Tudo"}
-                      </Btn>
-                    </div>
+                <Field label="Canais" mt={0}>
+                  <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:12, marginBottom:10 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:"#a0c0d8", marginBottom:8 }}>📧 E-mail</div>
+                    <Btn success onClick={sendByEmail} style={{ width:"100%" }}>📨 Enviar por E-mail</Btn>
+                  </div>
+                  <div style={{ background:"rgba(0,120,212,.04)", border:"1px solid rgba(0,120,212,.25)", borderRadius:9, padding:12, marginBottom:10 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:"#4a90e0", marginBottom:8 }}>👥 Teams</div>
+                    <Btn onClick={sendToTeams} disabled={!teamsWebhook} style={{ width:"100%" }}>💬 Postar no Teams</Btn>
+                  </div>
+                  <div style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:9, padding:12 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:"#a0c0d8", marginBottom:8 }}>📋 Copiar</div>
+                    <Btn secondary style={{ width:"100%" }} onClick={() => copyText(`${emailSubject}\n\n${distMsg}\n\n${videoUrl}`)}>{copied ? "✓ Copiado" : "📋 Copiar Tudo"}</Btn>
                   </div>
                 </Field>
-
                 <ErrorBox msg={distError} />
                 <InfoBox msg={distSuccess} />
-
-                {videoUrl && (
-                  <Field label="Preview do Vídeo">
-                    <video controls src={videoUrl} poster={thumbnailUrl} style={{ width:"100%", borderRadius:8, background:"#000", maxHeight:200 }} />
-                  </Field>
-                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* ══ HISTÓRICO ══════════════════════════════════════════════════════ */}
-        {tab === 5 && keyValidated && (
+        {/* ════ HISTÓRICO ════════════════════════════════════════════════════ */}
+        {tab === 6 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="📚" title="Histórico" sub={`${episodes.length} episódio${episodes.length !== 1 ? "s" : ""} · banco persistente`} />
+            <SectionHeader icon="📚" title="Histórico" sub={`${episodes.length} episódio${episodes.length !== 1 ? "s" : ""} · ${newsletters.length} edição${newsletters.length !== 1 ? "ões" : ""}`} />
 
-            <div style={{ marginTop:20 }}>
+            {/* NEWSLETTERS HISTORY */}
+            <div style={{ marginTop:18, marginBottom:24 }}>
+              <div style={{ fontSize:11, color:"#a78bfa", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", marginBottom:10 }}>📰 Newsletters publicadas</div>
+              {newsletters.length === 0 ? (
+                <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:9, padding:24, textAlign:"center", color:"#506070", fontSize:11 }}>Nenhuma edição publicada ainda</div>
+              ) : (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:10 }}>
+                  {newsletters.map(n => {
+                    const expired = n.podcastExpiresAt && isExpired(n.podcastExpiresAt);
+                    return (
+                      <div key={n.id} style={{ background:"rgba(167,139,250,.04)", border:"1px solid rgba(167,139,250,.2)", borderRadius:10, padding:12 }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"start", marginBottom:6 }}>
+                          <div style={{ fontSize:11, color:"#a78bfa", fontFamily:"monospace", fontWeight:700 }}>{fmtDate(n.date)}</div>
+                          <div style={{ display:"flex", gap:4 }}>
+                            {n.podcastUrl && <span style={{ fontSize:10 }}>{expired ? "⏰" : "🎙️"}</span>}
+                            {n.aiSummary && <span style={{ fontSize:10 }}>🧠</span>}
+                          </div>
+                        </div>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#e0e8f0", marginBottom:6, lineHeight:1.3 }}>{n.title || "Sem título"}</div>
+                        <div style={{ fontSize:10, color:"#506070", marginBottom:8 }}>{n.headlines?.length || 0} manchetes</div>
+                        <div style={{ display:"flex", gap:5 }}>
+                          <button onClick={() => { setEditorDate(n.date); setTab(0); }} style={{ flex:1, background:"rgba(167,139,250,.08)", border:"1px solid rgba(167,139,250,.25)", color:"#a78bfa", borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer", fontWeight:600 }}>📝 Editar</button>
+                          <a href={`?view=public&date=${n.date}`} target="_blank" rel="noreferrer" style={{ flex:1, background:"rgba(16,185,129,.08)", border:"1px solid rgba(16,185,129,.25)", color:"#10b981", borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer", fontWeight:600, textAlign:"center", textDecoration:"none" }}>👁️ Ver</a>
+                          <button onClick={() => deleteNewsletter(n.date)} style={{ background:"rgba(239,68,68,.08)", border:"1px solid rgba(239,68,68,.25)", color:"#ef4444", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* EPISODES HISTORY */}
+            <div>
+              <div style={{ fontSize:11, color:"#00b4ff", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", marginBottom:10 }}>🎬 Episódios gerados</div>
               {selectedEpisode && (
-                <div className="fade" style={{ background:"rgba(0,180,255,.04)", border:"1px solid rgba(0,180,255,.2)", borderRadius:11, padding:18, marginBottom:16 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"start", marginBottom:12 }}>
-                    <div>
-                      <div style={{ fontSize:14, fontWeight:700, color:"#00b4ff" }}>{selectedEpisode.title}</div>
-                      <div style={{ fontSize:11, color:"#506070", marginTop:3 }}>{selectedEpisode.podcastName} · {selectedEpisode.duration} min · {new Date(selectedEpisode.createdAt).toLocaleString("pt-BR")}</div>
-                    </div>
-                    <Btn secondary onClick={() => setSelectedEpisode(null)}>✕ Fechar</Btn>
+                <div className="fade" style={{ background:"rgba(0,180,255,.04)", border:"1px solid rgba(0,180,255,.2)", borderRadius:11, padding:16, marginBottom:14 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#00b4ff" }}>{selectedEpisode.title}</div>
+                    <Btn secondary onClick={() => setSelectedEpisode(null)}>✕</Btn>
                   </div>
                   {selectedEpisode.videoUrl && (
                     <video controls src={selectedEpisode.videoUrl} poster={selectedEpisode.thumbnailUrl} style={{ width:"100%", borderRadius:8, background:"#000", maxHeight:400 }} />
                   )}
-                  <div style={{ display:"flex", gap:8, marginTop:10, flexWrap:"wrap" }}>
-                    {selectedEpisode.videoUrl && (
-                      <>
-                        <Btn success onClick={() => window.open(selectedEpisode.videoUrl, "_blank")}>⬇️ Download</Btn>
-                        <Btn secondary onClick={() => copyText(selectedEpisode.videoUrl)}>📋 Copiar Link</Btn>
-                      </>
-                    )}
-                    <Btn onClick={() => {
-                      if (selectedEpisode.script) setRefined(selectedEpisode.script);
-                      if (selectedEpisode.title) setEpTitle(selectedEpisode.title);
-                      if (selectedEpisode.podcastName) setPodcastName(selectedEpisode.podcastName);
-                      if (selectedEpisode.duration) setDuration(selectedEpisode.duration);
-                      if (selectedEpisode.emailSubject) setEmailSubject(selectedEpisode.emailSubject);
-                      if (selectedEpisode.emailBody) setDistEmail(selectedEpisode.emailBody);
-                      if (selectedEpisode.videoUrl) setVideoUrl(selectedEpisode.videoUrl);
-                      if (selectedEpisode.thumbnailUrl) setThumbnailUrl(selectedEpisode.thumbnailUrl);
-                      setTab(4);
-                    }}>📤 Redistribuir</Btn>
-                  </div>
                 </div>
               )}
-
               {episodes.length === 0 ? (
-                <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:10, padding:"50px 20px", textAlign:"center", color:"#2a4050", fontSize:12 }}>
-                  📂 Nenhum episódio salvo<br/>
-                  <span style={{ fontSize:10 }}>Gere seu primeiro na aba Render</span>
-                </div>
+                <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:9, padding:24, textAlign:"center", color:"#506070", fontSize:11 }}>Nenhum episódio gerado</div>
               ) : (
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:10 }}>
                   {episodes.map(ep => (
-                    <div key={ep.id} style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+                    <div key={ep.id} style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, overflow:"hidden" }}>
                       {ep.thumbnailUrl ? (
-                        <div style={{ position:"relative", paddingBottom:"56.25%", background:"#000" }}>
-                          <img src={ep.thumbnailUrl} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }} />
-                          {ep.videoUrl && (
-                            <div onClick={() => setSelectedEpisode(ep)} style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,.3)", cursor:"pointer", color:"#fff", fontSize:30 }}>▶️</div>
-                          )}
-                        </div>
+                        <img src={ep.thumbnailUrl} alt="" style={{ width:"100%", height:120, objectFit:"cover" }} />
                       ) : (
-                        <div style={{ height:80, background:"linear-gradient(135deg,#0a1628,#0d1a2e)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>
-                          {ep.engine === "kling" ? "⚡" : "🎥"}
-                        </div>
+                        <div style={{ height:80, background:"linear-gradient(135deg,#0a1628,#0d1a2e)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>{ep.engine === "kling" ? "⚡" : "🎥"}</div>
                       )}
-                      <div style={{ padding:12, flex:1, display:"flex", flexDirection:"column" }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:"#c8d8e8", marginBottom:4 }}>{ep.title}</div>
-                        <div style={{ fontSize:10, color:"#506070", marginBottom:8 }}>{ep.podcastName} · {ep.duration} min</div>
-                        <div style={{ fontSize:9, color:"#3a5060", fontFamily:"monospace", marginBottom:10 }}>
-                          {new Date(ep.createdAt).toLocaleDateString("pt-BR")} {new Date(ep.createdAt).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})} · {ep.engine === "kling" ? "⚡ Kling" : "🎥 HeyGen"}
-                        </div>
-                        <div style={{ display:"flex", gap:6, marginTop:"auto" }}>
-                          <button onClick={() => setSelectedEpisode(ep)} style={{ flex:1, background:"rgba(0,180,255,.08)", border:"1px solid rgba(0,180,255,.2)", color:"#00b4ff", borderRadius:6, padding:"6px", fontSize:10, cursor:"pointer", fontWeight:600 }}>👁️ Ver</button>
-                          {ep.videoUrl && <button onClick={() => window.open(ep.videoUrl, "_blank")} style={{ background:"rgba(16,185,129,.08)", border:"1px solid rgba(16,185,129,.2)", color:"#10b981", borderRadius:6, padding:"6px 10px", fontSize:10, cursor:"pointer" }}>⬇️</button>}
-                          <button onClick={() => { if(confirm(`Deletar?`)) deleteEpisode(ep.id); }} style={{ background:"rgba(239,68,68,.08)", border:"1px solid rgba(239,68,68,.2)", color:"#ef4444", borderRadius:6, padding:"6px 10px", fontSize:10, cursor:"pointer" }}>🗑️</button>
+                      <div style={{ padding:12 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#c8d8e8" }}>{ep.title}</div>
+                        <div style={{ fontSize:10, color:"#506070", marginTop:3, fontFamily:"monospace" }}>{new Date(ep.createdAt).toLocaleDateString("pt-BR")} · {ep.duration}min</div>
+                        <div style={{ display:"flex", gap:5, marginTop:8 }}>
+                          <button onClick={() => setSelectedEpisode(ep)} style={{ flex:1, background:"rgba(0,180,255,.08)", border:"1px solid rgba(0,180,255,.2)", color:"#00b4ff", borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer" }}>👁️ Ver</button>
+                          {ep.videoUrl && <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background:"rgba(29,185,84,.08)", border:"1px solid rgba(29,185,84,.25)", color:"#1DB954", borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer" }}>📰</button>}
+                          <button onClick={() => { if(confirm("Deletar?")) deleteEpisode(ep.id); }} style={{ background:"rgba(239,68,68,.08)", border:"1px solid rgba(239,68,68,.25)", color:"#ef4444", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-
-              <div style={{ marginTop:18, background:"linear-gradient(135deg,rgba(0,77,179,.07),rgba(0,180,255,.03))", border:"1px solid rgba(0,180,255,.1)", borderRadius:10, padding:14 }}>
-                <div style={{ fontWeight:700, fontSize:12, color:"#00b4ff", marginBottom:8 }}>📊 Estatísticas</div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:10 }}>
-                  {[
-                    { k:"Total", v:episodes.length },
-                    { k:"Kling", v:episodes.filter(e => e.engine==="kling").length },
-                    { k:"HeyGen", v:episodes.filter(e => e.engine==="heygen").length },
-                    { k:"Min", v:episodes.reduce((s, e) => s + (e.duration||0), 0) },
-                  ].map(s => (
-                    <div key={s.k} style={{ background:"rgba(0,0,0,.2)", borderRadius:7, padding:"10px 12px", textAlign:"center" }}>
-                      <div style={{ fontSize:18, fontWeight:800, color:"#00b4ff", fontFamily:"'JetBrains Mono',monospace" }}>{s.v}</div>
-                      <div style={{ fontSize:9, color:"#3a5060", letterSpacing:".05em", textTransform:"uppercase" }}>{s.k}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         )}
 
-        {tab > 0 && !keyValidated && (
+        {tab > 1 && !keyValidated && (
           <div className="fade" style={{ textAlign:"center", padding:"80px 20px" }}>
             <div style={{ fontSize:48, marginBottom:14 }}>🔒</div>
             <div style={{ fontSize:18, fontWeight:700, color:"#d97706", marginBottom:8 }}>Aba bloqueada</div>
-            <div style={{ fontSize:12, color:"#608090", marginBottom:20 }}>Configure sua chave Anthropic na aba Diagnóstico.</div>
-            <Btn onClick={() => setTab(0)}>← Diagnóstico</Btn>
+            <div style={{ fontSize:12, color:"#608090", marginBottom:20 }}>Configure sua chave Anthropic no Diagnóstico.</div>
+            <Btn onClick={() => setTab(1)}>← Diagnóstico</Btn>
           </div>
         )}
 
-      </div>
-
-      {/* FOOTER */}
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"rgba(7,11,19,.97)", backdropFilter:"blur(14px)", borderTop:"1px solid rgba(255,255,255,.05)", padding:"9px 24px", display:"flex", alignItems:"center", gap:10, zIndex:100 }}>
-        <span style={{ fontSize:9, color:"#1a3040", fontFamily:"monospace", minWidth:50 }}>FLUXO</span>
-        {TABS.map((t, i) => (
-          <div key={i} style={{ display:"flex", alignItems:"center", gap:3 }}>
-            <div style={{ width:7, height:7, borderRadius:"50%", background: done.includes(i) ? "#10b981" : tab===i ? "#00b4ff" : "rgba(255,255,255,.07)" }} />
-            <span style={{ fontSize:9, color: tab===i ? "#00b4ff" : done.includes(i) ? "#10b981" : "#1a3040", cursor:"pointer" }} onClick={() => canAccessTab(i) && setTab(i)}>{t.label}</span>
-            {i < TABS.length-1 && <span style={{ color:"#1a2a3a", fontSize:8 }}>›</span>}
-          </div>
-        ))}
-        <div style={{ marginLeft:"auto", fontSize:9, color:"#1a3040", fontFamily:"monospace" }}>{episodes.length} eps</div>
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<PodcastStudio />);
+// ─── ROUTER ──────────────────────────────────────────────────────────────────
+
+function App() {
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get("view");
+
+  if (view === "public") return <PublicNewsletter />;
+  return <AdminApp />;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   </script>
 </body>
 </html>
