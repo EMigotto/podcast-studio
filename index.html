@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Syncronize-MI · NewsLetter de IA</title>
   <meta property="og:title" content="Syncronize-MI · NewsLetter de IA" />
-  <meta property="og:description" content="Curadoria semanal de IA com foco em produtividade, desenvolvimento sistêmico e novos modelos LLM" />
-  <meta property="og:type" content="article" />
+  <meta property="og:description" content="Atualizações de Inteligência Artificial para quem tem pouco tempo" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,12 +18,49 @@
   <style>
     * { box-sizing: border-box; }
     html, body, #root { margin: 0; padding: 0; min-height: 100%; }
-    body { font-family: 'Outfit', system-ui, sans-serif; background: #070b13; color: #d8e8f0; }
-    body.light-newsletter { background: #fafbff; color: #1a2540; }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: rgba(0,0,0,.05); }
-    ::-webkit-scrollbar-thumb { background: rgba(80,100,255,.25); border-radius: 8px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(80,100,255,.45); }
+
+    /* ─── BRAND COLORS (Syncronize-MI poster) ─────────────────────── */
+    :root {
+      --navy: #1f3a5c;
+      --navy-deep: #15273f;
+      --sage: #9eaf95;
+      --sage-light: #b8c5b0;
+      --sage-dark: #7d8f73;
+      --gold: #cdb380;
+      --gold-light: #e0c995;
+      --gold-dark: #a8915f;
+      --cream: #f1ede1;
+      --cream-soft: #faf7ed;
+      --ink: #0f1a2e;
+      --ink-soft: #2a3d5a;
+      --muted: #6b7d96;
+    }
+
+    /* Light theme (default for newsletter) */
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+    }
+    /* Admin always dark unless toggled */
+    body.admin-dark {
+      background: var(--ink);
+      color: var(--cream);
+    }
+    body.newsletter-dark {
+      background: var(--ink);
+      color: var(--cream);
+    }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,.04); }
+    ::-webkit-scrollbar-thumb { background: rgba(31,58,92,.25); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(31,58,92,.45); }
+    body.admin-dark ::-webkit-scrollbar-track,
+    body.newsletter-dark ::-webkit-scrollbar-track { background: rgba(255,255,255,.04); }
+    body.admin-dark ::-webkit-scrollbar-thumb,
+    body.newsletter-dark ::-webkit-scrollbar-thumb { background: rgba(205,179,128,.3); }
+
     textarea, input, select { outline: none !important; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
@@ -37,42 +73,46 @@
     .spin { animation: spin 1s linear infinite; }
     .pulse { animation: pulse 1.4s ease-in-out infinite; }
     .float { animation: float 3s ease-in-out infinite; }
-    .shim-light { background:linear-gradient(90deg,#eef0fa 25%,#dde2f5 50%,#eef0fa 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
-    .shim-dark { background:linear-gradient(90deg,#0d1a2e 25%,#1a3050 50%,#0d1a2e 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
   </style>
 </head>
 <body>
   <div id="root">
-    <div style="text-align:center; padding:80px 20px; color:#608090;">
-      <div style="font-size:32px;">🎙️</div>
-      <div>Carregando...</div>
+    <div style="text-align:center; padding:80px 20px; color:#6b7d96;">
+      <div style="font-size:32px;">🧠</div>
+      <div>Carregando Syncronize-MI...</div>
     </div>
   </div>
 
   <script type="text/babel" data-presets="env,react">
 const { useState, useRef, useEffect, useCallback, useMemo, memo } = React;
 
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ═════════════════════════════════════════════════════════════════════════════
 
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 const DEFAULT_KLING_KEY = "aebc940334837f309fda6849afe6bce1";
 
-// SYNCRONIZE-MI BRAND COLORS (light, editorial, vibrant)
+// SYNCRONIZE-MI BRAND PALETTE (extracted from poster)
 const BRAND = {
-  primary: "#0050ff",      // electric blue (sync, flow)
-  secondary: "#7c3aed",    // purple (AI, intelligence)
-  accent: "#fbbf24",       // warm yellow (highlight)
-  pink: "#ec4899",         // pink (energy)
-  bg: "#fafbff",
-  bgWarm: "#fff8e7",
-  text: "#1a2540",
-  textMuted: "#5a6a85",
-  border: "#e0e6f5",
-  cardBg: "#ffffff",
+  navy:      "#1f3a5c",      // primary — deep navy
+  navyDeep:  "#15273f",
+  navyLight: "#2c4f7a",
+  sage:      "#9eaf95",      // secondary — sage green
+  sageLight: "#b8c5b0",
+  sageDark:  "#7d8f73",
+  gold:      "#cdb380",      // accent — warm gold
+  goldLight: "#e0c995",
+  goldDark:  "#a8915f",
+  cream:     "#f1ede1",      // light bg
+  creamSoft: "#faf7ed",
+  ink:       "#0f1a2e",      // text dark / dark bg
+  inkSoft:   "#2a3d5a",
+  muted:     "#6b7d96",
 };
 
 const ADMIN_TABS = [
-  { id: "newsletter", label: "Newsletter", icon: "📰" },
+  { id: "newsletter",  label: "Newsletter",  icon: "📰" },
   { id: "diagnostico", label: "Diagnóstico", icon: "🔬" },
   { id: "pauta",       label: "Pauta",       icon: "📡" },
   { id: "roteiro",     label: "Roteiro",     icon: "✍️" },
@@ -82,9 +122,9 @@ const ADMIN_TABS = [
 ];
 
 const FOCUS_AREAS = [
-  { id: "produtividade", label: "Produtividade", icon: "⚡", color: BRAND.primary },
-  { id: "sistemico",     label: "Desenvolvimento Sistêmico", icon: "🔧", color: BRAND.secondary },
-  { id: "llm",           label: "Novos Modelos LLM/IA", icon: "🧠", color: BRAND.accent },
+  { id: "produtividade", label: "Produtividade",                icon: "⚡", colorLight: BRAND.navy,  colorDark: "#5a8fc7" },
+  { id: "sistemico",     label: "Desenvolvimento Sistêmico",   icon: "🔧", colorLight: BRAND.sageDark, colorDark: BRAND.sage },
+  { id: "llm",           label: "Novos Modelos LLM/IA",         icon: "🧠", colorLight: BRAND.goldDark, colorDark: BRAND.gold },
 ];
 
 const KLING_ROLES = [
@@ -93,51 +133,67 @@ const KLING_ROLES = [
   { id:"educator",   label:"Educador",   kling:"patient educator", icon:"🎓" },
   { id:"vlogger",    label:"Vlogger",    kling:"energetic vlogger", icon:"🎥" },
 ];
-const KLING_EMOTIONS = [
-  { id:"confident",    label:"Confiante",  icon:"💼" },
-  { id:"enthusiastic", label:"Entusiasta", icon:"🔥" },
-  { id:"calm",         label:"Calmo",      icon:"😌" },
-  { id:"empathetic",   label:"Empático",   icon:"🤝" },
-];
 
-const CAT_LIGHT = {
-  IA:           { bg: "#dbeafe", color: "#1e40af", label: "IA" },
-  Hardware:     { bg: "#fed7aa", color: "#9a3412", label: "Hardware" },
-  Software:     { bg: "#e9d5ff", color: "#6b21a8", label: "Software" },
-  Cloud:        { bg: "#d1fae5", color: "#065f46", label: "Cloud" },
-  Startups:     { bg: "#fef3c7", color: "#92400e", label: "Startups" },
-  "Regulação":  { bg: "#fee2e2", color: "#991b1b", label: "Regulação" },
-  Podcast:      { bg: "#dcfce7", color: "#14532d", label: "Podcast" },
-  Produtividade:{ bg: "#dbeafe", color: "#1e40af", label: "Produtividade" },
-  "Sistêmico":  { bg: "#e9d5ff", color: "#6b21a8", label: "Sistêmico" },
-  LLM:          { bg: "#fef3c7", color: "#92400e", label: "LLM" },
+// Categories — light / dark variants
+const CAT_STYLE = {
+  IA:           { lightBg: "#dde6f0", lightFg: BRAND.navy,    darkBg: "rgba(90,143,199,.18)",  darkFg: "#a8c8e8" },
+  LLM:          { lightBg: "#f0e3c8", lightFg: BRAND.goldDark, darkBg: "rgba(205,179,128,.18)", darkFg: BRAND.goldLight },
+  Produtividade:{ lightBg: "#dde6f0", lightFg: BRAND.navy,    darkBg: "rgba(90,143,199,.18)",  darkFg: "#a8c8e8" },
+  "Sistêmico":  { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
+  Hardware:     { lightBg: "#f0e3c8", lightFg: BRAND.goldDark, darkBg: "rgba(205,179,128,.18)", darkFg: BRAND.goldLight },
+  Software:     { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
+  Cloud:        { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
+  Startups:     { lightBg: "#f0e3c8", lightFg: BRAND.goldDark, darkBg: "rgba(205,179,128,.18)", darkFg: BRAND.goldLight },
+  "Regulação":  { lightBg: "#f0d8c8", lightFg: "#9a3412",     darkBg: "rgba(180,90,40,.18)",   darkFg: "#e8a888" },
+  Podcast:      { lightBg: "#dee5d8", lightFg: BRAND.sageDark, darkBg: "rgba(158,175,149,.18)", darkFg: BRAND.sageLight },
 };
-const CAT_DARK = {
-  IA:"#00d4ff", Hardware:"#ff6b35", Software:"#7c3aed", Cloud:"#10b981",
-  Startups:"#f59e0b", "Regulação":"#ef4444", Podcast:"#1DB954",
-  Produtividade:"#00b4ff", "Sistêmico":"#a78bfa", LLM:"#f59e0b",
+const catStyle = (cat, dark) => {
+  const s = CAT_STYLE[cat] || CAT_STYLE.IA;
+  return dark
+    ? { background: s.darkBg, color: s.darkFg }
+    : { background: s.lightBg, color: s.lightFg };
 };
 
-// ─── DB LAYER ────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// DB LAYER — with separate storage for large blobs (videos)
+// ═════════════════════════════════════════════════════════════════════════════
 
 const hasClaudeStorage = () => typeof window !== "undefined" && window.storage;
+
 const db = {
   async get(key) {
     try {
-      if (hasClaudeStorage()) { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
-      const v = localStorage.getItem(key); return v ? JSON.parse(v) : null;
-    } catch { return null; }
+      if (hasClaudeStorage()) {
+        const r = await window.storage.get(key);
+        return r ? JSON.parse(r.value) : null;
+      }
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : null;
+    } catch (e) {
+      console.error("db.get error", key, e);
+      return null;
+    }
   },
   async set(key, value) {
+    const json = JSON.stringify(value);
     try {
-      if (hasClaudeStorage()) await window.storage.set(key, JSON.stringify(value));
-      else localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch { return false; }
+      if (hasClaudeStorage()) {
+        await window.storage.set(key, json);
+      } else {
+        localStorage.setItem(key, json);
+      }
+      return { ok: true };
+    } catch (e) {
+      console.error("db.set FAILED", key, "size:", json.length, e);
+      return { ok: false, error: e.message, size: json.length };
+    }
   },
   async delete(key) {
-    try { if (hasClaudeStorage()) await window.storage.delete(key); else localStorage.removeItem(key); return true; }
-    catch { return false; }
+    try {
+      if (hasClaudeStorage()) await window.storage.delete(key);
+      else localStorage.removeItem(key);
+      return { ok: true };
+    } catch { return { ok: false }; }
   },
   async listByPrefix(prefix) {
     try {
@@ -150,7 +206,10 @@ const db = {
       const items = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k?.startsWith(prefix)) { const v = localStorage.getItem(k); if (v) items.push(JSON.parse(v)); }
+        if (k?.startsWith(prefix)) {
+          const v = localStorage.getItem(k);
+          if (v) try { items.push(JSON.parse(v)); } catch {}
+        }
       }
       return items;
     } catch { return []; }
@@ -163,9 +222,19 @@ const db = {
     const items = await db.listByPrefix("newsletter:");
     return items.sort((a, b) => (b.date||"").localeCompare(a.date||""));
   },
+  // Save big blob separately so it doesn't bloat the newsletter record
+  async saveVideoBlob(blobKey, dataUrl) {
+    return await db.set(blobKey, { data: dataUrl, savedAt: Date.now() });
+  },
+  async getVideoBlob(blobKey) {
+    const r = await db.get(blobKey);
+    return r?.data || null;
+  },
 };
 
-// ─── ANTHROPIC ───────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// ANTHROPIC
+// ═════════════════════════════════════════════════════════════════════════════
 
 async function callAnthropic(apiKey, body) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -214,7 +283,9 @@ async function callClaude(apiKey, userPrompt, useSearch = false, maxTokens = 150
   return text;
 }
 
-// ─── HEYGEN ──────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// HEYGEN
+// ═════════════════════════════════════════════════════════════════════════════
 
 async function heygenTestConnection(apiKey) {
   const res = await fetch("https://api.heygen.com/v2/voices", {
@@ -234,7 +305,7 @@ async function heygenGenerateVideo(apiKey, { avatarId, voiceId, scriptText }) {
     video_inputs: [{
       character: { type: "avatar", avatar_id: avatarId, avatar_style: "normal" },
       voice: { type: "text", input_text: safeScript, voice_id: voiceId },
-      background: { type: "color", value: "#0a1628" },
+      background: { type: "color", value: BRAND.navy },
     }],
     dimension: { width: 1280, height: 720 },
   };
@@ -262,72 +333,49 @@ async function klingTestConnection(apiKey) {
   return { ok: true };
 }
 
-// ─── VIDEO URL HELPERS ───────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// VIDEO PLAYER (smart: detects HeyGen, YouTube, Vimeo, mp4, data URL)
+// ═════════════════════════════════════════════════════════════════════════════
 
-// Detect video URL type and return appropriate embed strategy
 function getVideoEmbedInfo(url) {
   if (!url) return null;
-
-  // HeyGen share page (app.heygen.com/videos/...)
   if (url.includes("app.heygen.com/videos/") || url.includes("share.heygen.com")) {
-    // HeyGen share pages support iframe embedding
-    return { type: "iframe", src: url, original: url };
+    return { type: "iframe", src: url };
   }
-
-  // YouTube
   const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
-  if (ytMatch) {
-    return { type: "iframe", src: `https://www.youtube.com/embed/${ytMatch[1]}`, original: url };
-  }
-
-  // Vimeo
+  if (ytMatch) return { type: "iframe", src: `https://www.youtube.com/embed/${ytMatch[1]}` };
   const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) {
-    return { type: "iframe", src: `https://player.vimeo.com/video/${vimeoMatch[1]}`, original: url };
-  }
-
-  // Direct .mp4 / .webm / .ogg or data URLs
+  if (vimeoMatch) return { type: "iframe", src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
   if (url.startsWith("data:video") || /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url)) {
-    return { type: "video", src: url, original: url };
+    return { type: "video", src: url };
   }
-
-  // HeyGen API resource (resource3.heygen.ai or similar) — direct mp4
-  if (url.includes("heygen.ai") && url.includes(".mp4")) {
-    return { type: "video", src: url, original: url };
-  }
-
-  // Default: try iframe (works for most share pages)
-  return { type: "iframe", src: url, original: url, fallback: true };
+  if (url.includes("heygen.ai") && url.includes(".mp4")) return { type: "video", src: url };
+  return { type: "iframe", src: url };
 }
 
-const VideoPlayer = memo(function VideoPlayer({ url, poster, light, maxHeight = 480 }) {
+const VideoPlayer = memo(function VideoPlayer({ url, poster, maxHeight = 480 }) {
   const info = getVideoEmbedInfo(url);
   if (!info) return null;
-  const bgColor = light ? "#000" : "#000";
-
   if (info.type === "video") {
     return (
-      <video controls poster={poster} style={{ width:"100%", borderRadius:12, background:bgColor, maxHeight, display:"block" }}>
+      <video controls poster={poster} style={{ width:"100%", borderRadius:12, background:"#000", maxHeight, display:"block" }}>
         <source src={info.src} />
-        Seu navegador não suporta este vídeo.
       </video>
     );
   }
-  // iframe (HeyGen, YouTube, Vimeo, share pages)
   return (
-    <div style={{ position:"relative", paddingBottom:"56.25%", height:0, overflow:"hidden", borderRadius:12, background:bgColor, maxHeight }}>
-      <iframe
-        src={info.src}
+    <div style={{ position:"relative", paddingBottom:"56.25%", height:0, overflow:"hidden", borderRadius:12, background:"#000" }}>
+      <iframe src={info.src}
         style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", border:0, borderRadius:12 }}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-        allowFullScreen
-        title="Video Player"
-      />
+        allowFullScreen title="Video Player" />
     </div>
   );
 });
 
-// ─── DISTRIBUTION ────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// DISTRIBUTION
+// ═════════════════════════════════════════════════════════════════════════════
 
 function openMailto(toList, subject, body) {
   const recipients = (toList || "").split(/[,;\n]/).map(s => s.trim()).filter(s => s.includes("@")).join(",");
@@ -339,20 +387,17 @@ async function sendTeamsWebhook(webhookUrl, title, body, videoUrl) {
   if (!webhookUrl?.startsWith("https://")) throw new Error("URL Teams inválida");
   const card = {
     "@type": "MessageCard", "@context": "https://schema.org/extensions",
-    summary: title, themeColor: "0050ff",
-    title: title || "🎙️ Syncronize-MI",
-    text: body || "",
+    summary: title, themeColor: BRAND.navy.replace("#", ""),
+    title: title || "🎙️ Syncronize-MI", text: body || "",
     potentialAction: videoUrl ? [{ "@type": "OpenUri", name: "▶️ Assistir", targets: [{ os: "default", uri: videoUrl }] }] : [],
   };
-  await fetch(webhookUrl, {
-    method: "POST", mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(card),
-  });
+  await fetch(webhookUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(card) });
   return { ok: true };
 }
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═════════════════════════════════════════════════════════════════════════════
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (iso) => { if (!iso) return ""; const [y, m, d] = iso.split("-"); return `${d}/${m}/${y}`; };
@@ -369,122 +414,123 @@ const fmtDateShort = (iso) => {
   return `${parseInt(d)} ${months[parseInt(m)-1]}`;
 };
 const isExpired = (expiresAt) => expiresAt && Date.now() > expiresAt;
-
 const estimateReadTime = (text) => {
   if (!text) return 0;
-  const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round(words / 200)); // 200 wpm
+  return Math.max(1, Math.round(text.split(/\s+/).filter(Boolean).length / 200));
 };
-
 const getShareUrl = (date) => {
   const url = new URL(window.location.href);
   url.search = `?view=public&date=${date}`;
   return url.toString();
 };
 
-// ─── REUSABLE COMPONENTS (defined OUTSIDE) ───────────────────────────────────
+// Theme hook
+function useTheme(storageKey = "user:theme", defaultTheme = "light") {
+  const [theme, setTheme] = useState(defaultTheme);
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) setTheme(saved);
+  }, [storageKey]);
+  const toggle = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    localStorage.setItem(storageKey, next);
+  };
+  return [theme, toggle];
+}
 
-const Btn = memo(function Btn({ onClick, disabled, secondary, danger, success, children, style = {} }) {
+// ═════════════════════════════════════════════════════════════════════════════
+// COMPONENTS (defined OUTSIDE main app — prevents textarea remount bug)
+// ═════════════════════════════════════════════════════════════════════════════
+
+const Btn = memo(function Btn({ onClick, disabled, secondary, danger, success, gold, sage, children, style = {} }) {
+  let bg, color, border, shadow;
+  if (success) { bg = `linear-gradient(135deg, ${BRAND.sageDark}, ${BRAND.sage})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.sage}40`; }
+  else if (gold) { bg = `linear-gradient(135deg, ${BRAND.goldDark}, ${BRAND.gold})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.gold}40`; }
+  else if (sage) { bg = `linear-gradient(135deg, ${BRAND.sageDark}, ${BRAND.sage})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.sage}40`; }
+  else if (danger) { bg = "rgba(180,40,40,.12)"; color = "#c84545"; border = "1px solid rgba(180,40,40,.3)"; shadow = "none"; }
+  else if (secondary) { bg = "transparent"; color = BRAND.muted; border = `1px solid ${BRAND.muted}40`; shadow = "none"; }
+  else { bg = `linear-gradient(135deg, ${BRAND.navyDeep}, ${BRAND.navy})`; color = "#fff"; border = "none"; shadow = `0 2px 10px ${BRAND.navy}40`; }
   return (
     <button onClick={onClick} disabled={disabled} style={{
       padding:"9px 16px", borderRadius:8, fontSize:12, fontWeight:600,
       cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? .45 : 1,
-      display:"inline-flex", alignItems:"center", gap:7, fontFamily:"'Outfit',sans-serif", transition:"all .15s",
-      background: success ? "linear-gradient(135deg,#0a7a3a,#10b981)" : danger ? "rgba(239,68,68,.15)" : secondary ? "rgba(255,255,255,.04)" : "linear-gradient(135deg,#0050bb,#0090ee)",
-      border: danger ? "1px solid rgba(239,68,68,.35)" : secondary ? "1px solid rgba(255,255,255,.09)" : "none",
-      color: danger ? "#ef4444" : secondary ? "#80a0c0" : "#fff",
-      boxShadow: (!secondary && !danger && !disabled) ? "0 2px 10px rgba(0,144,238,.25)" : "none",
+      display:"inline-flex", alignItems:"center", gap:7, fontFamily:"'Outfit',sans-serif",
+      transition:"all .15s", background: bg, color, border,
+      boxShadow: !disabled ? shadow : "none",
       ...style,
     }}>{children}</button>
   );
 });
 
-const Field = memo(function Field({ label, children, mt }) {
+const Field = memo(function Field({ label, children, mt, dark }) {
   return (
     <div style={{ marginTop: mt ?? 14 }}>
-      <div style={{ fontSize:9, fontWeight:700, color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>{label}</div>
+      <div style={{ fontSize:9, fontWeight:700, color: dark ? BRAND.gold : BRAND.muted, letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>{label}</div>
       {children}
     </div>
   );
 });
 
-const TextInput = memo(function TextInput({ value, onChange, placeholder, type = "text", style = {} }) {
+const TextInput = memo(function TextInput({ value, onChange, placeholder, type = "text", dark, style = {} }) {
   return (
     <input type={type} value={value || ""} onChange={onChange} placeholder={placeholder}
-      style={{ width:"100%", background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.09)", borderRadius:7, color:"#c8d8e8", fontSize:12, padding:"9px 12px", fontFamily:"'Outfit',sans-serif", ...style }} />
+      style={{
+        width:"100%",
+        background: dark ? "rgba(255,255,255,.04)" : "#fff",
+        border: `1px solid ${dark ? "rgba(255,255,255,.1)" : BRAND.sage + "40"}`,
+        borderRadius:7, color: dark ? BRAND.cream : BRAND.ink,
+        fontSize:12, padding:"9px 12px", fontFamily:"'Outfit',sans-serif",
+        ...style
+      }} />
   );
 });
 
-const TextArea = memo(function TextArea({ value, onChange, placeholder, rows = 6, style = {} }) {
+const TextArea = memo(function TextArea({ value, onChange, placeholder, rows = 6, dark, style = {} }) {
   return (
     <textarea value={value || ""} onChange={onChange} placeholder={placeholder} rows={rows}
-      style={{ width:"100%", background:"rgba(255,255,255,.025)", border:"1px solid rgba(255,255,255,.09)", borderRadius:8, color:"#c8d8e8", fontSize:12, padding:"12px", lineHeight:1.75, fontFamily:"'Outfit',sans-serif", resize:"vertical", ...style }} />
+      style={{
+        width:"100%",
+        background: dark ? "rgba(255,255,255,.04)" : "#fff",
+        border: `1px solid ${dark ? "rgba(255,255,255,.1)" : BRAND.sage + "40"}`,
+        borderRadius:8, color: dark ? BRAND.cream : BRAND.ink,
+        fontSize:12, padding:"12px", lineHeight:1.75,
+        fontFamily:"'Outfit',sans-serif", resize:"vertical",
+        ...style
+      }} />
   );
 });
 
 const ErrorBox = memo(function ErrorBox({ msg }) {
   if (!msg) return null;
-  return <div style={{ background:"rgba(239,68,68,.08)", border:"1px solid rgba(239,68,68,.25)", borderRadius:8, padding:"9px 13px", fontSize:11, color:"#fc8080", marginTop:10 }}>⚠️ {msg}</div>;
+  return <div style={{ background:"rgba(200,69,69,.08)", border:"1px solid rgba(200,69,69,.3)", borderRadius:8, padding:"9px 13px", fontSize:11, color:"#c84545", marginTop:10 }}>⚠️ {msg}</div>;
 });
 
 const InfoBox = memo(function InfoBox({ msg }) {
   if (!msg) return null;
-  return <div style={{ background:"rgba(16,185,129,.06)", border:"1px solid rgba(16,185,129,.25)", borderRadius:8, padding:"9px 13px", fontSize:11, color:"#6ad490", marginTop:10 }}>✅ {msg}</div>;
+  return <div style={{ background:`${BRAND.sage}20`, border:`1px solid ${BRAND.sage}50`, borderRadius:8, padding:"9px 13px", fontSize:11, color:BRAND.sageDark, marginTop:10 }}>✅ {msg}</div>;
 });
 
 const Spinner = memo(function Spinner({ light }) {
-  return <span className="spin" style={{ display:"inline-block", width:13, height:13, border:`2px solid ${light ? "rgba(0,80,255,.2)" : "rgba(255,255,255,.2)"}`, borderTopColor: light ? "#0050ff" : "#fff", borderRadius:"50%", flexShrink:0 }} />;
+  return <span className="spin" style={{ display:"inline-block", width:13, height:13, border:`2px solid ${light ? BRAND.navy + "20" : "rgba(255,255,255,.2)"}`, borderTopColor: light ? BRAND.navy : "#fff", borderRadius:"50%", flexShrink:0 }} />;
 });
 
-const Chip = memo(function Chip({ sel, onClick, children }) {
+const ThemeToggle = memo(function ThemeToggle({ theme, onToggle, style = {} }) {
   return (
-    <button onClick={onClick} style={{
-      padding:"6px 11px", borderRadius:7, fontSize:11, fontWeight:500, cursor:"pointer",
-      background: sel ? "rgba(0,180,255,.1)" : "rgba(255,255,255,.02)",
-      border: `1px solid ${sel ? "rgba(0,180,255,.4)" : "rgba(255,255,255,.08)"}`,
-      color: sel ? "#00b4ff" : "#6080a0",
-      display:"flex", alignItems:"center", gap:5, fontFamily:"'Outfit',sans-serif",
-    }}>{children}</button>
+    <button onClick={onToggle} title={theme === "light" ? "Modo escuro" : "Modo claro"} style={{
+      background:"transparent", border:`1px solid ${theme === "dark" ? "rgba(255,255,255,.15)" : BRAND.muted + "40"}`,
+      color: theme === "dark" ? BRAND.gold : BRAND.navy,
+      padding:"7px 12px", borderRadius:8, fontSize:14, cursor:"pointer",
+      fontFamily:"'Outfit',sans-serif",
+      ...style,
+    }}>
+      {theme === "light" ? "🌙" : "☀️"}
+    </button>
   );
-});
-
-const Card = memo(function Card({ sel, onClick, children }) {
-  return (
-    <div onClick={onClick} style={{
-      padding:"11px 14px", borderRadius:9, cursor:"pointer", transition:"all .15s",
-      background: sel ? "rgba(0,180,255,.07)" : "rgba(255,255,255,.02)",
-      border: `1px solid ${sel ? "rgba(0,180,255,.35)" : "rgba(255,255,255,.07)"}`,
-    }}>{children}</div>
-  );
-});
-
-const SectionHeader = memo(function SectionHeader({ icon, title, sub }) {
-  return (
-    <div style={{ borderBottom:"1px solid rgba(255,255,255,.05)", paddingBottom:14 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-        <span style={{ fontSize:24 }}>{icon}</span>
-        <div>
-          <h2 style={{ margin:0, fontSize:20, fontWeight:800, color:"#fff", letterSpacing:"-.02em" }}>{title}</h2>
-          <p style={{ margin:"2px 0 0", fontSize:11, color:"#2a4050" }}>{sub}</p>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-const StatusBadge = memo(function StatusBadge({ status, label }) {
-  const colors = {
-    ok: { bg: "rgba(16,185,129,.15)", color: "#10b981" },
-    warn: { bg: "rgba(255,160,0,.12)", color: "#f59e0b" },
-    err: { bg: "rgba(239,68,68,.15)", color: "#ef4444" },
-    idle: { bg: "rgba(255,255,255,.04)", color: "#6080a0" },
-  };
-  const c = colors[status] || colors.idle;
-  return <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background:c.bg, color:c.color, fontWeight:700, letterSpacing:".05em" }}>{label}</span>;
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// PUBLIC NEWSLETTER (Light editorial design)
+// PUBLIC NEWSLETTER
 // ═════════════════════════════════════════════════════════════════════════════
 
 function PublicNewsletter() {
@@ -492,34 +538,41 @@ function PublicNewsletter() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-  const [shareOpen, setShareOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const [theme, setTheme] = useState("light"); // "light" | "dark"
+  const [theme, toggleTheme] = useTheme("user:newsletter_theme", "light");
+  const [videoBlob, setVideoBlob] = useState(null);
+
+  const isDark = theme === "dark";
 
   useEffect(() => {
-    document.body.classList.toggle("light-newsletter", theme === "light");
-    return () => document.body.classList.remove("light-newsletter");
-  }, [theme]);
+    document.body.classList.toggle("newsletter-dark", isDark);
+    return () => document.body.classList.remove("newsletter-dark");
+  }, [isDark]);
 
-  // Load newsletters and pick date from URL or most recent
   useEffect(() => {
     (async () => {
       const items = await db.listNewsletters();
       setNewsletters(items);
       const params = new URLSearchParams(window.location.search);
       const urlDate = params.get("date");
-      if (urlDate && items.find(n => n.date === urlDate)) {
-        setSelectedDate(urlDate);
-      } else if (items.length > 0) {
-        setSelectedDate(items[0].date);
-      } else {
-        setSelectedDate(today());
-      }
+      if (urlDate && items.find(n => n.date === urlDate)) setSelectedDate(urlDate);
+      else if (items.length > 0) setSelectedDate(items[0].date);
+      else setSelectedDate(today());
       setLoading(false);
     })();
   }, []);
 
-  // Update URL when date changes
+  // Load video blob from separate storage if podcastUrl points to blob ref
+  useEffect(() => {
+    if (!selectedDate) return;
+    const current = newsletters.find(n => n.date === selectedDate);
+    if (current?.podcastBlobRef) {
+      db.getVideoBlob(current.podcastBlobRef).then(setVideoBlob);
+    } else {
+      setVideoBlob(null);
+    }
+  }, [selectedDate, newsletters]);
+
   useEffect(() => {
     if (!selectedDate || loading) return;
     const url = new URL(window.location.href);
@@ -529,7 +582,8 @@ function PublicNewsletter() {
   }, [selectedDate, loading]);
 
   const current = newsletters.find(n => n.date === selectedDate);
-  const podcastValid = current?.podcastUrl && (!current.podcastExpiresAt || !isExpired(current.podcastExpiresAt));
+  const effectivePodcastUrl = videoBlob || current?.podcastUrl;
+  const podcastValid = effectivePodcastUrl && (!current?.podcastExpiresAt || !isExpired(current.podcastExpiresAt));
 
   const filteredHeadlines = useMemo(() => {
     if (!current?.headlines) return [];
@@ -539,36 +593,26 @@ function PublicNewsletter() {
 
   const categoriesInUse = useMemo(() => {
     if (!current?.headlines) return [];
-    const set = new Set(current.headlines.map(h => h.category).filter(Boolean));
-    return Array.from(set);
+    return Array.from(new Set(current.headlines.map(h => h.category).filter(Boolean)));
   }, [current]);
 
   const readTime = useMemo(() => {
     if (!current) return 0;
-    const totalText = (current.aiSummary || "") + " " + (current.headlines || []).map(h => h.summary).join(" ");
-    return estimateReadTime(totalText);
+    return estimateReadTime((current.aiSummary || "") + " " + (current.headlines || []).map(h => h.summary).join(" "));
   }, [current]);
 
-  // ── Share handler ──
   const handleShare = async () => {
     const url = getShareUrl(selectedDate);
     const title = current?.title || `Syncronize-MI · ${fmtDate(selectedDate)}`;
-    const text = current?.subtitle || "Curadoria semanal de IA";
-
+    const text = current?.subtitle || "Atualizações de IA para quem tem pouco tempo";
     if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url });
-        return;
-      } catch (e) { /* user cancelled */ }
+      try { await navigator.share({ title, text, url }); return; } catch {}
     }
-    // Fallback: copy
     try {
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2500);
-    } catch {
-      setShareOpen(true);
-    }
+    } catch {}
   };
 
   const copyShareUrl = async () => {
@@ -577,132 +621,137 @@ function PublicNewsletter() {
     setTimeout(() => setShareCopied(false), 2500);
   };
 
-  // ── LIGHT THEME (default) ──
-  const isLight = theme === "light";
-  const styles = isLight ? {
-    bg: "#fafbff",
-    text: "#1a2540",
-    textMuted: "#5a6a85",
-    cardBg: "#ffffff",
-    cardBorder: "#e0e6f5",
-    cardShadow: "0 2px 14px rgba(20,40,90,.04)",
-    cardShadowHover: "0 8px 30px rgba(20,40,90,.1)",
-    accent1: BRAND.primary,
-    accent2: BRAND.secondary,
-    accent3: BRAND.accent,
-  } : {
-    bg: "#070b13",
-    text: "#e8eef8",
-    textMuted: "#8090a8",
+  // Theme variables
+  const T = isDark ? {
+    bg: BRAND.ink,
+    bgAlt: BRAND.navyDeep,
+    text: BRAND.cream,
+    textMuted: "#9ba8b8",
     cardBg: "rgba(255,255,255,.03)",
     cardBorder: "rgba(255,255,255,.08)",
     cardShadow: "none",
-    cardShadowHover: "0 8px 30px rgba(0,180,255,.1)",
-    accent1: "#00b4ff",
-    accent2: "#a78bfa",
-    accent3: "#fbbf24",
+    cardShadowHover: `0 8px 30px ${BRAND.gold}20`,
+    accent1: BRAND.gold,
+    accent2: BRAND.sage,
+    accent3: "#5a8fc7",
+    heroGradient: `linear-gradient(135deg, ${BRAND.navyDeep} 0%, ${BRAND.navy} 100%)`,
+    titleColor: BRAND.cream,
+    titleAccent: BRAND.gold,
+  } : {
+    bg: BRAND.cream,
+    bgAlt: BRAND.creamSoft,
+    text: BRAND.ink,
+    textMuted: BRAND.muted,
+    cardBg: "#fff",
+    cardBorder: "rgba(31,58,92,.12)",
+    cardShadow: "0 2px 14px rgba(31,58,92,.04)",
+    cardShadowHover: "0 8px 30px rgba(31,58,92,.12)",
+    accent1: BRAND.navy,
+    accent2: BRAND.sageDark,
+    accent3: BRAND.goldDark,
+    heroGradient: `linear-gradient(135deg, ${BRAND.cream} 0%, ${BRAND.creamSoft} 100%)`,
+    titleColor: BRAND.ink,
+    titleAccent: BRAND.navy,
   };
 
   if (loading) {
     return (
-      <div style={{ background: styles.bg, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", color: styles.textMuted }}>
+      <div style={{ background: T.bg, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", color: T.textMuted }}>
         <div style={{ textAlign:"center" }}>
           <div className="float" style={{ fontSize:48, marginBottom:12 }}>🧠</div>
-          <div>Carregando edição...</div>
+          <div style={{ fontFamily:"'Fraunces',serif", fontStyle:"italic" }}>Carregando edição...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ background: styles.bg, minHeight:"100vh", color: styles.text, transition:"all .3s" }}>
-      {/* ═══ HERO HEADER ═══ */}
+    <div style={{ background: T.bg, minHeight:"100vh", color: T.text, transition:"all .3s" }}>
+      {/* HERO */}
       <div style={{
-        background: isLight
-          ? `linear-gradient(135deg, ${BRAND.primary}08 0%, ${BRAND.secondary}06 50%, ${BRAND.accent}08 100%)`
-          : `linear-gradient(135deg, rgba(0,77,179,.15), rgba(124,58,237,.08))`,
-        borderBottom: isLight ? `1px solid ${BRAND.border}` : "1px solid rgba(0,180,255,.15)",
-        padding: "30px 24px 24px",
-        position: "relative",
-        overflow: "hidden",
+        background: T.heroGradient,
+        borderBottom: `1px solid ${T.cardBorder}`,
+        padding: "28px 24px 20px", position:"relative", overflow:"hidden",
       }}>
-        {/* Decorative blobs */}
-        {isLight && (
-          <>
-            <div style={{ position:"absolute", top:-60, right:-60, width:240, height:240, background:`radial-gradient(circle, ${BRAND.primary}15, transparent 70%)`, borderRadius:"50%", pointerEvents:"none" }} />
-            <div style={{ position:"absolute", bottom:-80, left:-40, width:200, height:200, background:`radial-gradient(circle, ${BRAND.secondary}12, transparent 70%)`, borderRadius:"50%", pointerEvents:"none" }} />
-          </>
-        )}
+        {/* Decorative geometric shapes (poster-inspired) */}
+        <div style={{
+          position:"absolute", top: -60, right: -40, width: 200, height: 200,
+          background: BRAND.navy, opacity: isDark ? .25 : .12,
+          clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+          pointerEvents:"none",
+        }} />
+        <div style={{
+          position:"absolute", bottom: -50, left: -30, width: 180, height: 180,
+          background: BRAND.sage, opacity: isDark ? .15 : .25,
+          clipPath: "polygon(0% 0%, 100% 30%, 70% 100%, 0% 80%)",
+          pointerEvents:"none",
+        }} />
+        <div style={{
+          position:"absolute", top: 30, right: 100, width: 140, height: 140,
+          background: BRAND.gold, opacity: isDark ? .15 : .25,
+          clipPath: "polygon(20% 0%, 100% 50%, 80% 100%, 0% 60%)",
+          pointerEvents:"none",
+        }} />
 
         <div style={{ maxWidth:1100, margin:"0 auto", position:"relative" }}>
-          {/* Logo + brand name */}
           <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:6, flexWrap:"wrap" }}>
             <div style={{
-              width:56, height:56, borderRadius:16,
-              background: `linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.secondary} 50%, ${BRAND.pink} 100%)`,
+              width:54, height:54, borderRadius:14,
+              background: T.titleAccent,
               display:"flex", alignItems:"center", justifyContent:"center",
-              fontSize:30, color:"#fff",
-              boxShadow:`0 8px 24px ${BRAND.primary}40`,
-            }}>
-              <span style={{ filter:"drop-shadow(0 1px 2px rgba(0,0,0,.2))" }}>🧠</span>
-            </div>
+              fontSize:26, color:"#fff",
+              boxShadow:`0 6px 20px ${T.titleAccent}60`,
+            }}>🧠</div>
             <div style={{ flex:1, minWidth:200 }}>
               <div style={{
-                fontFamily:"'Fraunces',serif", fontSize:32, fontWeight:900,
-                letterSpacing:"-.035em", lineHeight:1,
-                color: styles.text,
-                background: isLight ? `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.secondary})` : "none",
-                WebkitBackgroundClip: isLight ? "text" : "initial",
-                WebkitTextFillColor: isLight ? "transparent" : styles.text,
-                backgroundClip: isLight ? "text" : "initial",
+                fontFamily:"'Fraunces',serif", fontSize:34, fontWeight:800,
+                letterSpacing:"-.035em", lineHeight:1, color: T.titleColor,
               }}>
                 Syncronize-MI
               </div>
-              <div style={{ fontSize:11, color: styles.textMuted, letterSpacing:".18em", textTransform:"uppercase", marginTop:5, fontWeight:600 }}>
-                NewsLetter de IA · {newsletters.length} edição{newsletters.length !== 1 ? "ões" : ""}
+              <div style={{
+                fontFamily:"'Fraunces',serif", fontStyle:"italic", fontWeight:400,
+                fontSize:13, color: T.textMuted, marginTop:4,
+              }}>
+                Atualizações de Inteligência Artificial para quem tem pouco tempo
               </div>
             </div>
 
-            {/* Top actions */}
             <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-              <button onClick={() => setTheme(isLight ? "dark" : "light")} style={{
-                background: "transparent", border: `1px solid ${isLight ? BRAND.border : "rgba(255,255,255,.1)"}`,
-                color: styles.textMuted, padding:"7px 12px", borderRadius:8, fontSize:11, cursor:"pointer",
-                display:"flex", alignItems:"center", gap:5, fontFamily:"'Outfit',sans-serif",
-              }} title={isLight ? "Modo escuro" : "Modo claro"}>
-                {isLight ? "🌙" : "☀️"}
-              </button>
+              <ThemeToggle theme={theme} onToggle={toggleTheme} />
               <button onClick={handleShare} style={{
-                background: `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.secondary})`,
+                background: `linear-gradient(135deg, ${T.titleAccent}, ${BRAND.navyLight})`,
                 border:"none", color:"#fff", padding:"8px 16px", borderRadius:8,
                 fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"'Outfit',sans-serif",
                 display:"flex", alignItems:"center", gap:6,
-                boxShadow:`0 4px 14px ${BRAND.primary}40`,
+                boxShadow:`0 4px 14px ${T.titleAccent}40`,
               }}>
                 {shareCopied ? "✓ Link copiado!" : "🔗 Compartilhar"}
               </button>
               <a href="?view=admin" style={{
-                fontSize:10, color: styles.textMuted, textDecoration:"none",
+                fontSize:10, color: T.textMuted, textDecoration:"none",
                 padding:"7px 12px", borderRadius:8,
-                border: `1px solid ${isLight ? BRAND.border : "rgba(255,255,255,.06)"}`,
+                border: `1px solid ${T.cardBorder}`,
               }}>Admin →</a>
             </div>
           </div>
 
-          {/* Date selector */}
           {newsletters.length > 0 && (
-            <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap", marginTop:18, paddingTop:18, borderTop: `1px solid ${isLight ? BRAND.border : "rgba(255,255,255,.06)"}` }}>
-              <span style={{ fontSize:10, color: styles.textMuted, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase" }}>📆 Edições</span>
+            <div style={{
+              display:"flex", alignItems:"center", gap:10, flexWrap:"wrap",
+              marginTop:18, paddingTop:18, borderTop: `1px solid ${T.cardBorder}`,
+            }}>
+              <span style={{ fontSize:10, color: T.textMuted, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase" }}>📆 Edições</span>
               {newsletters.slice(0, 14).map(n => {
                 const sel = selectedDate === n.date;
                 return (
                   <button key={n.date} onClick={() => setSelectedDate(n.date)} style={{
-                    background: sel ? `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.secondary})` : (isLight ? "#fff" : "rgba(255,255,255,.03)"),
-                    border: `1px solid ${sel ? "transparent" : (isLight ? BRAND.border : "rgba(255,255,255,.06)")}`,
-                    color: sel ? "#fff" : styles.text,
-                    borderRadius:7, padding:"6px 12px", fontSize:11, cursor:"pointer", fontFamily:"'JetBrains Mono',monospace", fontWeight:600,
-                    boxShadow: sel ? `0 4px 14px ${BRAND.primary}40` : "none",
-                    transition:"all .15s",
+                    background: sel ? T.titleAccent : (isDark ? "rgba(255,255,255,.05)" : "#fff"),
+                    border: `1px solid ${sel ? T.titleAccent : T.cardBorder}`,
+                    color: sel ? "#fff" : T.text,
+                    borderRadius:7, padding:"6px 12px", fontSize:11, cursor:"pointer",
+                    fontFamily:"'JetBrains Mono',monospace", fontWeight:600,
+                    boxShadow: sel ? `0 4px 14px ${T.titleAccent}40` : "none",
                   }}>
                     {fmtDateShort(n.date)}
                     {n.podcastUrl && (!n.podcastExpiresAt || !isExpired(n.podcastExpiresAt)) && <span style={{ marginLeft:5 }}>🎙️</span>}
@@ -714,79 +763,75 @@ function PublicNewsletter() {
         </div>
       </div>
 
-      {/* ═══ MAIN CONTENT ═══ */}
+      {/* MAIN */}
       <div style={{ maxWidth:1100, margin:"0 auto", padding:"32px 24px 60px" }}>
         {!current ? (
           <div style={{
-            border: `2px dashed ${isLight ? BRAND.border : "rgba(255,255,255,.07)"}`,
+            border: `2px dashed ${T.cardBorder}`,
             borderRadius:16, padding:"80px 20px",
-            textAlign:"center", color: styles.textMuted,
-            background: isLight ? "#fff" : "transparent",
+            textAlign:"center", color: T.textMuted,
+            background: T.cardBg,
           }}>
             <div className="float" style={{ fontSize:48, marginBottom:14 }}>📭</div>
-            <div style={{ fontSize:18, fontWeight:600, color: styles.text, fontFamily:"'Fraunces',serif" }}>Nenhuma edição disponível</div>
-            <div style={{ fontSize:12, marginTop:6 }}>Volte em breve para conferir as novidades</div>
+            <div style={{ fontSize:18, fontWeight:600, color: T.text, fontFamily:"'Fraunces',serif" }}>Nenhuma edição disponível</div>
           </div>
         ) : (
           <div className="fade">
-            {/* TITLE BLOCK */}
             <div style={{ marginBottom:28 }}>
               <div style={{
-                display:"inline-block",
-                fontSize:11, fontWeight:700, letterSpacing:".15em", textTransform:"uppercase",
-                background: `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.secondary})`,
-                WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-                marginBottom:10,
+                display:"inline-block", fontSize:11, fontWeight:700, letterSpacing:".15em",
+                textTransform:"uppercase", color: T.titleAccent, marginBottom:10,
               }}>
-                Edição de {fmtDateLong(current.date)}
+                ◆ Edição de {fmtDateLong(current.date)}
               </div>
               <h1 style={{
-                fontFamily:"'Fraunces',serif", fontSize:"clamp(32px, 5vw, 52px)", fontWeight:800,
-                color: styles.text, margin:"4px 0 0",
+                fontFamily:"'Fraunces',serif", fontSize:"clamp(34px, 5.5vw, 56px)", fontWeight:800,
+                color: T.titleColor, margin:"4px 0 0",
                 letterSpacing:"-.035em", lineHeight:1.05,
               }}>
                 {current.title || "Highlights de IA"}
               </h1>
               {current.subtitle && (
                 <div style={{
-                  fontSize:18, color: styles.textMuted, marginTop:14, lineHeight:1.55, maxWidth:780,
+                  fontSize:19, color: T.textMuted, marginTop:14, lineHeight:1.55, maxWidth:780,
                   fontFamily:"'Fraunces',serif", fontWeight:400, fontStyle:"italic",
                 }}>
                   {current.subtitle}
                 </div>
               )}
-              {/* Meta info */}
-              <div style={{ display:"flex", gap:14, marginTop:16, fontSize:11, color: styles.textMuted, flexWrap:"wrap" }}>
+              <div style={{ display:"flex", gap:14, marginTop:16, fontSize:11, color: T.textMuted, flexWrap:"wrap" }}>
                 {readTime > 0 && <span>📖 {readTime} min de leitura</span>}
                 {current.headlines?.length > 0 && <span>📰 {current.headlines.length} notícia{current.headlines.length !== 1 ? "s" : ""}</span>}
-                {podcastValid && <span style={{ color: BRAND.primary, fontWeight:600 }}>🎙️ Podcast disponível</span>}
+                {podcastValid && <span style={{ color: T.titleAccent, fontWeight:600 }}>🎙️ Podcast disponível</span>}
               </div>
             </div>
 
-            {/* PODCAST PLAYER (FEATURED, FIRST) */}
+            {/* PODCAST */}
             {podcastValid && (
               <div style={{
-                background: isLight
-                  ? `linear-gradient(135deg, #fff 0%, ${BRAND.primary}08 100%)`
-                  : "linear-gradient(135deg, rgba(0,80,255,.06), rgba(124,58,237,.04))",
-                border: `1px solid ${isLight ? BRAND.border : "rgba(0,180,255,.2)"}`,
+                background: T.cardBg,
+                border: `1px solid ${T.cardBorder}`,
                 borderRadius:16, padding:24, marginBottom:30,
-                boxShadow: isLight ? styles.cardShadow : "none",
+                boxShadow: T.cardShadow,
+                position:"relative", overflow:"hidden",
               }}>
+                <div style={{
+                  position:"absolute", top:0, left:0, right:0, height:4,
+                  background:`linear-gradient(90deg, ${BRAND.navy}, ${BRAND.sage}, ${BRAND.gold})`,
+                }} />
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, flexWrap:"wrap", gap:10 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:12 }}>
                     <div style={{
-                      width:42, height:42, borderRadius:11,
-                      background:`linear-gradient(135deg, ${BRAND.primary}, ${BRAND.secondary})`,
+                      width:42, height:42, borderRadius:11, background: T.titleAccent,
                       display:"flex", alignItems:"center", justifyContent:"center",
                       fontSize:22, color:"#fff",
-                      boxShadow:`0 4px 14px ${BRAND.primary}40`,
+                      boxShadow:`0 4px 14px ${T.titleAccent}40`,
                     }}>🎙️</div>
                     <div>
-                      <div style={{ fontSize:14, fontWeight:700, color: styles.text, fontFamily:"'Fraunces',serif", fontStyle:"italic" }}>
+                      <div style={{ fontSize:14, fontWeight:700, color: T.text, fontFamily:"'Fraunces',serif", fontStyle:"italic" }}>
                         {current.podcastTitle || "Podcast da Semana"}
                       </div>
-                      <div style={{ fontSize:11, color: styles.textMuted, marginTop:2 }}>
+                      <div style={{ fontSize:11, color: T.textMuted, marginTop:2 }}>
                         Syncronize-MI {current.podcastDuration ? `· ${current.podcastDuration} min` : ""}
                       </div>
                     </div>
@@ -794,98 +839,88 @@ function PublicNewsletter() {
                   {current.podcastExpiresAt && (
                     <div style={{
                       fontSize:10, padding:"4px 10px", borderRadius:6,
-                      background: isLight ? "#fff8e7" : "rgba(251,191,36,.1)",
-                      color: isLight ? "#92400e" : "#fbbf24",
+                      background: `${BRAND.gold}25`, color: BRAND.goldDark,
                       fontFamily:"'JetBrains Mono',monospace", fontWeight:600,
                     }}>
                       ⏰ até {new Date(current.podcastExpiresAt).toLocaleDateString("pt-BR")}
                     </div>
                   )}
                 </div>
-                <VideoPlayer url={current.podcastUrl} poster={current.podcastThumbnail} light={isLight} maxHeight={520} />
+                <VideoPlayer url={effectivePodcastUrl} poster={current.podcastThumbnail} maxHeight={520} />
               </div>
             )}
 
             {current?.podcastUrl && !podcastValid && (
               <div style={{
-                background: isLight ? "#fff8e7" : "rgba(251,191,36,.06)",
-                border: `1px solid ${isLight ? "#fde68a" : "rgba(251,191,36,.25)"}`,
-                borderRadius:11, padding:14, marginBottom:24, fontSize:12,
-                color: isLight ? "#92400e" : "#fbbf24",
+                background: `${BRAND.gold}15`, border: `1px solid ${BRAND.gold}40`,
+                borderRadius:11, padding:14, marginBottom:24, fontSize:12, color: BRAND.goldDark,
               }}>
-                ⏰ O podcast desta edição expirou e não está mais disponível.
+                ⏰ O podcast desta edição expirou.
               </div>
             )}
 
-            {/* TL;DR / EXECUTIVE SUMMARY */}
+            {/* SUMMARY */}
             {current.aiSummary && (
               <div style={{
-                background: isLight ? "#fff" : "rgba(255,255,255,.02)",
-                border: `1px solid ${isLight ? BRAND.border : "rgba(124,58,237,.2)"}`,
+                background: T.cardBg, border: `1px solid ${T.cardBorder}`,
                 borderRadius:16, padding:28, marginBottom:30,
-                boxShadow: styles.cardShadow,
-                position:"relative", overflow:"hidden",
+                boxShadow: T.cardShadow, position:"relative", overflow:"hidden",
               }}>
                 <div style={{
-                  position:"absolute", top:0, left:0, right:0, height:4,
-                  background:`linear-gradient(90deg, ${BRAND.primary}, ${BRAND.secondary}, ${BRAND.pink})`,
+                  position:"absolute", top:0, left:0, bottom:0, width:5,
+                  background: T.titleAccent,
                 }} />
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-                  <span style={{
-                    fontSize:11, fontWeight:700, letterSpacing:".15em", textTransform:"uppercase",
-                    color: BRAND.secondary,
-                  }}>🧠 Análise da Semana</span>
-                  <span style={{ fontSize:10, color: styles.textMuted }}>· Editorial IA</span>
+                <div style={{ paddingLeft:14 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                    <span style={{
+                      fontSize:11, fontWeight:700, letterSpacing:".15em", textTransform:"uppercase",
+                      color: T.titleAccent,
+                    }}>🧠 Análise da Semana</span>
+                  </div>
+                  <div style={{
+                    fontFamily:"'Fraunces',serif", fontSize:18, lineHeight:1.7,
+                    color: T.text, whiteSpace:"pre-wrap", fontWeight:400,
+                  }}>{current.aiSummary}</div>
                 </div>
-                <div style={{
-                  fontFamily:"'Fraunces',serif", fontSize:18, lineHeight:1.7,
-                  color: styles.text, whiteSpace:"pre-wrap",
-                  fontWeight:400,
-                }}>{current.aiSummary}</div>
               </div>
             )}
 
-            {/* FOCUS AREAS — INSIGHT CARDS */}
+            {/* FOCUS INSIGHTS */}
             {current.focusInsights && current.focusInsights.length > 0 && (
               <div style={{ marginBottom:30 }}>
                 <div style={{
-                  fontSize:11, color: styles.textMuted, fontWeight:700,
+                  fontSize:11, color: T.textMuted, fontWeight:700,
                   letterSpacing:".15em", textTransform:"uppercase", marginBottom:14,
                   display:"flex", alignItems:"center", gap:8,
                 }}>
-                  <span style={{ width:24, height:1, background: styles.cardBorder }} />
+                  <span style={{ width:24, height:1, background: T.cardBorder }} />
                   Temas em Destaque
-                  <span style={{ flex:1, height:1, background: styles.cardBorder }} />
+                  <span style={{ flex:1, height:1, background: T.cardBorder }} />
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:14 }}>
                   {FOCUS_AREAS.map((area, i) => {
                     const insight = current.focusInsights.find(x => x.area === area.id);
                     if (!insight?.summary) return null;
-                    const colors = [BRAND.primary, BRAND.secondary, BRAND.accent];
-                    const color = colors[i] || BRAND.primary;
+                    const colors = [T.accent1, T.accent2, T.accent3];
+                    const color = colors[i] || T.titleAccent;
                     return (
                       <div key={area.id} style={{
-                        background: isLight ? "#fff" : "rgba(255,255,255,.02)",
-                        border: `1px solid ${isLight ? BRAND.border : "rgba(255,255,255,.06)"}`,
-                        borderRadius:14, padding:20,
-                        boxShadow: styles.cardShadow,
-                        position:"relative", overflow:"hidden",
-                        transition:"all .25s",
-                      }} onMouseEnter={e => e.currentTarget.style.boxShadow = styles.cardShadowHover}
-                         onMouseLeave={e => e.currentTarget.style.boxShadow = styles.cardShadow}>
+                        background: T.cardBg, border: `1px solid ${T.cardBorder}`,
+                        borderRadius:14, padding:20, boxShadow: T.cardShadow,
+                        position:"relative", overflow:"hidden", transition:"all .25s",
+                      }}>
                         <div style={{ position:"absolute", top:0, left:0, bottom:0, width:4, background:color }} />
                         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10, paddingLeft:8 }}>
                           <div style={{
                             width:36, height:36, borderRadius:10,
-                            background: `${color}15`, color: color,
-                            display:"flex", alignItems:"center", justifyContent:"center",
-                            fontSize:18,
+                            background: `${color}20`, color: color,
+                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
                           }}>{area.icon}</div>
                           <div style={{ fontSize:11, color: color, fontWeight:700, letterSpacing:".05em", textTransform:"uppercase" }}>
                             {area.label}
                           </div>
                         </div>
-                        <div style={{ fontSize:14, color: styles.text, lineHeight:1.6, paddingLeft:8 }}>
+                        <div style={{ fontSize:14, color: T.text, lineHeight:1.6, paddingLeft:8 }}>
                           {insight.summary}
                         </div>
                       </div>
@@ -895,33 +930,31 @@ function PublicNewsletter() {
               </div>
             )}
 
-            {/* HEADLINES — FILTER + GRID */}
+            {/* HEADLINES */}
             {current.headlines && current.headlines.length > 0 && (
               <div>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:10 }}>
-                  <div style={{ fontSize:11, color: styles.textMuted, fontWeight:700, letterSpacing:".15em", textTransform:"uppercase" }}>
+                  <div style={{ fontSize:11, color: T.textMuted, fontWeight:700, letterSpacing:".15em", textTransform:"uppercase" }}>
                     📰 Notícias da Semana ({filteredHeadlines.length}/{current.headlines.length})
                   </div>
-                  {/* Category filter */}
                   {categoriesInUse.length > 1 && (
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                       <button onClick={() => setFilter("all")} style={{
                         padding:"4px 10px", borderRadius:6, fontSize:10, fontWeight:600, cursor:"pointer",
-                        background: filter === "all" ? styles.text : "transparent",
-                        color: filter === "all" ? styles.bg : styles.textMuted,
-                        border: `1px solid ${filter === "all" ? styles.text : (isLight ? BRAND.border : "rgba(255,255,255,.1)")}`,
+                        background: filter === "all" ? T.text : "transparent",
+                        color: filter === "all" ? T.bg : T.textMuted,
+                        border: `1px solid ${filter === "all" ? T.text : T.cardBorder}`,
                         fontFamily:"'Outfit',sans-serif",
                       }}>Todas</button>
                       {categoriesInUse.map(cat => {
                         const sel = filter === cat;
-                        const catColor = isLight ? CAT_LIGHT[cat] : null;
-                        const darkColor = CAT_DARK[cat] || "#888";
+                        const cs = catStyle(cat, isDark);
                         return (
                           <button key={cat} onClick={() => setFilter(cat)} style={{
                             padding:"4px 10px", borderRadius:6, fontSize:10, fontWeight:600, cursor:"pointer",
-                            background: sel ? (catColor?.bg || `${darkColor}20`) : "transparent",
-                            color: sel ? (catColor?.color || darkColor) : styles.textMuted,
-                            border: `1px solid ${sel ? (catColor?.color || darkColor) + "40" : (isLight ? BRAND.border : "rgba(255,255,255,.1)")}`,
+                            background: sel ? cs.background : "transparent",
+                            color: sel ? cs.color : T.textMuted,
+                            border: `1px solid ${sel ? cs.color + "60" : T.cardBorder}`,
                             fontFamily:"'Outfit',sans-serif",
                           }}>{cat}</button>
                         );
@@ -932,59 +965,45 @@ function PublicNewsletter() {
 
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(330px, 1fr))", gap:16 }}>
                   {filteredHeadlines.map((h, i) => {
-                    const catStyle = isLight ? CAT_LIGHT[h.category] : null;
-                    const darkColor = CAT_DARK[h.category] || "#888";
-                    // First card: featured (full row on small)
+                    const cs = catStyle(h.category, isDark);
                     const featured = i === 0 && filter === "all";
                     return (
                       <div key={i} style={{
                         gridColumn: featured ? "1 / -1" : "auto",
-                        background: isLight ? "#fff" : "rgba(255,255,255,.02)",
-                        border: `1px solid ${isLight ? BRAND.border : "rgba(255,255,255,.06)"}`,
+                        background: T.cardBg, border: `1px solid ${T.cardBorder}`,
                         borderRadius:14, padding: featured ? 24 : 18,
-                        cursor: h.url ? "pointer" : "default",
-                        transition:"all .2s",
-                        boxShadow: styles.cardShadow,
-                        display:"flex", flexDirection: featured ? "row" : "column", gap:14,
-                        flexWrap: "wrap",
+                        cursor: h.url ? "pointer" : "default", transition:"all .2s",
+                        boxShadow: T.cardShadow,
                       }}
                       onClick={() => h.url && window.open(h.url, "_blank", "noopener,noreferrer")}
-                      onMouseEnter={e => { if (h.url) { e.currentTarget.style.boxShadow = styles.cardShadowHover; e.currentTarget.style.transform = "translateY(-2px)"; } }}
-                      onMouseLeave={e => { e.currentTarget.style.boxShadow = styles.cardShadow; e.currentTarget.style.transform = "translateY(0)"; }}>
-                        <div style={{ flex:1, minWidth:200 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+                      onMouseEnter={e => { if (h.url) { e.currentTarget.style.boxShadow = T.cardShadowHover; e.currentTarget.style.transform = "translateY(-2px)"; } }}
+                      onMouseLeave={e => { e.currentTarget.style.boxShadow = T.cardShadow; e.currentTarget.style.transform = "translateY(0)"; }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+                          <span style={{
+                            fontSize:9, padding:"3px 9px", borderRadius:5, fontWeight:700, letterSpacing:".04em",
+                            background: cs.background, color: cs.color,
+                          }}>{h.category || "IA"}</span>
+                          {h.source && <span style={{ fontSize:10, color: T.textMuted, fontWeight:500 }}>{h.source}</span>}
+                          {featured && (
                             <span style={{
                               fontSize:9, padding:"3px 9px", borderRadius:5, fontWeight:700, letterSpacing:".04em",
-                              background: catStyle?.bg || `${darkColor}20`,
-                              color: catStyle?.color || darkColor,
-                            }}>{h.category || "IA"}</span>
-                            {h.source && <span style={{ fontSize:10, color: styles.textMuted, fontWeight:500 }}>{h.source}</span>}
-                            {featured && (
-                              <span style={{
-                                fontSize:9, padding:"3px 9px", borderRadius:5, fontWeight:700, letterSpacing:".04em",
-                                background: `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.secondary})`,
-                                color:"#fff",
-                              }}>⭐ DESTAQUE</span>
-                            )}
-                          </div>
-                          <div style={{
-                            fontFamily:"'Fraunces',serif",
-                            fontSize: featured ? 22 : 17, fontWeight: featured ? 700 : 600, lineHeight:1.3,
-                            color: styles.text, marginBottom:10,
-                          }}>{h.title}</div>
-                          <div style={{ fontSize: featured ? 14 : 13, color: styles.textMuted, lineHeight:1.6 }}>
-                            {h.summary}
-                          </div>
-                          {h.url && (
-                            <div style={{
-                              marginTop:12, fontSize:11, fontWeight:600,
-                              color: BRAND.primary,
-                              display:"flex", alignItems:"center", gap:5,
-                            }}>
-                              Ler matéria completa →
-                            </div>
+                              background: `linear-gradient(135deg, ${T.titleAccent}, ${BRAND.navyLight})`, color:"#fff",
+                            }}>⭐ DESTAQUE</span>
                           )}
                         </div>
+                        <div style={{
+                          fontFamily:"'Fraunces',serif",
+                          fontSize: featured ? 24 : 17, fontWeight: featured ? 700 : 600, lineHeight:1.3,
+                          color: T.text, marginBottom:10,
+                        }}>{h.title}</div>
+                        <div style={{ fontSize: featured ? 14 : 13, color: T.textMuted, lineHeight:1.6 }}>
+                          {h.summary}
+                        </div>
+                        {h.url && (
+                          <div style={{ marginTop:12, fontSize:11, fontWeight:600, color: T.titleAccent, display:"flex", alignItems:"center", gap:5 }}>
+                            Ler matéria completa →
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -995,66 +1014,31 @@ function PublicNewsletter() {
             {/* FOOTER */}
             <div style={{
               marginTop:60, paddingTop:30,
-              borderTop: `1px solid ${isLight ? BRAND.border : "rgba(255,255,255,.05)"}`,
-              textAlign:"center", color: styles.textMuted, fontSize:11,
+              borderTop: `1px solid ${T.cardBorder}`,
+              textAlign:"center", color: T.textMuted, fontSize:11,
             }}>
               <div style={{ display:"flex", justifyContent:"center", gap:14, marginBottom:14, flexWrap:"wrap" }}>
                 <button onClick={handleShare} style={{
-                  background: `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.secondary})`,
+                  background: `linear-gradient(135deg, ${T.titleAccent}, ${BRAND.navyLight})`,
                   border:"none", color:"#fff", padding:"10px 22px", borderRadius:9,
                   fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"'Outfit',sans-serif",
-                  boxShadow:`0 4px 14px ${BRAND.primary}30`,
-                  display:"flex", alignItems:"center", gap:7,
+                  boxShadow:`0 4px 14px ${T.titleAccent}30`,
                 }}>
                   {shareCopied ? "✓ Link copiado!" : "🔗 Compartilhar Edição"}
                 </button>
                 <button onClick={copyShareUrl} style={{
-                  background: "transparent",
-                  border: `1px solid ${isLight ? BRAND.border : "rgba(255,255,255,.1)"}`,
-                  color: styles.text, padding:"10px 22px", borderRadius:9,
+                  background: "transparent", border: `1px solid ${T.cardBorder}`,
+                  color: T.text, padding:"10px 22px", borderRadius:9,
                   fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"'Outfit',sans-serif",
-                }}>
-                  📋 Copiar Link
-                </button>
+                }}>📋 Copiar Link</button>
               </div>
-              <div style={{ marginTop:14, fontWeight:500 }}>📡 Syncronize-MI · Curadoria semanal de IA</div>
-              <div style={{ marginTop:6, fontSize:10, color: styles.textMuted, opacity:.7 }}>
-                Edição compartilhável: {getShareUrl(selectedDate)}
+              <div style={{ marginTop:14, fontWeight:500, fontFamily:"'Fraunces',serif", fontStyle:"italic", fontSize:13 }}>
+                📡 Syncronize-MI — Atualizações de IA para quem tem pouco tempo
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* SHARE MODAL FALLBACK */}
-      {shareOpen && (
-        <div onClick={() => setShareOpen(false)} style={{
-          position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000,
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: styles.cardBg, border: `1px solid ${styles.cardBorder}`,
-            borderRadius:14, padding:24, maxWidth:400, width:"90%",
-          }}>
-            <div style={{ fontWeight:700, marginBottom:12, color: styles.text }}>🔗 Compartilhar edição</div>
-            <input readOnly value={getShareUrl(selectedDate)} style={{
-              width:"100%", padding:"10px 12px", borderRadius:7, fontSize:12,
-              background: isLight ? "#f5f7fb" : "rgba(0,0,0,.3)",
-              border: `1px solid ${styles.cardBorder}`, color: styles.text,
-              fontFamily:"'JetBrains Mono',monospace",
-            }} />
-            <div style={{ display:"flex", gap:8, marginTop:14 }}>
-              <button onClick={copyShareUrl} style={{
-                flex:1, background: BRAND.primary, color:"#fff", border:"none", padding:"10px", borderRadius:7,
-                fontSize:12, fontWeight:600, cursor:"pointer",
-              }}>{shareCopied ? "✓ Copiado" : "📋 Copiar"}</button>
-              <button onClick={() => setShareOpen(false)} style={{
-                background:"transparent", border: `1px solid ${styles.cardBorder}`, color: styles.text, padding:"10px 16px", borderRadius:7,
-                fontSize:12, cursor:"pointer",
-              }}>Fechar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1064,6 +1048,32 @@ function PublicNewsletter() {
 // ═════════════════════════════════════════════════════════════════════════════
 
 function AdminApp() {
+  const [theme, toggleTheme] = useTheme("user:admin_theme", "dark");
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    document.body.classList.toggle("admin-dark", isDark);
+    return () => document.body.classList.remove("admin-dark");
+  }, [isDark]);
+
+  const T = isDark ? {
+    bg: BRAND.ink,
+    bgAlt: BRAND.navyDeep,
+    text: BRAND.cream,
+    textMuted: "#9ba8b8",
+    cardBg: "rgba(255,255,255,.03)",
+    cardBorder: "rgba(255,255,255,.08)",
+    headerBg: `linear-gradient(180deg,${BRAND.navyDeep},${BRAND.ink})`,
+  } : {
+    bg: BRAND.cream,
+    bgAlt: BRAND.creamSoft,
+    text: BRAND.ink,
+    textMuted: BRAND.muted,
+    cardBg: "#fff",
+    cardBorder: "rgba(31,58,92,.12)",
+    headerBg: `linear-gradient(180deg,${BRAND.creamSoft},${BRAND.cream})`,
+  };
+
   const [tab, setTab]                   = useState(0);
   const [done, setDone]                 = useState([]);
   const [storageReady, setStorageReady] = useState(false);
@@ -1089,6 +1099,7 @@ function AdminApp() {
   const [editorAiSummary, setEditorAiSummary] = useState("");
   const [editorFocusInsights, setEditorFocusInsights] = useState([]);
   const [editorPodcastUrl, setEditorPodcastUrl] = useState("");
+  const [editorPodcastBlobRef, setEditorPodcastBlobRef] = useState("");
   const [editorPodcastTitle, setEditorPodcastTitle] = useState("");
   const [editorPodcastDuration, setEditorPodcastDuration] = useState(15);
   const [editorPodcastThumbnail, setEditorPodcastThumbnail] = useState("");
@@ -1096,6 +1107,8 @@ function AdminApp() {
   const [isLoadingNl, setIsLoadingNl]     = useState(false);
   const [isGenSummary, setIsGenSummary]   = useState(false);
   const [isGenInsights, setIsGenInsights] = useState(false);
+  const [isGenTitle, setIsGenTitle]       = useState(false);
+  const [isGenSubtitle, setIsGenSubtitle] = useState(false);
   const [nlError, setNlError]             = useState("");
   const [nlSuccess, setNlSuccess]         = useState("");
 
@@ -1110,7 +1123,6 @@ function AdminApp() {
   const [quickScript, setQuickScript]   = useState("");
 
   const [kRole, setKRole]               = useState("tech_host");
-  const [kEmotion, setKEmotion]         = useState("confident");
   const [avatarFile, setAvatarFile]     = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileRef                         = useRef(null);
@@ -1144,10 +1156,11 @@ function AdminApp() {
 
   const markDone = useCallback((i) => setDone(p => p.includes(i) ? p : [...p, i]), []);
 
+  // ─── LOAD ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const settings = await db.get("user:settings_v8");
+      const settings = await db.get("user:settings_v9");
       if (cancelled) return;
       if (settings) {
         if (settings.apiKey) setApiKey(settings.apiKey);
@@ -1162,7 +1175,6 @@ function AdminApp() {
         if (settings.heygenValidated) setHeygenValidated(true);
         if (settings.podcastName) setPodcastName(settings.podcastName);
         if (settings.kRole) setKRole(settings.kRole);
-        if (settings.kEmotion) setKEmotion(settings.kEmotion);
       }
       setEpisodes(await db.listEpisodes());
       setNewsletters(await db.listNewsletters());
@@ -1171,20 +1183,21 @@ function AdminApp() {
     return () => { cancelled = true; };
   }, [markDone]);
 
+  // ─── AUTO-SAVE SETTINGS (NOT newsletters — those are explicit) ────────────
   useEffect(() => {
     if (!storageReady) return;
     const t = setTimeout(() => {
-      db.set("user:settings_v8", {
+      db.set("user:settings_v9", {
         apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId,
         teamsWebhook, defaultEmails,
         keyValidated, klingValidated, heygenValidated,
-        podcastName, kRole, kEmotion,
-        updatedAt: Date.now(),
+        podcastName, kRole, updatedAt: Date.now(),
       });
     }, 600);
     return () => clearTimeout(t);
-  }, [apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId, teamsWebhook, defaultEmails, keyValidated, klingValidated, heygenValidated, podcastName, kRole, kEmotion, storageReady]);
+  }, [apiKey, klingApiKey, heygenApiKey, heygenAvatarId, heygenVoiceId, teamsWebhook, defaultEmails, keyValidated, klingValidated, heygenValidated, podcastName, kRole, storageReady]);
 
+  // ─── LOAD EDITOR FROM SELECTED DATE ───────────────────────────────────────
   useEffect(() => {
     if (!storageReady) return;
     (async () => {
@@ -1196,6 +1209,7 @@ function AdminApp() {
         setEditorAiSummary(existing.aiSummary || "");
         setEditorFocusInsights(existing.focusInsights || []);
         setEditorPodcastUrl(existing.podcastUrl || "");
+        setEditorPodcastBlobRef(existing.podcastBlobRef || "");
         setEditorPodcastTitle(existing.podcastTitle || "");
         setEditorPodcastDuration(existing.podcastDuration || 15);
         setEditorPodcastThumbnail(existing.podcastThumbnail || "");
@@ -1206,11 +1220,14 @@ function AdminApp() {
       } else {
         setEditorTitle(""); setEditorSubtitle(""); setEditorHeadlines([]);
         setEditorAiSummary(""); setEditorFocusInsights([]);
-        setEditorPodcastUrl(""); setEditorPodcastTitle("");
-        setEditorPodcastDuration(15); setEditorPodcastThumbnail("");
+        setEditorPodcastUrl(""); setEditorPodcastBlobRef("");
+        setEditorPodcastTitle(""); setEditorPodcastDuration(15);
+        setEditorPodcastThumbnail("");
       }
     })();
   }, [editorDate, storageReady]);
+
+  // ─── HELPERS ──────────────────────────────────────────────────────────────
 
   const handleUpload = (e) => {
     const file = e.target.files?.[0];
@@ -1224,14 +1241,16 @@ function AdminApp() {
   const toggleHL = (h) => setSelHL(p => p.find(x => x.title === h.title) ? p.filter(x => x.title !== h.title) : [...p, h]);
   const copyText = (text) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
+  // ─── CONNECTION TESTS ─────────────────────────────────────────────────────
+
   const testAnthropic = async () => {
     setTesting(p => ({ ...p, anthropic: true }));
     const trimmed = apiKey.trim();
     if (!trimmed) { setTestResults(p => ({ ...p, anthropic: { status:"err", msg:"Cole sua chave." } })); setTesting(p => ({ ...p, anthropic: false })); return; }
     if (apiKey !== trimmed) setApiKey(trimmed);
-    if (!trimmed.startsWith("sk-ant-")) { setTestResults(p => ({ ...p, anthropic: { status:"err", msg:'Chave inválida.' } })); setTesting(p => ({ ...p, anthropic: false })); return; }
+    if (!trimmed.startsWith("sk-ant-")) { setTestResults(p => ({ ...p, anthropic: { status:"err", msg:'Inválida.' } })); setTesting(p => ({ ...p, anthropic: false })); return; }
     try {
-      const data = await callAnthropic(trimmed, { model: ANTHROPIC_MODEL, max_tokens: 30, messages: [{ role: "user", content: "Diga: OK" }] });
+      const data = await callAnthropic(trimmed, { model: ANTHROPIC_MODEL, max_tokens: 30, messages: [{ role: "user", content: "OK" }] });
       const reply = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
       setKeyValidated(true); markDone(1);
       setTestResults(p => ({ ...p, anthropic: { status:"ok", msg:"Conexão OK!", details:`"${reply}"` } }));
@@ -1250,9 +1269,7 @@ function AdminApp() {
       await klingTestConnection(klingApiKey.trim());
       setKlingValidated(true);
       setTestResults(p => ({ ...p, kling: { status:"ok", msg:"OK" } }));
-    } catch (err) {
-      setTestResults(p => ({ ...p, kling: { status:"err", msg: err.message } }));
-    }
+    } catch (err) { setTestResults(p => ({ ...p, kling: { status:"err", msg: err.message } })); }
     setTesting(p => ({ ...p, kling: false }));
   };
 
@@ -1264,9 +1281,7 @@ function AdminApp() {
       const voiceCount = data?.data?.voices?.length || 0;
       setHeygenValidated(true);
       setTestResults(p => ({ ...p, heygen: { status:"ok", msg:`OK! ${voiceCount} vozes.` } }));
-    } catch (err) {
-      setTestResults(p => ({ ...p, heygen: { status:"err", msg: err.message } }));
-    }
+    } catch (err) { setTestResults(p => ({ ...p, heygen: { status:"err", msg: err.message } })); }
     setTesting(p => ({ ...p, heygen: false }));
   };
 
@@ -1276,19 +1291,19 @@ function AdminApp() {
     try {
       await sendTeamsWebhook(teamsWebhook.trim(), "🧪 Teste Syncronize-MI", "Teste de conexão.");
       setTestResults(p => ({ ...p, teams: { status:"ok", msg:"Enviado!" } }));
-    } catch (err) {
-      setTestResults(p => ({ ...p, teams: { status:"err", msg: err.message } }));
-    }
+    } catch (err) { setTestResults(p => ({ ...p, teams: { status:"err", msg: err.message } })); }
     setTesting(p => ({ ...p, teams: false }));
   };
 
+  // ─── NEWSLETTER LOGIC ─────────────────────────────────────────────────────
+
   const fetchNewsForNewsletter = async () => {
-    if (!keyValidated) { setNlError("Configure a chave Anthropic primeiro."); return; }
+    if (!keyValidated) { setNlError("Configure a chave Anthropic."); return; }
     setIsLoadingNl(true); setNlError(""); setNlSuccess("");
     try {
       const text = await callClaude(
         apiKey,
-        `Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, e desenvolvimento sistêmico/engineering. Responda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,
+        `Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, e desenvolvimento sistêmico. Responda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,
         true, 3000
       );
       const m = text.match(/\[[\s\S]*\]/);
@@ -1299,6 +1314,77 @@ function AdminApp() {
       } else throw new Error("Sem JSON");
     } catch (err) { setNlError("Erro: " + err.message); }
     setIsLoadingNl(false);
+  };
+
+  // ─── NEW: Generate compelling TITLE ───────────────────────────────────────
+  const generateTitle = async () => {
+    if (!keyValidated) { setNlError("Configure a chave."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes primeiro."); return; }
+    setIsGenTitle(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Crie um TÍTULO chamativo e magnético para uma newsletter sobre IA, baseado nestas manchetes da semana:
+
+${editorHeadlines.map((h, i) => `${i+1}. ${h.title}`).join("\n")}
+
+REGRAS PARA O TÍTULO:
+- Máximo 7 palavras
+- Use linguagem provocativa, clickbait elegante (não vulgar)
+- Pode ter números, palavras de poder ou paradoxos
+- Deve fazer o leitor PARAR e querer ler
+- Tom editorial, jornalístico, instigante
+- Português brasileiro
+- Identifique a tendência principal da semana e faça disso o título
+
+EXEMPLOS DE BONS TÍTULOS (para inspiração de tom, não copie):
+- "A semana que aposentou os engenheiros"
+- "OpenAI piscou. O Google atacou."
+- "Por que 2026 já não é o futuro"
+- "O fim silencioso dos prompts"
+
+Responda APENAS com o título escolhido. Sem aspas, sem explicação.`,
+        false, 200
+      );
+      setEditorTitle(text.trim().replace(/^["']|["']$/g, ""));
+      setNlSuccess("Título gerado!");
+    } catch (err) { setNlError("Erro: " + err.message); }
+    setIsGenTitle(false);
+  };
+
+  // ─── NEW: Generate compelling IMPACT SUBTITLE ─────────────────────────────
+  const generateSubtitle = async () => {
+    if (!keyValidated) { setNlError("Configure a chave."); return; }
+    if (editorHeadlines.length === 0) { setNlError("Adicione manchetes primeiro."); return; }
+    setIsGenSubtitle(true); setNlError("");
+    try {
+      const text = await callClaude(
+        apiKey,
+        `Crie uma FRASE DE IMPACTO (subtítulo) para uma newsletter sobre IA. Ela acompanha o título "${editorTitle || "(título a definir)"}" e prepara o leitor para o conteúdo desta semana.
+
+CONTEXTO (manchetes da semana):
+${editorHeadlines.slice(0, 6).map((h, i) => `- ${h.title}: ${h.summary}`).join("\n")}
+
+REGRAS PARA A FRASE:
+- 1 a 2 frases (máximo 25 palavras total)
+- Tom editorial, sofisticado, com ponto de vista
+- Conecte os temas da semana em uma narrativa única
+- Pode usar contraste, paradoxo ou tensão
+- Português brasileiro elegante
+- Faça o leitor entender O QUE PERDERÁ se não ler
+
+EXEMPLOS DE BONS SUBTÍTULOS (apenas para tom, não copie):
+- "Enquanto debatemos regulação, três startups silenciosamente reescreveram o que IA significa"
+- "Os benchmarks caíram. Os preços também. E ninguém parece ter notado o terceiro movimento."
+- "Não é mais sobre quem tem o melhor modelo — é sobre quem sabe orquestrá-los"
+
+Responda APENAS com a frase escolhida.`,
+        false, 300
+      );
+      setEditorSubtitle(text.trim().replace(/^["']|["']$/g, ""));
+      setNlSuccess("Frase de impacto gerada!");
+    } catch (err) { setNlError("Erro: " + err.message); }
+    setIsGenSubtitle(false);
   };
 
   const generateAiSummary = async () => {
@@ -1357,26 +1443,36 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
     setIsGenInsights(false);
   };
 
-  const handlePodcastUpload = (e) => {
+  // ─── PODCAST UPLOAD — separate blob storage so it doesn't break newsletter ─
+  const handlePodcastUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      setNlError("Arquivo muito grande para upload local. Use URL externa (HeyGen, S3).");
-      return;
+    if (file.size > 30 * 1024 * 1024) {
+      setNlError(`Arquivo grande (${(file.size/(1024*1024)).toFixed(1)}MB). Recomendamos URL externa para arquivos > 30MB para garantir persistência.`);
     }
+    setNlSuccess("Convertendo...");
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditorPodcastUrl(reader.result);
-      if (!editorPodcastTitle) setEditorPodcastTitle(file.name.replace(/\.[^.]+$/, ""));
-      setNlSuccess(`Vídeo carregado (${(file.size / (1024*1024)).toFixed(1)}MB)`);
+    reader.onloadend = async () => {
+      const dataUrl = reader.result;
+      const blobKey = `videoblob:${editorDate}:${Date.now()}`;
+      const r = await db.saveVideoBlob(blobKey, dataUrl);
+      if (r.ok) {
+        setEditorPodcastBlobRef(blobKey);
+        setEditorPodcastUrl(""); // priority to blob ref
+        if (!editorPodcastTitle) setEditorPodcastTitle(file.name.replace(/\.[^.]+$/, ""));
+        setNlSuccess(`Vídeo salvo no banco (${(file.size / (1024*1024)).toFixed(1)}MB) ✓`);
+      } else {
+        setNlError(`Não foi possível salvar (${(file.size/(1024*1024)).toFixed(1)}MB). Erro: ${r.error}. Use URL externa.`);
+      }
     };
     reader.readAsDataURL(file);
   };
 
+  // ─── SAVE NEWSLETTER — ROBUST ─────────────────────────────────────────────
   const saveNewsletter = async () => {
     if (!editorDate) { setNlError("Selecione uma data."); return; }
     setNlError(""); setNlSuccess("");
-    const expiresAt = editorPodcastUrl && editorPodcastTtlDays > 0
+    const expiresAt = (editorPodcastUrl || editorPodcastBlobRef) && editorPodcastTtlDays > 0
       ? Date.now() + editorPodcastTtlDays * 24 * 60 * 60 * 1000 : null;
     const nl = {
       id: `newsletter:${editorDate}`,
@@ -1386,24 +1482,27 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
       headlines: editorHeadlines,
       aiSummary: editorAiSummary,
       focusInsights: editorFocusInsights,
-      podcastUrl: editorPodcastUrl,
+      podcastUrl: editorPodcastUrl,           // URL externa (HeyGen, etc)
+      podcastBlobRef: editorPodcastBlobRef,   // Reference to separate blob storage
       podcastTitle: editorPodcastTitle,
       podcastDuration: editorPodcastDuration,
       podcastThumbnail: editorPodcastThumbnail,
       podcastExpiresAt: expiresAt,
       updatedAt: Date.now(),
     };
-    const ok = await db.set(nl.id, nl);
-    if (ok) {
-      setNlSuccess(`Edição publicada! Link: ?view=public&date=${editorDate}`);
+    const result = await db.set(nl.id, nl);
+    if (result.ok) {
+      setNlSuccess(`✅ Edição publicada em ${fmtDate(editorDate)}!`);
       setNewsletters(await db.listNewsletters());
     } else {
-      setNlError("Erro ao salvar.");
+      setNlError(`❌ Falha ao salvar (${result.size} bytes): ${result.error}. Tente reduzir conteúdo ou usar URL externa para vídeo.`);
     }
   };
 
   const deleteNewsletter = async (date) => {
     if (!confirm(`Apagar edição de ${fmtDate(date)}?`)) return;
+    const existing = await db.get(`newsletter:${date}`);
+    if (existing?.podcastBlobRef) await db.delete(existing.podcastBlobRef);
     await db.delete(`newsletter:${date}`);
     setNewsletters(await db.listNewsletters());
     setNlSuccess(`Apagada`);
@@ -1414,7 +1513,7 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
     setLoadingNews(true); setNewsError(""); setHeadlines([]);
     try {
       const text = await callClaude(apiKey,
-        `10 notícias de IA da semana. Responda JSON: [{"title":"...","summary":"...","source":"...","category":"IA","url":"..."}]`,
+        `10 notícias de IA da semana. JSON: [{"title":"...","summary":"...","source":"...","category":"IA","url":"..."}]`,
         true, 2500);
       const m = text.match(/\[[\s\S]*\]/);
       if (m) setHeadlines(JSON.parse(m[0]).slice(0, 10));
@@ -1428,7 +1527,7 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
     const items = (selHL.length > 0 ? selHL : headlines).slice(0, 8);
     try {
       const text = await callClaude(apiKey,
-        `Roteiro de podcast em ${duration} min, português brasileiro.\n\nITENS:\n${items.map((h, i) => `${i+1}. ${h.title}: ${h.summary}`).join("\n")}\n\n[pausa] entre tópicos, *palavra* para ênfase.`,
+        `Roteiro de podcast em ${duration} min, português.\nITENS:\n${items.map((h, i) => `${i+1}. ${h.title}: ${h.summary}`).join("\n")}\n[pausa] entre tópicos, *palavra* para ênfase.`,
         false, 2500);
       setQuickScript(text.trim());
       setRawText(items.map(h => `• ${h.title}: ${h.summary}`).join("\n"));
@@ -1453,7 +1552,7 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
     setIsGenEmail(true); setRefineError("");
     try {
       const text = await callClaude(apiKey,
-        `ASSUNTO + CORPO para distribuir podcast. JSON: {"subject":"...","body":"..."}\nPodcast: ${podcastName} · EP: ${epTitle}`,
+        `ASSUNTO + CORPO. JSON: {"subject":"...","body":"..."}\nPodcast: ${podcastName} · EP: ${epTitle}`,
         false, 800);
       const m = text.match(/\{[\s\S]*?\}/);
       if (m) { const parsed = JSON.parse(m[0]); setEmailSubject(parsed.subject || ""); setDistEmail(parsed.body || ""); }
@@ -1490,10 +1589,7 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
       { p:80, m:"🎬 Render..." }, { p:95, m:"📦 Export..." },
     ];
     try {
-      for (const s of steps) {
-        await new Promise(r => setTimeout(r, 800));
-        setRenderPct(s.p); setRenderMsg(s.m);
-      }
+      for (const s of steps) { await new Promise(r => setTimeout(r, 800)); setRenderPct(s.p); setRenderMsg(s.m); }
       const demoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
       const demoThumb = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg";
       setRenderPct(100); setRenderMsg("✅ Pronto!");
@@ -1527,12 +1623,8 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
           setRenderDone(true); markDone(4);
           await saveEpisode({ videoUrl: status.video_url, thumbnailUrl: status.thumbnail_url, videoId });
           break;
-        } else if (status?.status === "failed") {
-          throw new Error(status?.error?.message || "Falhou");
-        } else {
-          pct = Math.min(95, pct + 3); setRenderPct(pct);
-          setRenderMsg(`🎬 ${status?.status}... (${attempts})`);
-        }
+        } else if (status?.status === "failed") throw new Error(status?.error?.message || "Falhou");
+        else { pct = Math.min(95, pct + 3); setRenderPct(pct); setRenderMsg(`🎬 ${status?.status}... (${attempts})`); }
       }
     } catch (err) { setRenderError("Erro: " + err.message); }
     setIsRendering(false);
@@ -1582,6 +1674,7 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
   const useEpisodeAsPodcast = (ep) => {
     if (ep.videoUrl) {
       setEditorPodcastUrl(ep.videoUrl);
+      setEditorPodcastBlobRef("");
       setEditorPodcastThumbnail(ep.thumbnailUrl || "");
       setEditorPodcastTitle(ep.title);
       setEditorPodcastDuration(ep.duration);
@@ -1592,15 +1685,29 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
 
   const canAccessTab = (i) => i === 0 || i === 1 || keyValidated;
 
+  // ─── ADMIN HEADER ─────────────────────────────────────────────────────────
+
   return (
-    <div style={{ background:"#070b13", minHeight:"100vh", color:"#d8e8f0", paddingBottom:64 }}>
-      <div style={{ background:"linear-gradient(180deg,#0a1628,#070b13)", borderBottom:"1px solid rgba(0,180,255,.1)", padding:"16px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+    <div style={{ background: T.bg, minHeight:"100vh", color: T.text, paddingBottom:30 }}>
+      <div style={{
+        background: T.headerBg,
+        borderBottom: `1px solid ${T.cardBorder}`,
+        padding:"16px 24px",
+        display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10,
+      }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:40, height:40, borderRadius:11, background:"linear-gradient(135deg,#0050ff,#7c3aed,#ec4899)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🧠</div>
+          <div style={{
+            width:42, height:42, borderRadius:11,
+            background: BRAND.navy,
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, color:"#fff",
+            boxShadow:`0 4px 14px ${BRAND.navy}40`,
+          }}>🧠</div>
           <div>
-            <div style={{ fontSize:18, fontWeight:800, color:"#fff" }}>Syncronize-MI · Admin</div>
-            <div style={{ fontSize:9, color:"#3a6a90", fontFamily:"'JetBrains Mono',monospace", letterSpacing:".1em" }}>
-              v8 · {keyValidated ? "🟢" : "🔴"}{klingValidated ? "🟢" : "⚫"}{heygenValidated ? "🟢" : "⚫"}
+            <div style={{ fontSize:18, fontWeight:800, color: T.text, fontFamily:"'Fraunces',serif", letterSpacing:"-.025em" }}>
+              Syncronize-MI · Admin
+            </div>
+            <div style={{ fontSize:9, color: T.textMuted, fontFamily:"'JetBrains Mono',monospace", letterSpacing:".1em" }}>
+              v9 · {keyValidated ? "🟢" : "🔴"}{klingValidated ? "🟢" : "⚫"}{heygenValidated ? "🟢" : "⚫"}
             </div>
           </div>
         </div>
@@ -1609,47 +1716,54 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
             const accessible = canAccessTab(i);
             return (
               <button key={i} onClick={() => { if (accessible) setTab(i); }} disabled={!accessible} style={{
-                background: tab === i ? "rgba(0,180,255,.12)" : "transparent",
-                border: `1px solid ${tab === i ? "rgba(0,180,255,.35)" : "transparent"}`,
-                color: !accessible ? "#1a2a3a" : tab === i ? "#00b4ff" : "#4a6a80",
+                background: tab === i ? `${BRAND.navy}20` : "transparent",
+                border: `1px solid ${tab === i ? `${BRAND.navy}60` : "transparent"}`,
+                color: !accessible ? T.textMuted + "60" : tab === i ? (isDark ? BRAND.gold : BRAND.navy) : T.textMuted,
                 borderRadius:7, padding:"6px 13px", fontSize:12, fontWeight:500,
                 cursor: accessible ? "pointer" : "not-allowed", display:"flex", alignItems:"center", gap:5,
-                opacity: accessible ? 1 : .55,
+                opacity: accessible ? 1 : .55, fontFamily:"'Outfit',sans-serif",
               }}>
                 {!accessible && i > 1 && <span style={{ fontSize:9 }}>🔒</span>}
-                {done.includes(i) && <span style={{ fontSize:9, color:"#10b981" }}>✓</span>}
+                {done.includes(i) && <span style={{ fontSize:9, color: BRAND.sageDark }}>✓</span>}
                 <span>{t.icon}</span> {t.label}
               </button>
             );
           })}
-          <a href="?view=public" target="_blank" style={{ marginLeft:6, fontSize:11, color:"#10b981", textDecoration:"none", padding:"5px 10px", borderRadius:6, border:"1px solid rgba(16,185,129,.3)", background:"rgba(16,185,129,.06)" }}>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} style={{ marginLeft:6 }} />
+          <a href="?view=public" target="_blank" style={{
+            fontSize:11, color: BRAND.sageDark, textDecoration:"none",
+            padding:"6px 12px", borderRadius:7,
+            border:`1px solid ${BRAND.sage}40`, background:`${BRAND.sage}15`,
+          }}>
             👁️ Newsletter →
           </a>
         </div>
       </div>
 
       <div style={{ padding:"24px", maxWidth:1200, margin:"0 auto" }}>
-
-        {/* ════ NEWSLETTER ADMIN ═════════════════════════════════════════ */}
+        {/* ════ TAB 0 — NEWSLETTER ════ */}
         {tab === 0 && (
           <div className="fade">
-            <SectionHeader icon="📰" title="Newsletter Editor" sub="Gerencie edições da NewsLetter Syncronize-MI" />
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text, letterSpacing:"-.02em" }}>📰 Newsletter Editor</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted, fontStyle:"italic" }}>Gerencie edições da NewsLetter Syncronize-MI</p>
+            </div>
 
-            <div style={{ display:"flex", gap:12, marginTop:18, alignItems:"flex-end", flexWrap:"wrap" }}>
-              <Field label="Data" mt={0}>
-                <TextInput type="date" value={editorDate} onChange={e => setEditorDate(e.target.value)} style={{ width:180 }} />
+            <div style={{ display:"flex", gap:12, alignItems:"flex-end", flexWrap:"wrap" }}>
+              <Field label="Data" mt={0} dark={isDark}>
+                <TextInput type="date" value={editorDate} onChange={e => setEditorDate(e.target.value)} dark={isDark} style={{ width:180 }} />
               </Field>
               <div style={{ flex:1, minWidth:200 }}>
-                <div style={{ fontSize:9, fontWeight:700, color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>Edições</div>
+                <div style={{ fontSize:9, fontWeight:700, color: isDark ? BRAND.gold : BRAND.muted, letterSpacing:".1em", textTransform:"uppercase", marginBottom:6 }}>Edições</div>
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap", maxHeight:60, overflowY:"auto" }}>
-                  {newsletters.length === 0 ? <div style={{ fontSize:11, color:"#506070" }}>Nenhuma</div> :
+                  {newsletters.length === 0 ? <div style={{ fontSize:11, color: T.textMuted }}>Nenhuma</div> :
                     newsletters.slice(0, 12).map(n => (
                       <button key={n.date} onClick={() => setEditorDate(n.date)} style={{
-                        background: editorDate === n.date ? "rgba(0,180,255,.15)" : "rgba(255,255,255,.03)",
-                        border: `1px solid ${editorDate === n.date ? "rgba(0,180,255,.4)" : "rgba(255,255,255,.06)"}`,
-                        color: editorDate === n.date ? "#00b4ff" : "#90a8b8",
+                        background: editorDate === n.date ? `${BRAND.navy}25` : T.cardBg,
+                        border: `1px solid ${editorDate === n.date ? BRAND.navy : T.cardBorder}`,
+                        color: editorDate === n.date ? (isDark ? BRAND.gold : BRAND.navy) : T.text,
                         borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer", fontFamily:"monospace",
-                      }}>{fmtDate(n.date)} {n.podcastUrl && "🎙️"}</button>
+                      }}>{fmtDate(n.date)} {(n.podcastUrl || n.podcastBlobRef) && "🎙️"}</button>
                     ))}
                 </div>
               </div>
@@ -1668,17 +1782,40 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
             <InfoBox msg={nlSuccess} />
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:18 }}>
+              {/* LEFT */}
               <div>
-                <Field label="Título" mt={0}>
-                  <TextInput value={editorTitle} onChange={e => setEditorTitle(e.target.value)} placeholder="A semana que mudou a IA" />
-                </Field>
-                <Field label="Subtítulo">
-                  <TextArea value={editorSubtitle} onChange={e => setEditorSubtitle(e.target.value)} rows={2} placeholder="Frase de impacto..." />
-                </Field>
+                {/* TITLE WITH AI BUTTON */}
+                <div style={{ background: `${BRAND.gold}10`, border:`1px solid ${BRAND.gold}30`, borderRadius:11, padding:14, marginTop:0 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.goldDark }}>✨ Título Magnético</div>
+                    <Btn gold onClick={generateTitle} disabled={isGenTitle || !keyValidated || editorHeadlines.length === 0}>
+                      {isGenTitle ? <><Spinner /> Gerando...</> : "🪄 Gerar com IA"}
+                    </Btn>
+                  </div>
+                  <TextInput dark={isDark} value={editorTitle} onChange={e => setEditorTitle(e.target.value)} placeholder="Ex: A semana que aposentou os engenheiros" />
+                  <div style={{ fontSize:10, color: T.textMuted, marginTop:5, fontStyle:"italic" }}>
+                    💡 Use a IA para criar um título chamativo baseado nas manchetes (max 7 palavras)
+                  </div>
+                </div>
 
-                <div style={{ marginTop:14, padding:14, background:"rgba(0,180,255,.04)", border:"1px solid rgba(0,180,255,.18)", borderRadius:11 }}>
+                {/* SUBTITLE WITH AI BUTTON */}
+                <div style={{ background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}30`, borderRadius:11, padding:14, marginTop:14 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.sageDark }}>💥 Frase de Impacto</div>
+                    <Btn sage onClick={generateSubtitle} disabled={isGenSubtitle || !keyValidated || editorHeadlines.length === 0}>
+                      {isGenSubtitle ? <><Spinner /> Gerando...</> : "🪄 Gerar com IA"}
+                    </Btn>
+                  </div>
+                  <TextArea dark={isDark} value={editorSubtitle} onChange={e => setEditorSubtitle(e.target.value)} rows={2} placeholder="Frase editorial provocativa que faz o leitor querer ler tudo..." />
+                  <div style={{ fontSize:10, color: T.textMuted, marginTop:5, fontStyle:"italic" }}>
+                    💡 Subtítulo provocativo (max 25 palavras) que faz o leitor entender o que perderá se não ler
+                  </div>
+                </div>
+
+                {/* HEADLINES */}
+                <div style={{ marginTop:14, padding:14, background: `${BRAND.navy}08`, border:`1px solid ${BRAND.navy}30`, borderRadius:11 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:12, color:"#00b4ff" }}>📰 Manchetes ({editorHeadlines.length})</div>
+                    <div style={{ fontWeight:700, fontSize:12, color: isDark ? "#a8c8e8" : BRAND.navy }}>📰 Manchetes ({editorHeadlines.length})</div>
                     <Btn onClick={fetchNewsForNewsletter} disabled={isLoadingNl || !keyValidated}>
                       {isLoadingNl ? <><Spinner /> Buscando...</> : "🔍 Buscar IA"}
                     </Btn>
@@ -1686,42 +1823,46 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
                   {editorHeadlines.length > 0 && (
                     <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:240, overflowY:"auto" }}>
                       {editorHeadlines.map((h, i) => (
-                        <div key={i} style={{ background:"rgba(255,255,255,.02)", borderRadius:7, padding:"8px 10px", display:"flex", gap:8 }}>
+                        <div key={i} style={{ background: T.cardBg, borderRadius:7, padding:"8px 10px", display:"flex", gap:8 }}>
                           <div style={{ flex:1 }}>
-                            <div style={{ fontSize:11, fontWeight:600, color:"#a8c8d8" }}>{h.title}</div>
-                            <div style={{ fontSize:10, color:"#506070", marginTop:2 }}>{h.summary}</div>
-                            <div style={{ fontSize:9, color:"#3a5060", marginTop:3, fontFamily:"monospace" }}>{h.source} · {h.category}</div>
+                            <div style={{ fontSize:11, fontWeight:600, color: T.text }}>{h.title}</div>
+                            <div style={{ fontSize:10, color: T.textMuted, marginTop:2 }}>{h.summary}</div>
+                            <div style={{ fontSize:9, color: T.textMuted, marginTop:3, fontFamily:"monospace" }}>{h.source} · {h.category}</div>
                           </div>
-                          <button onClick={() => setEditorHeadlines(editorHeadlines.filter((_, idx) => idx !== i))} style={{ background:"transparent", border:"none", color:"#506070", cursor:"pointer" }}>×</button>
+                          <button onClick={() => setEditorHeadlines(editorHeadlines.filter((_, idx) => idx !== i))} style={{ background:"transparent", border:"none", color: T.textMuted, cursor:"pointer", fontSize:14 }}>×</button>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div style={{ marginTop:14, padding:14, background:"rgba(124,58,237,.04)", border:"1px solid rgba(124,58,237,.18)", borderRadius:11 }}>
+                {/* AI SUMMARY */}
+                <div style={{ marginTop:14, padding:14, background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}30`, borderRadius:11 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:12, color:"#a78bfa" }}>🧠 Resumo Executivo</div>
-                    <Btn onClick={generateAiSummary} disabled={isGenSummary || editorHeadlines.length === 0}>
-                      {isGenSummary ? <><Spinner /> Gerando...</> : "✨ Análise IA"}
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.sageDark }}>🧠 Resumo Executivo</div>
+                    <Btn sage onClick={generateAiSummary} disabled={isGenSummary || editorHeadlines.length === 0}>
+                      {isGenSummary ? <><Spinner /> ...</> : "✨ Análise IA"}
                     </Btn>
                   </div>
-                  <TextArea value={editorAiSummary} onChange={e => setEditorAiSummary(e.target.value)} rows={6} placeholder="Resumo editorial..." />
+                  <TextArea dark={isDark} value={editorAiSummary} onChange={e => setEditorAiSummary(e.target.value)} rows={6} placeholder="Resumo editorial (~250 palavras)..." />
                 </div>
 
-                <div style={{ marginTop:14, padding:14, background:"rgba(251,191,36,.04)", border:"1px solid rgba(251,191,36,.18)", borderRadius:11 }}>
+                {/* FOCUS INSIGHTS */}
+                <div style={{ marginTop:14, padding:14, background: `${BRAND.gold}10`, border:`1px solid ${BRAND.gold}30`, borderRadius:11 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:12, color:"#fbbf24" }}>🎯 Insights por Área</div>
-                    <Btn onClick={generateFocusInsights} disabled={isGenInsights || editorHeadlines.length === 0}>
-                      {isGenInsights ? <><Spinner /> Gerando...</> : "✨ 3 Insights"}
+                    <div style={{ fontWeight:700, fontSize:12, color: BRAND.goldDark }}>🎯 Insights por Área</div>
+                    <Btn gold onClick={generateFocusInsights} disabled={isGenInsights || editorHeadlines.length === 0}>
+                      {isGenInsights ? <><Spinner /> ...</> : "✨ 3 Insights"}
                     </Btn>
                   </div>
                   {FOCUS_AREAS.map(area => {
                     const insight = editorFocusInsights.find(i => i.area === area.id);
+                    const color = isDark ? area.colorDark : area.colorLight;
                     return (
                       <div key={area.id} style={{ marginTop:8 }}>
-                        <div style={{ fontSize:10, color:area.color, fontWeight:700, marginBottom:4 }}>{area.icon} {area.label}</div>
+                        <div style={{ fontSize:10, color, fontWeight:700, marginBottom:4 }}>{area.icon} {area.label}</div>
                         <TextArea
+                          dark={isDark}
                           value={insight?.summary || ""}
                           onChange={e => {
                             const newI = editorFocusInsights.filter(i => i.area !== area.id);
@@ -1736,68 +1877,75 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
                 </div>
               </div>
 
+              {/* RIGHT — PODCAST */}
               <div>
-                <div style={{ padding:14, background:"rgba(29,185,84,.04)", border:"1px solid rgba(29,185,84,.2)", borderRadius:11 }}>
-                  <div style={{ fontWeight:700, fontSize:13, color:"#1DB954", marginBottom:10 }}>🎙️ Podcast da Edição</div>
+                <div style={{ padding:14, background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}40`, borderRadius:11 }}>
+                  <div style={{ fontWeight:700, fontSize:13, color: BRAND.sageDark, marginBottom:10 }}>🎙️ Podcast da Edição</div>
 
-                  <div style={{ background:"rgba(0,80,255,.05)", border:"1px solid rgba(0,80,255,.2)", borderRadius:8, padding:10, fontSize:11, color:"#90b0e0", marginBottom:10 }}>
-                    💡 <strong>Suportado:</strong> URL HeyGen (app.heygen.com/videos/...), YouTube, Vimeo, MP4/WebM direto, ou upload local (max 50MB).
+                  <div style={{ background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:8, padding:10, fontSize:11, color: T.textMuted, marginBottom:10 }}>
+                    💡 <strong>Suportado:</strong> URL HeyGen (app.heygen.com/videos/...), YouTube, Vimeo, MP4 direto, ou upload local (max 30MB recomendado).
                   </div>
 
-                  <Field label="URL externa do vídeo (recomendado)" mt={0}>
+                  <Field label="URL externa do vídeo (recomendado)" mt={0} dark={isDark}>
                     <TextInput
-                      value={editorPodcastUrl?.startsWith("data:") ? "" : editorPodcastUrl}
-                      onChange={e => setEditorPodcastUrl(e.target.value)}
-                      placeholder="https://app.heygen.com/videos/... ou https://your-cdn/file.mp4"
+                      dark={isDark}
+                      value={editorPodcastUrl}
+                      onChange={e => { setEditorPodcastUrl(e.target.value); if (e.target.value) setEditorPodcastBlobRef(""); }}
+                      placeholder="https://app.heygen.com/videos/..."
                     />
                   </Field>
 
-                  <Field label="OU Upload local (max 50MB)">
+                  <Field label="OU Upload local (salvo no banco)" dark={isDark}>
                     <input type="file" accept="video/*" onChange={handlePodcastUpload}
-                      style={{ width:"100%", padding:"8px", background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.09)", borderRadius:7, color:"#c8d8e8", fontSize:11 }} />
+                      style={{ width:"100%", padding:"8px", background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:7, color: T.text, fontSize:11 }} />
+                    {editorPodcastBlobRef && (
+                      <div style={{ marginTop:6, fontSize:10, color: BRAND.sageDark, background: `${BRAND.sage}15`, padding:"5px 8px", borderRadius:5 }}>
+                        ✓ Vídeo salvo no banco · ref: {editorPodcastBlobRef.slice(-12)}
+                      </div>
+                    )}
                   </Field>
 
-                  {editorPodcastUrl && (
+                  {(editorPodcastUrl || editorPodcastBlobRef) && (
                     <div style={{ marginTop:10 }}>
-                      <VideoPlayer url={editorPodcastUrl} maxHeight={200} />
+                      <PodcastPreview blobRef={editorPodcastBlobRef} url={editorPodcastUrl} />
                     </div>
                   )}
 
-                  <Field label="Título do Episódio">
-                    <TextInput value={editorPodcastTitle} onChange={e => setEditorPodcastTitle(e.target.value)} placeholder="Syncronize-MI #042" />
+                  <Field label="Título do Episódio" dark={isDark}>
+                    <TextInput dark={isDark} value={editorPodcastTitle} onChange={e => setEditorPodcastTitle(e.target.value)} placeholder="Syncronize-MI #042" />
                   </Field>
 
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                    <Field label="Duração (min)">
-                      <TextInput type="number" value={editorPodcastDuration} onChange={e => setEditorPodcastDuration(parseInt(e.target.value) || 0)} />
+                    <Field label="Duração (min)" dark={isDark}>
+                      <TextInput dark={isDark} type="number" value={editorPodcastDuration} onChange={e => setEditorPodcastDuration(parseInt(e.target.value) || 0)} />
                     </Field>
-                    <Field label="Disponível (dias)">
-                      <TextInput type="number" value={editorPodcastTtlDays} onChange={e => setEditorPodcastTtlDays(parseInt(e.target.value) || 0)} />
+                    <Field label="Disponível (dias)" dark={isDark}>
+                      <TextInput dark={isDark} type="number" value={editorPodcastTtlDays} onChange={e => setEditorPodcastTtlDays(parseInt(e.target.value) || 0)} />
                     </Field>
                   </div>
 
-                  <Field label="Thumbnail URL (opcional)">
-                    <TextInput value={editorPodcastThumbnail} onChange={e => setEditorPodcastThumbnail(e.target.value)} />
+                  <Field label="Thumbnail URL (opcional)" dark={isDark}>
+                    <TextInput dark={isDark} value={editorPodcastThumbnail} onChange={e => setEditorPodcastThumbnail(e.target.value)} />
                   </Field>
 
-                  {editorPodcastTtlDays > 0 && editorPodcastUrl && (
-                    <div style={{ fontSize:10, color:"#506070", marginTop:8, padding:8, background:"rgba(0,0,0,.2)", borderRadius:6 }}>
+                  {editorPodcastTtlDays > 0 && (editorPodcastUrl || editorPodcastBlobRef) && (
+                    <div style={{ fontSize:10, color: T.textMuted, marginTop:8, padding:8, background: T.cardBg, borderRadius:6, border:`1px solid ${T.cardBorder}` }}>
                       ⏰ Expira: {new Date(Date.now() + editorPodcastTtlDays * 24*60*60*1000).toLocaleDateString("pt-BR")}
                     </div>
                   )}
                 </div>
 
                 {episodes.filter(e => e.videoUrl).length > 0 && (
-                  <div style={{ marginTop:14, padding:14, background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:11 }}>
-                    <div style={{ fontWeight:700, fontSize:12, color:"#a0c0d8", marginBottom:8 }}>📚 Usar episódio gerado</div>
+                  <div style={{ marginTop:14, padding:14, background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:11 }}>
+                    <div style={{ fontWeight:700, fontSize:12, color: T.text, marginBottom:8 }}>📚 Usar episódio gerado</div>
                     <div style={{ display:"flex", flexDirection:"column", gap:5, maxHeight:160, overflowY:"auto" }}>
                       {episodes.filter(e => e.videoUrl).slice(0, 6).map(ep => (
-                        <div key={ep.id} style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,.02)", borderRadius:6, padding:"6px 10px" }}>
+                        <div key={ep.id} style={{ display:"flex", alignItems:"center", gap:8, background: T.cardBg, borderRadius:6, padding:"6px 10px", border:`1px solid ${T.cardBorder}` }}>
                           <div style={{ flex:1, fontSize:11 }}>
-                            <div style={{ color:"#c8d8e8" }}>{ep.title}</div>
-                            <div style={{ color:"#506070", fontSize:9, fontFamily:"monospace" }}>{ep.engine} · {ep.duration}min</div>
+                            <div style={{ color: T.text }}>{ep.title}</div>
+                            <div style={{ color: T.textMuted, fontSize:9, fontFamily:"monospace" }}>{ep.engine} · {ep.duration}min</div>
                           </div>
-                          <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background:"rgba(29,185,84,.1)", border:"1px solid rgba(29,185,84,.3)", color:"#1DB954", borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer" }}>↓</button>
+                          <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background: `${BRAND.sage}25`, border:`1px solid ${BRAND.sage}50`, color: BRAND.sageDark, borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer", fontWeight:600 }}>↓ Usar</button>
                         </div>
                       ))}
                     </div>
@@ -1805,12 +1953,12 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
                 )}
 
                 {newsletters.find(n => n.date === editorDate) && (
-                  <div style={{ marginTop:14, padding:12, background:"linear-gradient(135deg, rgba(0,80,255,.06), rgba(124,58,237,.04))", border:"1px solid rgba(0,80,255,.2)", borderRadius:10 }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:"#00b4ff", marginBottom:6 }}>🔗 Link compartilhável</div>
-                    <div style={{ fontSize:10, color:"#90b0e0", fontFamily:"monospace", wordBreak:"break-all", marginBottom:8 }}>
-                      {window.location.origin}{window.location.pathname}?view=public&date={editorDate}
+                  <div style={{ marginTop:14, padding:12, background: `linear-gradient(135deg, ${BRAND.navy}15, ${BRAND.gold}10)`, border:`1px solid ${BRAND.navy}30`, borderRadius:10 }}>
+                    <div style={{ fontSize:11, fontWeight:700, color: isDark ? BRAND.gold : BRAND.navy, marginBottom:6 }}>🔗 Link compartilhável</div>
+                    <div style={{ fontSize:10, color: T.textMuted, fontFamily:"monospace", wordBreak:"break-all", marginBottom:8 }}>
+                      ?view=public&date={editorDate}
                     </div>
-                    <button onClick={() => copyText(`${window.location.origin}${window.location.pathname}?view=public&date=${editorDate}`)} style={{ background:"linear-gradient(135deg,#0050ff,#7c3aed)", border:"none", color:"#fff", padding:"5px 12px", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>
+                    <button onClick={() => copyText(`${window.location.origin}${window.location.pathname}?view=public&date=${editorDate}`)} style={{ background: BRAND.navy, border:"none", color:"#fff", padding:"5px 12px", borderRadius:5, fontSize:10, cursor:"pointer", fontWeight:600 }}>
                       {copied ? "✓ Copiado" : "📋 Copiar"}
                     </button>
                   </div>
@@ -1820,98 +1968,106 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
           </div>
         )}
 
-        {/* ════ DIAGNÓSTICO ═══════════════════════════════════════════════ */}
+        {/* ════ TAB 1 — DIAGNÓSTICO ════ */}
         {tab === 1 && (
           <div className="fade">
-            <SectionHeader icon="🔬" title="Diagnóstico" sub="Configure todas as APIs" />
-            <div style={{ marginTop:16, marginBottom:18, background: keyValidated ? "rgba(16,185,129,.06)" : "rgba(217,119,6,.07)", border: `1px solid ${keyValidated ? "rgba(16,185,129,.25)" : "rgba(217,119,6,.3)"}`, borderRadius:11, padding:14, display:"flex", alignItems:"center", gap:14 }}>
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>🔬 Diagnóstico</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted, fontStyle:"italic" }}>Configure todas as APIs</p>
+            </div>
+
+            <div style={{ marginTop:16, marginBottom:18,
+              background: keyValidated ? `${BRAND.sage}15` : `${BRAND.gold}15`,
+              border: `1px solid ${keyValidated ? BRAND.sage : BRAND.gold}50`,
+              borderRadius:11, padding:14, display:"flex", alignItems:"center", gap:14 }}>
               <div style={{ fontSize:28 }}>{keyValidated ? "✅" : "⚠️"}</div>
               <div style={{ flex:1 }}>
-                <div style={{ fontWeight:700, color: keyValidated ? "#10b981" : "#d97706", fontSize:13 }}>
+                <div style={{ fontWeight:700, color: keyValidated ? BRAND.sageDark : BRAND.goldDark, fontSize:13 }}>
                   {keyValidated ? "Sistema OK" : "Configure"}
                 </div>
-                <div style={{ fontSize:10, color:"#608090", marginTop:3 }}>
+                <div style={{ fontSize:10, color: T.textMuted, marginTop:3 }}>
                   Anthropic {keyValidated ? "✓" : "✗"} · Kling {klingValidated ? "✓" : "✗"} · HeyGen {heygenValidated ? "✓" : "✗"} · Teams {teamsWebhook ? "✓" : "—"}
                 </div>
               </div>
             </div>
+
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-              <div style={{ background:"rgba(217,119,6,.05)", border:"1px solid rgba(217,119,6,.25)", borderRadius:11, padding:16 }}>
+              <div style={{ background: `${BRAND.gold}15`, border:`1px solid ${BRAND.gold}40`, borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span>🧠</span>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:"#d97706" }}>Anthropic Claude</div>
-                  </div>
-                  <StatusBadge status={keyValidated ? "ok" : "warn"} label={keyValidated ? "✓" : "OBRIGATÓRIO"} />
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: BRAND.goldDark }}>Anthropic Claude</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: keyValidated ? `${BRAND.sage}30` : `${BRAND.gold}30`, color: keyValidated ? BRAND.sageDark : BRAND.goldDark, fontWeight:700 }}>
+                    {keyValidated ? "✓" : "OBRIGATÓRIO"}
+                  </span>
                 </div>
-                <TextInput type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="sk-ant-..." />
+                <TextInput dark={isDark} type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="sk-ant-..." />
                 <Btn onClick={testAnthropic} disabled={testing.anthropic || !apiKey.trim()} style={{ marginTop:10, width:"100%" }}>
                   {testing.anthropic ? <><Spinner /> Testando...</> : "▶️ Testar"}
                 </Btn>
                 {testResults.anthropic && (
-                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.anthropic.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.anthropic.status === "ok" ? "#6ad490" : "#fc8080" }}>
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.anthropic.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.anthropic.status === "ok" ? BRAND.sageDark : "#c84545" }}>
                     {testResults.anthropic.msg}
                   </div>
                 )}
               </div>
 
-              <div style={{ background:"rgba(0,180,255,.05)", border:"1px solid rgba(0,180,255,.18)", borderRadius:11, padding:16 }}>
+              <div style={{ background: `${BRAND.navy}15`, border:`1px solid ${BRAND.navy}40`, borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span>⚡</span>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:"#00b4ff" }}>Kling AI</div>
-                  </div>
-                  <StatusBadge status={klingValidated ? "ok" : "idle"} label={klingValidated ? "✓" : "OPCIONAL"} />
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: isDark ? "#a8c8e8" : BRAND.navy }}>Kling AI</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: klingValidated ? `${BRAND.sage}30` : T.cardBg, color: klingValidated ? BRAND.sageDark : T.textMuted, fontWeight:700 }}>
+                    {klingValidated ? "✓" : "OPCIONAL"}
+                  </span>
                 </div>
-                <TextInput type="password" value={klingApiKey} onChange={e => setKlingApiKey(e.target.value)} />
+                <TextInput dark={isDark} type="password" value={klingApiKey} onChange={e => setKlingApiKey(e.target.value)} />
                 <Btn onClick={testKling} disabled={testing.kling || !klingApiKey.trim()} style={{ marginTop:10, width:"100%" }}>
                   {testing.kling ? <><Spinner /> ...</> : "▶️ Validar"}
                 </Btn>
                 {testResults.kling && (
-                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.kling.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.kling.status === "ok" ? "#6ad490" : "#fc8080" }}>
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.kling.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.kling.status === "ok" ? BRAND.sageDark : "#c84545" }}>
                     {testResults.kling.msg}
                   </div>
                 )}
               </div>
 
-              <div style={{ background:"rgba(124,58,237,.05)", border:"1px solid rgba(124,58,237,.25)", borderRadius:11, padding:16 }}>
+              <div style={{ background: `${BRAND.sage}15`, border:`1px solid ${BRAND.sage}40`, borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span>🎥</span>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:"#a78bfa" }}>HeyGen</div>
-                  </div>
-                  <StatusBadge status={heygenValidated ? "ok" : "idle"} label={heygenValidated ? "✓" : "OPCIONAL"} />
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: BRAND.sageDark }}>HeyGen</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: heygenValidated ? `${BRAND.sage}30` : T.cardBg, color: heygenValidated ? BRAND.sageDark : T.textMuted, fontWeight:700 }}>
+                    {heygenValidated ? "✓" : "OPCIONAL"}
+                  </span>
                 </div>
-                <TextInput type="password" value={heygenApiKey} onChange={e => setHeygenApiKey(e.target.value)} />
+                <TextInput dark={isDark} type="password" value={heygenApiKey} onChange={e => setHeygenApiKey(e.target.value)} />
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
-                  <TextInput value={heygenAvatarId} onChange={e => setHeygenAvatarId(e.target.value)} placeholder="Avatar ID" />
-                  <TextInput value={heygenVoiceId} onChange={e => setHeygenVoiceId(e.target.value)} placeholder="Voice ID" />
+                  <TextInput dark={isDark} value={heygenAvatarId} onChange={e => setHeygenAvatarId(e.target.value)} placeholder="Avatar ID" />
+                  <TextInput dark={isDark} value={heygenVoiceId} onChange={e => setHeygenVoiceId(e.target.value)} placeholder="Voice ID" />
                 </div>
                 <Btn onClick={testHeygen} disabled={testing.heygen || !heygenApiKey.trim()} style={{ marginTop:10, width:"100%" }}>
                   {testing.heygen ? <><Spinner /> ...</> : "▶️ Testar"}
                 </Btn>
                 {testResults.heygen && (
-                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.heygen.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.heygen.status === "ok" ? "#6ad490" : "#fc8080" }}>
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.heygen.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.heygen.status === "ok" ? BRAND.sageDark : "#c84545" }}>
                     {testResults.heygen.msg}
                   </div>
                 )}
               </div>
 
-              <div style={{ background:"rgba(0,120,212,.05)", border:"1px solid rgba(0,120,212,.25)", borderRadius:11, padding:16 }}>
+              <div style={{ background: `${BRAND.navyLight}15`, border:`1px solid ${BRAND.navyLight}40`, borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
                   <span>📤</span>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:"#4a90e0" }}>Distribuição</div>
-                  </div>
-                  <StatusBadge status={teamsWebhook ? "ok" : "idle"} label={teamsWebhook ? "✓" : "OPCIONAL"} />
+                  <div style={{ flex:1, fontWeight:700, fontSize:13, color: isDark ? "#a8c8e8" : BRAND.navy }}>Distribuição</div>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:4, background: teamsWebhook ? `${BRAND.sage}30` : T.cardBg, color: teamsWebhook ? BRAND.sageDark : T.textMuted, fontWeight:700 }}>
+                    {teamsWebhook ? "✓" : "OPCIONAL"}
+                  </span>
                 </div>
-                <TextInput type="password" value={teamsWebhook} onChange={e => setTeamsWebhook(e.target.value)} placeholder="Teams Webhook" />
-                <TextArea value={defaultEmails} onChange={e => setDefaultEmails(e.target.value)} rows={2} placeholder="E-mails padrão" style={{ marginTop:8 }} />
+                <TextInput dark={isDark} type="password" value={teamsWebhook} onChange={e => setTeamsWebhook(e.target.value)} placeholder="Teams Webhook" />
+                <TextArea dark={isDark} value={defaultEmails} onChange={e => setDefaultEmails(e.target.value)} rows={2} placeholder="E-mails padrão" style={{ marginTop:8 }} />
                 <Btn onClick={testTeams} disabled={testing.teams || !teamsWebhook.trim()} style={{ marginTop:10, width:"100%" }}>
-                  {testing.teams ? <><Spinner /> ...</> : "▶️ Testar Teams"}
+                  {testing.teams ? <><Spinner /> ...</> : "▶️ Testar"}
                 </Btn>
                 {testResults.teams && (
-                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.teams.status === "ok" ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", color: testResults.teams.status === "ok" ? "#6ad490" : "#fc8080" }}>
+                  <div style={{ marginTop:10, padding:8, borderRadius:6, fontSize:11, background: testResults.teams.status === "ok" ? `${BRAND.sage}15` : "rgba(200,69,69,.1)", color: testResults.teams.status === "ok" ? BRAND.sageDark : "#c84545" }}>
                     {testResults.teams.msg}
                   </div>
                 )}
@@ -1920,111 +2076,124 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
           </div>
         )}
 
-        {/* ════ PAUTA ════════════════════════════════════════════════════════ */}
+        {/* ════ TAB 2 — PAUTA ════ */}
         {tab === 2 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="📡" title="Pauta" sub="Para episódios de podcast" />
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>📡 Pauta</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted, fontStyle:"italic" }}>Para episódios de podcast</p>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
               <div>
-                <Field label="Podcast" mt={0}><TextInput value={podcastName} onChange={e => setPodcastName(e.target.value)} /></Field>
-                <Field label="Episódio"><TextInput value={epTitle} onChange={e => setEpTitle(e.target.value)} /></Field>
-                <Field label="Duração">
+                <Field label="Podcast" mt={0} dark={isDark}><TextInput dark={isDark} value={podcastName} onChange={e => setPodcastName(e.target.value)} /></Field>
+                <Field label="Episódio" dark={isDark}><TextInput dark={isDark} value={epTitle} onChange={e => setEpTitle(e.target.value)} /></Field>
+                <Field label="Duração" dark={isDark}>
                   <div style={{ display:"flex", gap:6 }}>
                     {[5,8,10,12,15].map(d => (
-                      <button key={d} onClick={() => setDuration(d)} style={{ flex:1, padding:"8px 0", borderRadius:7, border:"1px solid", borderColor: duration===d ? "#00b4ff" : "rgba(255,255,255,.09)", background: duration===d ? "rgba(0,180,255,.1)" : "rgba(255,255,255,.02)", color: duration===d ? "#00b4ff" : "#4a6a80", cursor:"pointer", fontWeight:700, fontSize:12 }}>{d}m</button>
+                      <button key={d} onClick={() => setDuration(d)} style={{
+                        flex:1, padding:"8px 0", borderRadius:7, border:"1px solid",
+                        borderColor: duration===d ? BRAND.navy : T.cardBorder,
+                        background: duration===d ? `${BRAND.navy}20` : T.cardBg,
+                        color: duration===d ? (isDark ? BRAND.gold : BRAND.navy) : T.textMuted,
+                        cursor:"pointer", fontWeight:700, fontSize:12,
+                      }}>{d}m</button>
                     ))}
                   </div>
                 </Field>
-                <Field label="Avatar">
-                  <div onClick={() => fileRef.current?.click()} style={{ border:"2px dashed rgba(0,180,255,.22)", borderRadius:10, padding:16, textAlign:"center", cursor:"pointer" }}>
+                <Field label="Avatar" dark={isDark}>
+                  <div onClick={() => fileRef.current?.click()} style={{ border:`2px dashed ${BRAND.navy}40`, borderRadius:10, padding:16, textAlign:"center", cursor:"pointer", background: T.cardBg }}>
                     {avatarPreview ? <img src={avatarPreview} alt="" style={{ width:60, height:60, borderRadius:"50%", objectFit:"cover" }} /> : <>🤳 Foto</>}
                     <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={handleUpload} />
-                  </div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:8 }}>
-                    {KLING_ROLES.map(r => (<Chip key={r.id} sel={kRole===r.id} onClick={() => setKRole(r.id)}>{r.icon} {r.label}</Chip>))}
                   </div>
                 </Field>
               </div>
               <div>
                 <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                  <div style={{ fontSize:9, fontWeight:700, color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase" }}>Manchetes</div>
+                  <div style={{ fontSize:9, fontWeight:700, color: isDark ? BRAND.gold : BRAND.muted, letterSpacing:".1em", textTransform:"uppercase" }}>Manchetes</div>
                   <div style={{ display:"flex", gap:6 }}>
                     {editorHeadlines.length > 0 && <Btn secondary onClick={importHeadlinesFromNewsletter}>📥 Newsletter</Btn>}
                     <Btn onClick={fetchNews} disabled={loadingNews}>{loadingNews ? <><Spinner /> ...</> : "🔍"}</Btn>
                   </div>
                 </div>
                 <ErrorBox msg={newsError} />
-                {loadingNews && [...Array(5)].map((_, i) => (<div key={i} className="shim-dark" style={{ height:50, borderRadius:9, marginBottom:6 }} />))}
                 <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:380, overflowY:"auto" }}>
                   {headlines.map((h, i) => {
                     const sel = selHL.find(x => x.title === h.title);
                     return (
-                      <div key={i} onClick={() => toggleHL(h)} style={{ background: sel ? "rgba(0,180,255,.07)" : "rgba(255,255,255,.02)", border: `1px solid ${sel ? "rgba(0,180,255,.35)" : "rgba(255,255,255,.05)"}`, borderRadius:9, padding:"10px 12px", cursor:"pointer" }}>
-                        <div style={{ fontSize:12, fontWeight:600, color: sel ? "#00b4ff" : "#a8c8d8" }}>{h.title}</div>
-                        <div style={{ fontSize:10, color:"#506070", marginTop:3 }}>{h.summary}</div>
+                      <div key={i} onClick={() => toggleHL(h)} style={{
+                        background: sel ? `${BRAND.navy}15` : T.cardBg,
+                        border: `1px solid ${sel ? BRAND.navy : T.cardBorder}`,
+                        borderRadius:9, padding:"10px 12px", cursor:"pointer",
+                      }}>
+                        <div style={{ fontSize:12, fontWeight:600, color: sel ? (isDark ? BRAND.gold : BRAND.navy) : T.text }}>{h.title}</div>
+                        <div style={{ fontSize:10, color: T.textMuted, marginTop:3 }}>{h.summary}</div>
                       </div>
                     );
                   })}
                 </div>
                 {headlines.length > 0 && (
                   <Btn onClick={genQuickScript} disabled={isGenQuick} style={{ width:"100%", marginTop:8 }}>
-                    {isGenQuick ? <><Spinner /> ...</> : `📖 Roteiro`}
+                    {isGenQuick ? <><Spinner /> ...</> : "📖 Roteiro"}
                   </Btn>
                 )}
               </div>
             </div>
             {quickScript && (
-              <div style={{ marginTop:18, background:"rgba(45,138,10,.06)", border:"1px solid rgba(45,138,10,.25)", borderRadius:11, padding:16 }}>
+              <div style={{ marginTop:18, background: `${BRAND.sage}15`, border:`1px solid ${BRAND.sage}40`, borderRadius:11, padding:16 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                  <div style={{ fontWeight:700, color:"#6ad446" }}>📖 Roteiro</div>
+                  <div style={{ fontWeight:700, color: BRAND.sageDark }}>📖 Roteiro</div>
                   <Btn onClick={() => { setRefined(quickScript); markDone(2); setTab(3); }}>✍️ Usar →</Btn>
                 </div>
-                <div style={{ fontSize:12, color:"#90c870", whiteSpace:"pre-wrap", maxHeight:300, overflowY:"auto" }}>{quickScript}</div>
+                <div style={{ fontSize:12, color: T.text, whiteSpace:"pre-wrap", maxHeight:300, overflowY:"auto" }}>{quickScript}</div>
               </div>
             )}
           </div>
         )}
 
-        {/* ════ ROTEIRO ══════════════════════════════════════════════════════ */}
+        {/* ════ TAB 3 — ROTEIRO ════ */}
         {tab === 3 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="✍️" title="Roteiro" sub="" />
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:18 }}>
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>✍️ Roteiro</h2>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
               <div>
-                <Field label="Conteúdo" mt={0}>
-                  <TextArea value={rawText} onChange={e => setRawText(e.target.value)} rows={10} />
+                <Field label="Conteúdo" mt={0} dark={isDark}>
+                  <TextArea dark={isDark} value={rawText} onChange={e => setRawText(e.target.value)} rows={10} />
                   <Btn onClick={refineScript} disabled={isRefining || !rawText.trim()} style={{ marginTop:8 }}>
                     {isRefining ? <><Spinner /> ...</> : "✨ Refinar"}
                   </Btn>
                   <ErrorBox msg={refineError} />
                 </Field>
-                <Field label="E-mail">
-                  <TextInput value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
-                  <div style={{ marginTop:6 }}><TextArea value={distEmail} onChange={e => setDistEmail(e.target.value)} rows={4} /></div>
+                <Field label="E-mail" dark={isDark}>
+                  <TextInput dark={isDark} value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
+                  <div style={{ marginTop:6 }}><TextArea dark={isDark} value={distEmail} onChange={e => setDistEmail(e.target.value)} rows={4} /></div>
                   <Btn onClick={genEmailCopy} disabled={isGenEmail} style={{ marginTop:8, width:"100%" }}>
                     {isGenEmail ? <><Spinner /> ...</> : "🤖 Gerar"}
                   </Btn>
                 </Field>
               </div>
               <div>
-                <Field label="Roteiro" mt={0}>
-                  {!refinedScript ? <div style={{ border:"1px dashed rgba(255,255,255,.07)", borderRadius:9, padding:40, textAlign:"center", color:"#506070" }}>Refine primeiro</div> : <TextArea value={refinedScript} onChange={e => setRefined(e.target.value)} rows={16} />}
+                <Field label="Roteiro" mt={0} dark={isDark}>
+                  {!refinedScript ? <div style={{ border:`1px dashed ${T.cardBorder}`, borderRadius:9, padding:40, textAlign:"center", color: T.textMuted }}>Refine primeiro</div> : <TextArea dark={isDark} value={refinedScript} onChange={e => setRefined(e.target.value)} rows={16} />}
                 </Field>
               </div>
             </div>
           </div>
         )}
 
-        {/* ════ RENDER ═══════════════════════════════════════════════════════ */}
+        {/* ════ TAB 4 — RENDER ════ */}
         {tab === 4 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="🎬" title="Render" sub="" />
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>🎬 Render</h2>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
               <div>
-                <Field label="Motor" mt={0}>
+                <Field label="Motor" mt={0} dark={isDark}>
                   <div style={{ display:"flex", gap:10 }}>
-                    <Card sel={renderEngine==="kling"} onClick={() => setRenderEngine("kling")}><span>⚡ Kling</span></Card>
-                    <Card sel={renderEngine==="heygen"} onClick={() => setRenderEngine("heygen")}><span>🎥 HeyGen</span></Card>
+                    <div onClick={() => setRenderEngine("kling")} style={{ flex:1, padding:"11px 14px", borderRadius:9, cursor:"pointer", background: renderEngine==="kling" ? `${BRAND.navy}20` : T.cardBg, border: `1px solid ${renderEngine==="kling" ? BRAND.navy : T.cardBorder}`, color: T.text }}>⚡ Kling</div>
+                    <div onClick={() => setRenderEngine("heygen")} style={{ flex:1, padding:"11px 14px", borderRadius:9, cursor:"pointer", background: renderEngine==="heygen" ? `${BRAND.navy}20` : T.cardBg, border: `1px solid ${renderEngine==="heygen" ? BRAND.navy : T.cardBorder}`, color: T.text }}>🎥 HeyGen</div>
                   </div>
                 </Field>
                 <Btn onClick={startRender} disabled={isRendering || !refinedScript} style={{ width:"100%", marginTop:14 }}>
@@ -2033,21 +2202,21 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
                 <ErrorBox msg={renderError} />
               </div>
               <div>
-                <Field label="Pipeline" mt={0}>
+                <Field label="Pipeline" mt={0} dark={isDark}>
                   {(isRendering || renderDone) && (
-                    <div style={{ background:"rgba(255,255,255,.02)", borderRadius:10, padding:14, marginBottom:12 }}>
+                    <div style={{ background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:10, padding:14, marginBottom:12 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                        <span style={{ fontSize:11, color:"#90b0c8" }}>{renderMsg}</span>
-                        <span style={{ fontFamily:"monospace", color: renderDone ? "#10b981" : "#00b4ff" }}>{renderPct}%</span>
+                        <span style={{ fontSize:11, color: T.textMuted }}>{renderMsg}</span>
+                        <span style={{ fontFamily:"monospace", color: renderDone ? BRAND.sageDark : BRAND.navy }}>{renderPct}%</span>
                       </div>
-                      <div style={{ background:"rgba(255,255,255,.06)", borderRadius:99, height:7 }}>
-                        <div style={{ width:`${renderPct}%`, height:"100%", borderRadius:99, transition:"width .6s", background: renderDone ? "linear-gradient(90deg,#10b981,#34d399)" : "linear-gradient(90deg,#0050ff,#7c3aed)" }} />
+                      <div style={{ background: T.cardBorder, borderRadius:99, height:7 }}>
+                        <div style={{ width:`${renderPct}%`, height:"100%", borderRadius:99, transition:"width .6s", background: renderDone ? BRAND.sage : `linear-gradient(90deg,${BRAND.navy},${BRAND.navyLight})` }} />
                       </div>
                     </div>
                   )}
                   {renderDone && videoUrl && (
-                    <div style={{ background:"rgba(16,185,129,.05)", border:"1px solid rgba(16,185,129,.18)", borderRadius:10, padding:14 }}>
-                      <div style={{ fontWeight:700, color:"#10b981", marginBottom:10 }}>🎉 Pronto</div>
+                    <div style={{ background: `${BRAND.sage}10`, border:`1px solid ${BRAND.sage}40`, borderRadius:10, padding:14 }}>
+                      <div style={{ fontWeight:700, color: BRAND.sageDark, marginBottom:10 }}>🎉 Pronto</div>
                       <VideoPlayer url={videoUrl} poster={thumbnailUrl} maxHeight={300} />
                       <div style={{ display:"flex", gap:8, marginTop:10 }}>
                         <Btn success onClick={() => window.open(videoUrl, "_blank")}>⬇️</Btn>
@@ -2062,21 +2231,23 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
           </div>
         )}
 
-        {/* ════ DISTRIBUIÇÃO ════════════════════════════════════════════════ */}
+        {/* ════ TAB 5 — DISTRIBUIÇÃO ════ */}
         {tab === 5 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="📤" title="Distribuição" sub="" />
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginTop:20 }}>
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>📤 Distribuição</h2>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
               <div>
-                <Field label="Para" mt={0}><TextArea value={teamEmails} onChange={e => setTeamEmails(e.target.value)} rows={3} /></Field>
-                <Field label="Mensagem">
-                  <TextInput value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
-                  <div style={{ marginTop:6 }}><TextArea value={distMsg} onChange={e => setDistMsg(e.target.value)} rows={6} /></div>
+                <Field label="Para" mt={0} dark={isDark}><TextArea dark={isDark} value={teamEmails} onChange={e => setTeamEmails(e.target.value)} rows={3} /></Field>
+                <Field label="Mensagem" dark={isDark}>
+                  <TextInput dark={isDark} value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Assunto" />
+                  <div style={{ marginTop:6 }}><TextArea dark={isDark} value={distMsg} onChange={e => setDistMsg(e.target.value)} rows={6} /></div>
                   <Btn onClick={genDistMsg} disabled={isGenMsg} style={{ marginTop:8, width:"100%" }}>{isGenMsg ? <><Spinner /> ...</> : "🤖"}</Btn>
                 </Field>
               </div>
               <div>
-                <Field label="Canais" mt={0}>
+                <Field label="Canais" mt={0} dark={isDark}>
                   <Btn success onClick={sendByEmail} style={{ width:"100%", marginBottom:8 }}>📨 E-mail</Btn>
                   <Btn onClick={sendToTeams} disabled={!teamsWebhook} style={{ width:"100%", marginBottom:8 }}>💬 Teams</Btn>
                   <Btn secondary onClick={() => copyText(`${emailSubject}\n\n${distMsg}\n\n${videoUrl}`)} style={{ width:"100%" }}>{copied ? "✓" : "📋"}</Btn>
@@ -2088,23 +2259,26 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
           </div>
         )}
 
-        {/* ════ HISTÓRICO ════════════════════════════════════════════════════ */}
+        {/* ════ TAB 6 — HISTÓRICO ════ */}
         {tab === 6 && keyValidated && (
           <div className="fade">
-            <SectionHeader icon="📚" title="Histórico" sub={`${episodes.length} eps · ${newsletters.length} edições`} />
+            <div style={{ borderBottom:`1px solid ${T.cardBorder}`, paddingBottom:14, marginBottom:14 }}>
+              <h2 style={{ margin:0, fontSize:24, fontWeight:800, fontFamily:"'Fraunces',serif", color: T.text }}>📚 Histórico</h2>
+              <p style={{ margin:"4px 0 0", fontSize:12, color: T.textMuted }}>{episodes.length} eps · {newsletters.length} edições</p>
+            </div>
             <div style={{ marginTop:18, marginBottom:24 }}>
-              <div style={{ fontSize:11, color:"#a78bfa", fontWeight:700, marginBottom:10 }}>📰 Newsletters</div>
-              {newsletters.length === 0 ? <div style={{ color:"#506070" }}>Nenhuma</div> :
+              <div style={{ fontSize:11, color: BRAND.goldDark, fontWeight:700, marginBottom:10 }}>📰 Newsletters</div>
+              {newsletters.length === 0 ? <div style={{ color: T.textMuted }}>Nenhuma</div> :
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:10 }}>
                   {newsletters.map(n => (
-                    <div key={n.id} style={{ background:"rgba(124,58,237,.04)", border:"1px solid rgba(124,58,237,.2)", borderRadius:10, padding:12 }}>
-                      <div style={{ fontSize:11, color:"#a78bfa", fontFamily:"monospace", fontWeight:700 }}>{fmtDate(n.date)}</div>
-                      <div style={{ fontSize:12, fontWeight:700, color:"#e0e8f0", margin:"4px 0" }}>{n.title}</div>
-                      <div style={{ fontSize:10, color:"#506070", marginBottom:8 }}>{n.headlines?.length || 0} manchetes</div>
+                    <div key={n.id} style={{ background: `${BRAND.gold}10`, border:`1px solid ${BRAND.gold}30`, borderRadius:10, padding:12 }}>
+                      <div style={{ fontSize:11, color: BRAND.goldDark, fontFamily:"monospace", fontWeight:700 }}>{fmtDate(n.date)}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color: T.text, margin:"4px 0", fontFamily:"'Fraunces',serif" }}>{n.title}</div>
+                      <div style={{ fontSize:10, color: T.textMuted, marginBottom:8 }}>{n.headlines?.length || 0} manchetes {(n.podcastUrl || n.podcastBlobRef) && "· 🎙️"}</div>
                       <div style={{ display:"flex", gap:5 }}>
-                        <button onClick={() => { setEditorDate(n.date); setTab(0); }} style={{ flex:1, background:"rgba(124,58,237,.1)", border:"1px solid rgba(124,58,237,.3)", color:"#a78bfa", borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer" }}>📝</button>
-                        <a href={`?view=public&date=${n.date}`} target="_blank" rel="noreferrer" style={{ flex:1, background:"rgba(16,185,129,.1)", border:"1px solid rgba(16,185,129,.3)", color:"#10b981", borderRadius:5, padding:"4px", fontSize:10, textAlign:"center", textDecoration:"none" }}>👁️</a>
-                        <button onClick={() => deleteNewsletter(n.date)} style={{ background:"rgba(239,68,68,.1)", border:"1px solid rgba(239,68,68,.3)", color:"#ef4444", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
+                        <button onClick={() => { setEditorDate(n.date); setTab(0); }} style={{ flex:1, background: `${BRAND.gold}25`, border:`1px solid ${BRAND.gold}50`, color: BRAND.goldDark, borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer", fontWeight:600 }}>📝</button>
+                        <a href={`?view=public&date=${n.date}`} target="_blank" rel="noreferrer" style={{ flex:1, background: `${BRAND.sage}25`, border:`1px solid ${BRAND.sage}50`, color: BRAND.sageDark, borderRadius:5, padding:"4px", fontSize:10, textAlign:"center", textDecoration:"none", fontWeight:600 }}>👁️</a>
+                        <button onClick={() => deleteNewsletter(n.date)} style={{ background:"rgba(200,69,69,.1)", border:"1px solid rgba(200,69,69,.3)", color:"#c84545", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
                       </div>
                     </div>
                   ))}
@@ -2112,28 +2286,28 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
               }
             </div>
             <div>
-              <div style={{ fontSize:11, color:"#00b4ff", fontWeight:700, marginBottom:10 }}>🎬 Episódios</div>
+              <div style={{ fontSize:11, color: isDark ? "#a8c8e8" : BRAND.navy, fontWeight:700, marginBottom:10 }}>🎬 Episódios</div>
               {selectedEpisode && (
-                <div style={{ background:"rgba(0,180,255,.04)", border:"1px solid rgba(0,180,255,.2)", borderRadius:11, padding:16, marginBottom:14 }}>
+                <div style={{ background: `${BRAND.navy}10`, border:`1px solid ${BRAND.navy}40`, borderRadius:11, padding:16, marginBottom:14 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, color:"#00b4ff" }}>{selectedEpisode.title}</div>
+                    <div style={{ fontWeight:700, color: isDark ? BRAND.gold : BRAND.navy, fontFamily:"'Fraunces',serif" }}>{selectedEpisode.title}</div>
                     <Btn secondary onClick={() => setSelectedEpisode(null)}>✕</Btn>
                   </div>
                   {selectedEpisode.videoUrl && <VideoPlayer url={selectedEpisode.videoUrl} poster={selectedEpisode.thumbnailUrl} maxHeight={400} />}
                 </div>
               )}
-              {episodes.length === 0 ? <div style={{ color:"#506070" }}>Nenhum</div> :
+              {episodes.length === 0 ? <div style={{ color: T.textMuted }}>Nenhum</div> :
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:10 }}>
                   {episodes.map(ep => (
-                    <div key={ep.id} style={{ background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, overflow:"hidden" }}>
-                      {ep.thumbnailUrl ? <img src={ep.thumbnailUrl} alt="" style={{ width:"100%", height:120, objectFit:"cover" }} /> : <div style={{ height:80, background:"linear-gradient(135deg,#0a1628,#0d1a2e)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>{ep.engine === "kling" ? "⚡" : "🎥"}</div>}
+                    <div key={ep.id} style={{ background: T.cardBg, border:`1px solid ${T.cardBorder}`, borderRadius:10, overflow:"hidden" }}>
+                      {ep.thumbnailUrl ? <img src={ep.thumbnailUrl} alt="" style={{ width:"100%", height:120, objectFit:"cover" }} /> : <div style={{ height:80, background:`linear-gradient(135deg,${BRAND.navy},${BRAND.navyDeep})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, color:"#fff" }}>{ep.engine === "kling" ? "⚡" : "🎥"}</div>}
                       <div style={{ padding:12 }}>
-                        <div style={{ fontWeight:700, color:"#c8d8e8" }}>{ep.title}</div>
-                        <div style={{ fontSize:10, color:"#506070", fontFamily:"monospace", marginTop:3 }}>{new Date(ep.createdAt).toLocaleDateString("pt-BR")}</div>
+                        <div style={{ fontWeight:700, color: T.text }}>{ep.title}</div>
+                        <div style={{ fontSize:10, color: T.textMuted, fontFamily:"monospace", marginTop:3 }}>{new Date(ep.createdAt).toLocaleDateString("pt-BR")}</div>
                         <div style={{ display:"flex", gap:5, marginTop:8 }}>
-                          <button onClick={() => setSelectedEpisode(ep)} style={{ flex:1, background:"rgba(0,180,255,.1)", border:"1px solid rgba(0,180,255,.3)", color:"#00b4ff", borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer" }}>👁️</button>
-                          {ep.videoUrl && <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background:"rgba(29,185,84,.1)", border:"1px solid rgba(29,185,84,.3)", color:"#1DB954", borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer" }}>📰</button>}
-                          <button onClick={() => { if(confirm("Deletar?")) deleteEpisode(ep.id); }} style={{ background:"rgba(239,68,68,.1)", border:"1px solid rgba(239,68,68,.3)", color:"#ef4444", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
+                          <button onClick={() => setSelectedEpisode(ep)} style={{ flex:1, background: `${BRAND.navy}20`, border:`1px solid ${BRAND.navy}40`, color: isDark ? BRAND.gold : BRAND.navy, borderRadius:5, padding:"4px", fontSize:10, cursor:"pointer" }}>👁️</button>
+                          {ep.videoUrl && <button onClick={() => useEpisodeAsPodcast(ep)} style={{ background: `${BRAND.sage}25`, border:`1px solid ${BRAND.sage}50`, color: BRAND.sageDark, borderRadius:5, padding:"4px 10px", fontSize:10, cursor:"pointer" }}>📰</button>}
+                          <button onClick={() => { if(confirm("Deletar?")) deleteEpisode(ep.id); }} style={{ background:"rgba(200,69,69,.1)", border:"1px solid rgba(200,69,69,.3)", color:"#c84545", borderRadius:5, padding:"4px 8px", fontSize:10, cursor:"pointer" }}>🗑️</button>
                         </div>
                       </div>
                     </div>
@@ -2147,13 +2321,28 @@ ${editorHeadlines.map(h => `- ${h.title}: ${h.summary}`).join("\n")}`,
         {tab > 1 && !keyValidated && (
           <div className="fade" style={{ textAlign:"center", padding:80 }}>
             <div style={{ fontSize:48 }}>🔒</div>
-            <div style={{ fontSize:18, fontWeight:700, color:"#d97706", marginTop:14 }}>Bloqueado</div>
+            <div style={{ fontSize:18, fontWeight:700, color: BRAND.goldDark, marginTop:14 }}>Bloqueado</div>
             <Btn onClick={() => setTab(1)} style={{ marginTop:14 }}>← Diagnóstico</Btn>
           </div>
         )}
       </div>
     </div>
   );
+}
+
+// ─── PODCAST PREVIEW (loads blob from db if needed) ──────────────────────────
+
+function PodcastPreview({ blobRef, url }) {
+  const [resolvedUrl, setResolvedUrl] = useState(url);
+  useEffect(() => {
+    if (blobRef) {
+      db.getVideoBlob(blobRef).then(d => setResolvedUrl(d || ""));
+    } else {
+      setResolvedUrl(url);
+    }
+  }, [blobRef, url]);
+  if (!resolvedUrl) return null;
+  return <VideoPlayer url={resolvedUrl} maxHeight={200} />;
 }
 
 // ─── ROUTER ──────────────────────────────────────────────────────────────────
