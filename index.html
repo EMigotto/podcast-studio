@@ -46,7 +46,7 @@ const DEFAULT_KLING_KEY="aebc940334837f309fda6849afe6bce1";
 const DEFAULT_USERNAME="emigotto";
 const DEFAULT_PASSWORD="Migotto1";
 const BRAND={navy:"#1f3a5c",navyDeep:"#15273f",navyLight:"#2c4f7a",sage:"#9eaf95",sageLight:"#b8c5b0",sageDark:"#7d8f73",gold:"#cdb380",goldLight:"#e0c995",goldDark:"#a8915f",cream:"#f1ede1",creamSoft:"#faf7ed",ink:"#0f1a2e",inkSoft:"#2a3d5a",muted:"#6b7d96"};
-const ADMIN_TABS=[{id:"newsletter",label:"Newsletter",icon:"📰"},{id:"diagnostico",label:"Diagnóstico",icon:"🔬"},{id:"audiencia",label:"Audiência",icon:"📊"},{id:"pauta",label:"Pauta",icon:"📡"},{id:"roteiro",label:"Roteiro",icon:"✍️"},{id:"render",label:"Render",icon:"🎬"},{id:"distrib",label:"Distribuição",icon:"📤"},{id:"historico",label:"Histórico",icon:"📚"}];
+const ADMIN_TABS=[{id:"newsletter",label:"Newsletter",icon:"📰"},{id:"diagnostico",label:"Diagnóstico",icon:"🔬"},{id:"audiencia",label:"Audiência",icon:"📊"},{id:"pauta",label:"Pauta",icon:"📡"},{id:"roteiro",label:"Roteiro",icon:"✍️"},{id:"render",label:"Render",icon:"🎬"},{id:"distrib",label:"Distribuição",icon:"📤"},{id:"historico",label:"Histórico",icon:"📚"},{id:"fontes",label:"Fontes",icon:"📰"}];
 const FOCUS_AREAS=[{id:"produtividade",label:"Produtividade",icon:"⚡",colorLight:BRAND.navy,colorDark:"#5a8fc7"},{id:"sistemico",label:"Desenvolvimento Sistêmico",icon:"🔧",colorLight:BRAND.sageDark,colorDark:BRAND.sage},{id:"llm",label:"Novos Modelos LLM/IA",icon:"🧠",colorLight:BRAND.goldDark,colorDark:BRAND.gold}];
 const CAT_STYLE={IA:{lightBg:"#dde6f0",lightFg:BRAND.navy,darkBg:"rgba(90,143,199,.18)",darkFg:"#a8c8e8"},LLM:{lightBg:"#f0e3c8",lightFg:BRAND.goldDark,darkBg:"rgba(205,179,128,.18)",darkFg:BRAND.goldLight},Produtividade:{lightBg:"#dde6f0",lightFg:BRAND.navy,darkBg:"rgba(90,143,199,.18)",darkFg:"#a8c8e8"},"Sistêmico":{lightBg:"#dee5d8",lightFg:BRAND.sageDark,darkBg:"rgba(158,175,149,.18)",darkFg:BRAND.sageLight},Hardware:{lightBg:"#f0e3c8",lightFg:BRAND.goldDark,darkBg:"rgba(205,179,128,.18)",darkFg:BRAND.goldLight},Software:{lightBg:"#dee5d8",lightFg:BRAND.sageDark,darkBg:"rgba(158,175,149,.18)",darkFg:BRAND.sageLight},Cloud:{lightBg:"#dee5d8",lightFg:BRAND.sageDark,darkBg:"rgba(158,175,149,.18)",darkFg:BRAND.sageLight},Startups:{lightBg:"#f0e3c8",lightFg:BRAND.goldDark,darkBg:"rgba(205,179,128,.18)",darkFg:BRAND.goldLight},"Regulação":{lightBg:"#f0d8c8",lightFg:"#9a3412",darkBg:"rgba(180,90,40,.18)",darkFg:"#e8a888"},Podcast:{lightBg:"#dee5d8",lightFg:BRAND.sageDark,darkBg:"rgba(158,175,149,.18)",darkFg:BRAND.sageLight}};
 const catStyle=(cat,dark)=>{const s=CAT_STYLE[cat]||CAT_STYLE.IA;return dark?{background:s.darkBg,color:s.darkFg}:{background:s.lightBg,color:s.lightFg}};
@@ -55,10 +55,8 @@ const catStyle=(cat,dark)=>{const s=CAT_STYLE[cat]||CAT_STYLE.IA;return dark?{ba
 // ─── SUPABASE BACKEND ───────────────────────────────────────────────────────
 // COLE AQUI O URL E O ANON KEY DO SEU PROJETO SUPABASE (Settings → API)
 // Veja SETUP.md para criar o projeto em ~5 minutos
-const SUPABASE_URL =  "https://lmqwegtbwgvfumoaagag.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXdlZ3Rid2d2ZnVtb2FhZ2FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNzMzODgsImV4cCI6MjA5Mzg0OTM4OH0.rERsOrp1nrInxXhAqjTmk8w-qGacXcrcjlkGj7DjMPc";
-// NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_0JTXTtmj5E7DTVwhNwpv3w_eQ0APYBd
-
+const SUPABASE_URL = ""; // ex: "https://xxxxxxxxxxxx.supabase.co"
+const SUPABASE_ANON_KEY = ""; // ex: "eyJhbGciOiJIUzI1NiIs..."
 
 const sb = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } })
@@ -66,7 +64,7 @@ const sb = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
 const SB_OK = !!sb;
 
 // Map key prefix → table name (each table: id text PK, data jsonb)
-const TABLE_MAP = { "newsletter":"newsletters", "comment":"comments", "view":"views", "episode":"episodes", "videoblob":"videoblobs", "user":"settings" };
+const TABLE_MAP = { "newsletter":"newsletters", "comment":"comments", "view":"views", "episode":"episodes", "videoblob":"videoblobs", "user":"settings", "source":"news_sources" };
 const tableForKey = k => TABLE_MAP[k.split(":")[0]] || null;
 
 const db = {
@@ -142,6 +140,37 @@ const commentsApi={
   async remove(id){await db.delete(id)},
 };
 
+// NEWS SOURCES (configurable list of sources used when fetching news)
+const DEFAULT_SOURCES = [
+  { id:"source:techcrunch",  name:"TechCrunch",       url:"https://techcrunch.com/category/artificial-intelligence/", category:"IA", active:true },
+  { id:"source:venturebeat", name:"VentureBeat AI",   url:"https://venturebeat.com/ai/",                              category:"IA", active:true },
+  { id:"source:theverge",    name:"The Verge AI",     url:"https://www.theverge.com/ai-artificial-intelligence",       category:"IA", active:true },
+  { id:"source:arstechnica", name:"Ars Technica",     url:"https://arstechnica.com/ai/",                               category:"IA", active:true },
+  { id:"source:wired",       name:"Wired AI",         url:"https://www.wired.com/tag/artificial-intelligence/",        category:"IA", active:true },
+  { id:"source:mit",         name:"MIT Tech Review",  url:"https://www.technologyreview.com/topic/artificial-intelligence/", category:"IA", active:true },
+  { id:"source:anthropic",   name:"Anthropic Blog",   url:"https://www.anthropic.com/news",                            category:"LLM", active:true },
+  { id:"source:openai",      name:"OpenAI Blog",      url:"https://openai.com/blog/",                                  category:"LLM", active:true },
+  { id:"source:googleai",    name:"Google AI Blog",   url:"https://blog.google/technology/ai/",                        category:"LLM", active:true },
+  { id:"source:huggingface", name:"Hugging Face Blog",url:"https://huggingface.co/blog",                                category:"LLM", active:true },
+  { id:"source:github",      name:"GitHub Blog AI",   url:"https://github.blog/tag/ai/",                                category:"Sistêmico", active:true },
+  { id:"source:hn",          name:"Hacker News",      url:"https://news.ycombinator.com/",                              category:"Sistêmico", active:true },
+];
+const newsSourcesApi={
+  async list(){
+    const items=await db.listByPrefix("source:");
+    return items.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  },
+  async seedDefaults(){
+    const existing=await this.list();
+    if(existing.length>0)return existing;
+    for(const s of DEFAULT_SOURCES)await db.set(s.id,s);
+    return await this.list();
+  },
+  async upsert(src){const id=src.id||`source:${Date.now()}-${Math.random().toString(36).slice(2,6)}`;const s={...src,id};await db.set(id,s);return s},
+  async remove(id){await db.delete(id)},
+  async toggleActive(id){const s=await db.get(id);if(!s)return null;s.active=!s.active;await db.set(id,s);return s},
+};
+
 // ANALYTICS
 const parseBrowser=ua=>/Edg\//.test(ua)?"Edge":/OPR\/|Opera/.test(ua)?"Opera":/Firefox\//.test(ua)?"Firefox":/Chrome\//.test(ua)&&!/Edg\//.test(ua)?"Chrome":/Safari\//.test(ua)&&!/Chrome\//.test(ua)?"Safari":"Outro";
 const parseOS=ua=>/Windows NT/.test(ua)?"Windows":/Mac OS X|Macintosh/.test(ua)&&!/iPhone|iPad/.test(ua)?"macOS":/iPhone|iPad|iPod/.test(ua)?"iOS":/Android/.test(ua)?"Android":/Linux/.test(ua)?"Linux":"Outro";
@@ -198,11 +227,58 @@ const VideoPlayer=memo(function VideoPlayer({url,poster,aspectRatio="16/9",maxWi
   const[w,h]=aspectRatio.split("/").map(Number);
   const pb=`${(h/w)*100}%`;
   const cs={width:"100%",maxWidth:maxWidth||(aspectRatio==="9/16"?340:"100%"),margin:"0 auto"};
+  const openExternal=()=>window.open(info.src,"_blank","noopener,noreferrer");
   if(info.type==="video"){
-    return<div style={cs}><div style={{position:"relative",paddingBottom:pb,height:0,overflow:"hidden",borderRadius:12,background:"#000"}}><video controls poster={poster} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"contain",borderRadius:12,background:"#000"}}><source src={info.src}/></video></div></div>;
+    return<div style={cs}>
+      <div style={{position:"relative",paddingBottom:pb,height:0,overflow:"hidden",borderRadius:12,background:"#000"}}>
+        <video controls poster={poster} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"contain",borderRadius:12,background:"#000"}}><source src={info.src}/></video>
+      </div>
+      <div style={{textAlign:"center",marginTop:6}}><button onClick={openExternal} style={{background:"transparent",border:"none",color:BRAND.muted,fontSize:10,cursor:"pointer",textDecoration:"underline",fontFamily:"'Outfit',sans-serif"}}>↗️ Abrir vídeo em nova aba</button></div>
+    </div>;
   }
-  return<div style={cs}><div style={{position:"relative",paddingBottom:pb,height:0,overflow:"hidden",borderRadius:12,background:"#000"}}><iframe src={info.src} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",border:0,borderRadius:12}} allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;fullscreen" allowFullScreen title="Video Player"/></div></div>;
+  return<div style={cs}>
+    <div style={{position:"relative",paddingBottom:pb,height:0,overflow:"hidden",borderRadius:12,background:"#000"}}>
+      <iframe src={info.src} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",border:0,borderRadius:12}} allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;fullscreen" allowFullScreen title="Video Player"/>
+    </div>
+    <div style={{textAlign:"center",marginTop:6}}><button onClick={openExternal} style={{background:"transparent",border:"none",color:BRAND.muted,fontSize:10,cursor:"pointer",textDecoration:"underline",fontFamily:"'Outfit',sans-serif"}}>↗️ Abrir vídeo em nova aba (caso não carregue aqui)</button></div>
+  </div>;
 });
+
+// AUDIO PLAYER (for AutoContent / NotebookLM-style podcasts)
+const AudioPlayer=memo(function AudioPlayer({url,title,T}){
+  if(!url)return null;
+  return<div style={{background:T?.cardBg||"#fff",border:`1px solid ${T?.cardBorder||BRAND.sage+"40"}`,borderRadius:12,padding:14}}>
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+      <div style={{width:36,height:36,borderRadius:10,background:BRAND.gold,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#fff",boxShadow:`0 3px 10px ${BRAND.gold}40`}}>🎧</div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:12,fontWeight:700,color:T?.text||BRAND.ink,fontFamily:"'Fraunces',serif",fontStyle:"italic"}}>{title||"Podcast de Resumo"}</div>
+        <div style={{fontSize:10,color:T?.textMuted||BRAND.muted,marginTop:2}}>Resumo em áudio · NotebookLM/AutoContent</div>
+      </div>
+    </div>
+    <audio controls src={url} style={{width:"100%",borderRadius:8}}/>
+  </div>;
+});
+
+// AUTOCONTENT API (NotebookLM-style podcast generation)
+// Sign up at autocontentapi.com — they are an unofficial NotebookLM API alternative
+async function autoContentCreatePodcast(apiKey,{resources,text,outputType="audio"}){
+  const body={resources:resources||[],text:text||"",outputType,callbackData:""};
+  const res=await fetch("https://api.autocontentapi.com/content/Create",{
+    method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${apiKey}`},
+    body:JSON.stringify(body)
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data?.message||data?.error||`HTTP ${res.status}`);
+  return data?.request_id||data?.requestId;
+}
+async function autoContentGetStatus(apiKey,requestId){
+  const res=await fetch(`https://api.autocontentapi.com/content/Status/${requestId}`,{
+    method:"GET",headers:{"Authorization":`Bearer ${apiKey}`}
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data?.message||`HTTP ${res.status}`);
+  return data;
+}
 
 // DISTRIBUTION
 function openMailto(toList,subject,body){const r=(toList||"").split(/[,;\n]/).map(s=>s.trim()).filter(s=>s.includes("@")).join(",");window.open(`mailto:${r}?subject=${encodeURIComponent(subject||"")}&body=${encodeURIComponent(body||"")}`,"_blank")}
@@ -398,12 +474,31 @@ function PublicNewsletter(){
 
         {current?.podcastUrl&&!podcastValid&&<div style={{background:`${BRAND.gold}15`,border:`1px solid ${BRAND.gold}40`,borderRadius:11,padding:14,marginBottom:24,fontSize:12,color:BRAND.goldDark}}>⏰ O podcast desta edição expirou.</div>}
 
-        {current.aiSummary&&<div style={{background:T.cardBg,border:`1px solid ${T.cardBorder}`,borderRadius:16,padding:28,marginBottom:30,boxShadow:T.cardShadow,position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,left:0,bottom:0,width:5,background:T.titleAccent}}/>
-          <div style={{paddingLeft:14}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}><span style={{fontSize:11,fontWeight:700,letterSpacing:".15em",textTransform:"uppercase",color:T.titleAccent}}>🧠 Análise da Semana</span></div>
-            <div style={{fontFamily:"'Fraunces',serif",fontSize:18,lineHeight:1.7,color:T.text,whiteSpace:"pre-wrap",fontWeight:400}}>{current.aiSummary}</div>
+        {current.aiSummary&&<div style={{display:"grid",gridTemplateColumns:current.audioPodcastUrl?"2fr 1fr":"1fr",gap:18,marginBottom:30,alignItems:"start"}}>
+          <div style={{background:T.cardBg,border:`1px solid ${T.cardBorder}`,borderRadius:16,padding:28,boxShadow:T.cardShadow,position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:0,left:0,bottom:0,width:5,background:T.titleAccent}}/>
+            <div style={{paddingLeft:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}><span style={{fontSize:11,fontWeight:700,letterSpacing:".15em",textTransform:"uppercase",color:T.titleAccent}}>🧠 Análise da Semana</span></div>
+              <div style={{fontFamily:"'Fraunces',serif",fontSize:18,lineHeight:1.7,color:T.text,whiteSpace:"pre-wrap",fontWeight:400}}>{current.aiSummary}</div>
+            </div>
           </div>
+          {current.audioPodcastUrl&&<div><AudioPlayer url={current.audioPodcastUrl} title="🎧 Ouvir Podcast de Resumo" T={T}/></div>}
+        </div>}
+
+        {(current.companies?.length>0||current.topics?.length>0)&&<div style={{marginBottom:30,padding:18,background:T.cardBg,border:`1px solid ${T.cardBorder}`,borderRadius:14}}>
+          <div style={{fontSize:11,color:T.textMuted,fontWeight:700,letterSpacing:".15em",textTransform:"uppercase",marginBottom:12}}>🏷️ Principais Empresas & Tópicos</div>
+          {current.companies?.length>0&&<div style={{marginBottom:current.topics?.length>0?10:0}}>
+            <div style={{fontSize:10,color:T.textMuted,fontWeight:600,marginBottom:6}}>EMPRESAS:</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {current.companies.map((c,i)=><span key={i} style={{fontSize:11,padding:"4px 10px",borderRadius:6,background:`${BRAND.navy}15`,color:isDark?"#a8c8e8":BRAND.navy,fontWeight:600,border:`1px solid ${BRAND.navy}30`}}>{c}</span>)}
+            </div>
+          </div>}
+          {current.topics?.length>0&&<div>
+            <div style={{fontSize:10,color:T.textMuted,fontWeight:600,marginBottom:6}}>TÓPICOS:</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {current.topics.map((t,i)=><span key={i} style={{fontSize:11,padding:"4px 10px",borderRadius:6,background:`${BRAND.gold}20`,color:BRAND.goldDark,fontWeight:600,border:`1px solid ${BRAND.gold}40`}}>#{t}</span>)}
+            </div>
+          </div>}
         </div>}
 
         {current.focusInsights&&current.focusInsights.length>0&&<div style={{marginBottom:30}}>
@@ -633,8 +728,22 @@ function AdminApp({session,onLogout}){
   const[heygenValidated,setHeygenValidated]=useState(false);
   const[teamsWebhook,setTeamsWebhook]=useState("");
   const[defaultEmails,setDefaultEmails]=useState("");
+  const[autoContentApiKey,setAutoContentApiKey]=useState("");
+  const[autoContentValidated,setAutoContentValidated]=useState(false);
   const[testing,setTesting]=useState({});
   const[testResults,setTestResults]=useState({});
+  // News sources
+  const[newsSources,setNewsSources]=useState([]);
+  const[srcName,setSrcName]=useState("");
+  const[srcUrl,setSrcUrl]=useState("");
+  const[srcCategory,setSrcCategory]=useState("IA");
+  const[srcMsg,setSrcMsg]=useState({type:"",text:""});
+  // Audio podcast
+  const[editorAudioPodcastUrl,setEditorAudioPodcastUrl]=useState("");
+  const[isGenAudioPodcast,setIsGenAudioPodcast]=useState(false);
+  const[audioPodcastMsg,setAudioPodcastMsg]=useState("");
+  const[editorCompanies,setEditorCompanies]=useState([]);
+  const[editorTopics,setEditorTopics]=useState([]);
   const[pwdCurrent,setPwdCurrent]=useState("");
   const[pwdNew,setPwdNew]=useState("");
   const[pwdNewConfirm,setPwdNewConfirm]=useState("");
@@ -700,11 +809,11 @@ function AdminApp({session,onLogout}){
   const[selectedEpisode,setSelectedEpisode]=useState(null);
   const markDone=useCallback(i=>setDone(p=>p.includes(i)?p:[...p,i]),[]);
 
-  useEffect(()=>{let cancelled=false;(async()=>{const settings=await db.get("user:settings_v10");if(cancelled)return;if(settings){if(settings.apiKey)setApiKey(settings.apiKey);if(settings.klingApiKey)setKlingApiKey(settings.klingApiKey);if(settings.heygenApiKey)setHeygenApiKey(settings.heygenApiKey);if(settings.heygenAvatarId)setHeygenAvatarId(settings.heygenAvatarId);if(settings.heygenVoiceId)setHeygenVoiceId(settings.heygenVoiceId);if(settings.teamsWebhook)setTeamsWebhook(settings.teamsWebhook);if(settings.defaultEmails)setDefaultEmails(settings.defaultEmails);if(settings.keyValidated){setKeyValidated(true);markDone(1)}if(settings.klingValidated)setKlingValidated(true);if(settings.heygenValidated)setHeygenValidated(true);if(settings.podcastName)setPodcastName(settings.podcastName);if(settings.kRole)setKRole(settings.kRole)}setEpisodes(await db.listEpisodes());setNewsletters(await db.listNewsletters());setStorageReady(true)})();return()=>{cancelled=true}},[markDone]);
+  useEffect(()=>{let cancelled=false;(async()=>{const settings=await db.get("user:settings_v10");if(cancelled)return;if(settings){if(settings.apiKey)setApiKey(settings.apiKey);if(settings.klingApiKey)setKlingApiKey(settings.klingApiKey);if(settings.heygenApiKey)setHeygenApiKey(settings.heygenApiKey);if(settings.heygenAvatarId)setHeygenAvatarId(settings.heygenAvatarId);if(settings.heygenVoiceId)setHeygenVoiceId(settings.heygenVoiceId);if(settings.teamsWebhook)setTeamsWebhook(settings.teamsWebhook);if(settings.defaultEmails)setDefaultEmails(settings.defaultEmails);if(settings.autoContentApiKey)setAutoContentApiKey(settings.autoContentApiKey);if(settings.autoContentValidated)setAutoContentValidated(true);if(settings.keyValidated){setKeyValidated(true);markDone(1)}if(settings.klingValidated)setKlingValidated(true);if(settings.heygenValidated)setHeygenValidated(true);if(settings.podcastName)setPodcastName(settings.podcastName);if(settings.kRole)setKRole(settings.kRole)}setEpisodes(await db.listEpisodes());setNewsletters(await db.listNewsletters());const seeded=await newsSourcesApi.seedDefaults();setNewsSources(seeded);setStorageReady(true)})();return()=>{cancelled=true}},[markDone]);
 
-  useEffect(()=>{if(!storageReady)return;const t=setTimeout(()=>{db.set("user:settings_v10",{apiKey,klingApiKey,heygenApiKey,heygenAvatarId,heygenVoiceId,teamsWebhook,defaultEmails,keyValidated,klingValidated,heygenValidated,podcastName,kRole,updatedAt:Date.now()})},600);return()=>clearTimeout(t)},[apiKey,klingApiKey,heygenApiKey,heygenAvatarId,heygenVoiceId,teamsWebhook,defaultEmails,keyValidated,klingValidated,heygenValidated,podcastName,kRole,storageReady]);
+  useEffect(()=>{if(!storageReady)return;const t=setTimeout(()=>{db.set("user:settings_v10",{apiKey,klingApiKey,heygenApiKey,heygenAvatarId,heygenVoiceId,teamsWebhook,defaultEmails,autoContentApiKey,autoContentValidated,keyValidated,klingValidated,heygenValidated,podcastName,kRole,updatedAt:Date.now()})},600);return()=>clearTimeout(t)},[apiKey,klingApiKey,heygenApiKey,heygenAvatarId,heygenVoiceId,teamsWebhook,defaultEmails,autoContentApiKey,autoContentValidated,keyValidated,klingValidated,heygenValidated,podcastName,kRole,storageReady]);
 
-  useEffect(()=>{if(!storageReady)return;(async()=>{const ex=await db.get(`newsletter:${editorDate}`);if(ex){setEditorTitle(ex.title||"");setEditorSubtitle(ex.subtitle||"");setEditorHeadlines(ex.headlines||[]);setEditorAiSummary(ex.aiSummary||"");setEditorFocusInsights(ex.focusInsights||[]);setEditorPodcastUrl(ex.podcastUrl||"");setEditorPodcastBlobRef(ex.podcastBlobRef||"");setEditorPodcastTitle(ex.podcastTitle||"");setEditorPodcastDuration(ex.podcastDuration||15);setEditorPodcastThumbnail(ex.podcastThumbnail||"");setEditorPodcastAspect(ex.podcastAspectRatio||"9/16");setEditorPodcastHighlights(ex.podcastHighlights||"");if(ex.podcastExpiresAt){const days=Math.max(1,Math.round((ex.podcastExpiresAt-Date.now())/(86400000)));setEditorPodcastTtlDays(days)}}else{setEditorTitle("");setEditorSubtitle("");setEditorHeadlines([]);setEditorAiSummary("");setEditorFocusInsights([]);setEditorPodcastUrl("");setEditorPodcastBlobRef("");setEditorPodcastTitle("");setEditorPodcastDuration(15);setEditorPodcastThumbnail("");setEditorPodcastAspect("9/16");setEditorPodcastHighlights("")}})()},[editorDate,storageReady]);
+  useEffect(()=>{if(!storageReady)return;(async()=>{const ex=await db.get(`newsletter:${editorDate}`);if(ex){setEditorTitle(ex.title||"");setEditorSubtitle(ex.subtitle||"");setEditorHeadlines(ex.headlines||[]);setEditorAiSummary(ex.aiSummary||"");setEditorFocusInsights(ex.focusInsights||[]);setEditorPodcastUrl(ex.podcastUrl||"");setEditorPodcastBlobRef(ex.podcastBlobRef||"");setEditorPodcastTitle(ex.podcastTitle||"");setEditorPodcastDuration(ex.podcastDuration||15);setEditorPodcastThumbnail(ex.podcastThumbnail||"");setEditorPodcastAspect(ex.podcastAspectRatio||"9/16");setEditorPodcastHighlights(ex.podcastHighlights||"");setEditorAudioPodcastUrl(ex.audioPodcastUrl||"");setEditorCompanies(ex.companies||[]);setEditorTopics(ex.topics||[]);if(ex.podcastExpiresAt){const days=Math.max(1,Math.round((ex.podcastExpiresAt-Date.now())/(86400000)));setEditorPodcastTtlDays(days)}}else{setEditorTitle("");setEditorSubtitle("");setEditorHeadlines([]);setEditorAiSummary("");setEditorFocusInsights([]);setEditorPodcastUrl("");setEditorPodcastBlobRef("");setEditorPodcastTitle("");setEditorPodcastDuration(15);setEditorPodcastThumbnail("");setEditorPodcastAspect("9/16");setEditorPodcastHighlights("");setEditorAudioPodcastUrl("");setEditorCompanies([]);setEditorTopics([])}})()},[editorDate,storageReady]);
 
   const handleUpload=e=>{const f=e.target.files?.[0];if(!f)return;setAvatarFile(f);const r=new FileReader();r.onloadend=()=>setAvatarPreview(r.result);r.readAsDataURL(f)};
   const toggleHL=h=>setSelHL(p=>p.find(x=>x.title===h.title)?p.filter(x=>x.title!==h.title):[...p,h]);
@@ -736,9 +845,84 @@ function AdminApp({session,onLogout}){
   const fetchNewsForNewsletter=async()=>{
     if(!keyValidated){setNlError("Configure a chave Anthropic.");return}
     setIsLoadingNl(true);setNlError("");setNlSuccess("");
-    try{const t=await callClaude(apiKey,`Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, e desenvolvimento sistêmico. Responda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,true,3000);const m=t.match(/\[[\s\S]*\]/);if(m){const p=JSON.parse(m[0]).slice(0,10);setEditorHeadlines(p);setNlSuccess(`${p.length} manchetes`)}else throw new Error("Sem JSON")}
+    const activeSources=newsSources.filter(s=>s.active);
+    const sourcesHint=activeSources.length>0?`\n\nFOCO EM PESQUISAR NESTAS FONTES (priorize-as):\n${activeSources.map(s=>`- ${s.name} (${s.url}) — categoria ${s.category||"IA"}`).join("\n")}\n\nSempre que possível, retorne o link direto da matéria nessas fontes no campo "url" e o nome da fonte no campo "source".`:"";
+    try{const t=await callClaude(apiKey,`Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, e desenvolvimento sistêmico.${sourcesHint}\n\nResponda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,true,3000);const m=t.match(/\[[\s\S]*\]/);if(m){const p=JSON.parse(m[0]).slice(0,10);setEditorHeadlines(p);setNlSuccess(`${p.length} manchetes${activeSources.length>0?` (usando ${activeSources.length} fontes)`:""}`);
+      // Auto-extract companies/topics after fetching
+      extractCompaniesAndTopics(p).catch(()=>{});
+    }else throw new Error("Sem JSON")}
     catch(err){setNlError("Erro: "+err.message)}
     setIsLoadingNl(false);
+  };
+  const extractCompaniesAndTopics=async(headlines)=>{
+    const hl=headlines||editorHeadlines;
+    if(!keyValidated||hl.length===0)return;
+    try{
+      const t=await callClaude(apiKey,`Extraia das manchetes abaixo as PRINCIPAIS empresas/organizações mencionadas e os TÓPICOS de interesse (conceitos técnicos, áreas).\nResponda SOMENTE JSON: {"companies":["OpenAI","Google","Anthropic",...],"topics":["agentes","RAG","multimodal",...]}\nMáximo 8 empresas e 8 tópicos, ordenados por relevância.\n\nMANCHETES:\n${hl.map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`,false,500);
+      const m=t.match(/\{[\s\S]*\}/);
+      if(m){const p=JSON.parse(m[0]);setEditorCompanies(p.companies||[]);setEditorTopics(p.topics||[])}
+    }catch(err){console.warn("Failed to extract companies/topics:",err.message)}
+  };
+  const generateAudioPodcast=async()=>{
+    if(!autoContentApiKey.trim()){setAudioPodcastMsg("❌ Configure a chave do AutoContent no Diagnóstico");return}
+    if(editorHeadlines.length===0&&!editorAiSummary){setAudioPodcastMsg("❌ Gere manchetes ou resumo primeiro");return}
+    setIsGenAudioPodcast(true);setAudioPodcastMsg("🎙️ Gerando podcast em áudio... (2-5 min)");
+    try{
+      // Build sources from headlines URLs + summary text
+      const resources=editorHeadlines.filter(h=>h.url).slice(0,10).map(h=>({content:h.url,type:"website"}));
+      const sourceText=`RESUMO DA NEWSLETTER ${fmtDateLong(editorDate)}: ${editorTitle}\n\n${editorAiSummary}\n\nMANCHETES:\n${editorHeadlines.map(h=>`- ${h.title}: ${h.summary} (Fonte: ${h.source||"N/A"})`).join("\n")}`;
+      if(sourceText)resources.push({content:sourceText,type:"text"});
+      const reqId=await autoContentCreatePodcast(autoContentApiKey.trim(),{resources,outputType:"audio",customization:{instructions:"Crie um podcast SUCINTO (máx 5 min) em português brasileiro, com 2 hosts dialogando. FOQUE em inovação de IA e impacto prático. Tom editorial. Evite jargão excessivo."}});
+      setAudioPodcastMsg(`⏳ Processando (id: ${reqId?.slice?.(0,12)})...`);
+      // Poll status
+      let attempts=0;
+      while(attempts<60){
+        await new Promise(r=>setTimeout(r,5000));attempts++;
+        try{
+          const st=await autoContentGetStatus(autoContentApiKey.trim(),reqId);
+          if(st?.status==="completed"||st?.status==="ready"||st?.audio_url||st?.audioUrl){
+            const url=st.audio_url||st.audioUrl||st.url||st.download_url;
+            setEditorAudioPodcastUrl(url);
+            setAudioPodcastMsg(`✅ Podcast pronto! URL salva.`);
+            break;
+          }else if(st?.status==="failed"||st?.error){
+            throw new Error(st?.error?.message||st?.error||"Geração falhou");
+          }else{
+            setAudioPodcastMsg(`⏳ Processando... (${attempts*5}s, status: ${st?.status||"working"})`);
+          }
+        }catch(pe){setAudioPodcastMsg(`⏳ Aguardando... (${attempts*5}s)`)}
+      }
+      if(attempts>=60&&!editorAudioPodcastUrl)setAudioPodcastMsg("⏰ Timeout. Verifique no painel AutoContent depois.");
+    }catch(err){setAudioPodcastMsg("❌ Erro: "+err.message)}
+    setIsGenAudioPodcast(false);
+  };
+  // News sources CRUD handlers
+  const reloadSources=async()=>{setNewsSources(await newsSourcesApi.list())};
+  const handleAddSource=async()=>{
+    setSrcMsg({type:"",text:""});
+    if(!srcName.trim()||!srcUrl.trim()){setSrcMsg({type:"err",text:"Preencha nome e URL"});return}
+    if(!srcUrl.startsWith("http")){setSrcMsg({type:"err",text:"URL deve começar com http:// ou https://"});return}
+    await newsSourcesApi.upsert({name:srcName.trim(),url:srcUrl.trim(),category:srcCategory,active:true});
+    setSrcName("");setSrcUrl("");setSrcMsg({type:"ok",text:"✅ Fonte adicionada"});
+    await reloadSources();
+  };
+  const handleToggleSource=async(id)=>{await newsSourcesApi.toggleActive(id);await reloadSources()};
+  const handleDeleteSource=async(id)=>{if(!confirm("Apagar esta fonte?"))return;await newsSourcesApi.remove(id);await reloadSources()};
+  const testAutoContent=async()=>{
+    setTesting(p=>({...p,autocontent:true}));
+    if(!autoContentApiKey.trim()){setTestResults(p=>({...p,autocontent:{status:"err",msg:"Cole a chave."}}));setTesting(p=>({...p,autocontent:false}));return}
+    try{
+      // Try a simple status call to verify the key
+      const res=await fetch("https://api.autocontentapi.com/content/Status/test",{method:"GET",headers:{"Authorization":`Bearer ${autoContentApiKey.trim()}`}});
+      // Even a 404 means the key was accepted (404 = request not found, but auth OK)
+      if(res.status===401||res.status===403){setTestResults(p=>({...p,autocontent:{status:"err",msg:"Chave inválida"}}));setAutoContentValidated(false)}
+      else{setAutoContentValidated(true);setTestResults(p=>({...p,autocontent:{status:"ok",msg:"OK! Chave aceita."}}))}
+    }catch(err){
+      // Network error / CORS — assume key is valid but warn user
+      setAutoContentValidated(true);
+      setTestResults(p=>({...p,autocontent:{status:"warn",msg:"⚠️ Não foi possível validar (CORS). Tentando salvar mesmo assim."}}));
+    }
+    setTesting(p=>({...p,autocontent:false}));
   };
   const generateTitle=async()=>{
     if(!keyValidated){setNlError("Configure a chave.");return}
@@ -794,7 +978,7 @@ function AdminApp({session,onLogout}){
     if(!editorDate){setNlError("Selecione uma data.");return}
     setNlError("");setNlSuccess("");
     const expiresAt=(editorPodcastUrl||editorPodcastBlobRef)&&editorPodcastTtlDays>0?Date.now()+editorPodcastTtlDays*86400000:null;
-    const nl={id:`newsletter:${editorDate}`,date:editorDate,title:editorTitle||`Highlights de IA · ${fmtDate(editorDate)}`,subtitle:editorSubtitle,headlines:editorHeadlines,aiSummary:editorAiSummary,focusInsights:editorFocusInsights,podcastUrl:editorPodcastUrl,podcastBlobRef:editorPodcastBlobRef,podcastTitle:editorPodcastTitle,podcastDuration:editorPodcastDuration,podcastThumbnail:editorPodcastThumbnail,podcastExpiresAt:expiresAt,podcastAspectRatio:editorPodcastAspect,podcastHighlights:editorPodcastHighlights,updatedAt:Date.now()};
+    const nl={id:`newsletter:${editorDate}`,date:editorDate,title:editorTitle||`Highlights de IA · ${fmtDate(editorDate)}`,subtitle:editorSubtitle,headlines:editorHeadlines,aiSummary:editorAiSummary,focusInsights:editorFocusInsights,podcastUrl:editorPodcastUrl,podcastBlobRef:editorPodcastBlobRef,podcastTitle:editorPodcastTitle,podcastDuration:editorPodcastDuration,podcastThumbnail:editorPodcastThumbnail,podcastExpiresAt:expiresAt,podcastAspectRatio:editorPodcastAspect,podcastHighlights:editorPodcastHighlights,audioPodcastUrl:editorAudioPodcastUrl,companies:editorCompanies,topics:editorTopics,updatedAt:Date.now()};
     const r=await db.set(nl.id,nl);
     if(r.ok){setNlSuccess(`✅ Edição publicada em ${fmtDate(editorDate)}!`);setNewsletters(await db.listNewsletters())}
     else{setNlError(`❌ Falha (${r.size} bytes): ${r.error}`)}
@@ -816,7 +1000,7 @@ function AdminApp({session,onLogout}){
   const sendToTeams=async()=>{setDistError("");setDistSuccess("");if(!teamsWebhook.trim()){setDistError("Configure webhook.");return}if(!distMsg.trim()){setDistError("Gere a mensagem.");return}try{await sendTeamsWebhook(teamsWebhook.trim(),emailSubject||`🎙️ ${epTitle}`,distMsg,videoUrl);setDistSuccess("Enviado!")}catch(err){setDistError("Erro: "+err.message)}};
   const importHeadlinesFromNewsletter=()=>{if(editorHeadlines.length>0){setHeadlines(editorHeadlines);setNewsError("")}};
   const useEpisodeAsPodcast=ep=>{if(ep.videoUrl){setEditorPodcastUrl(ep.videoUrl);setEditorPodcastBlobRef("");setEditorPodcastThumbnail(ep.thumbnailUrl||"");setEditorPodcastTitle(ep.title);setEditorPodcastDuration(ep.duration);setTab(0);setNlSuccess(`"${ep.title}" carregado`)}};
-  const canAccessTab=i=>i===0||i===1||i===2||keyValidated;
+  const canAccessTab=i=>i===0||i===1||i===2||i===8||keyValidated;
 
   return<div style={{background:T.bg,minHeight:"100vh",color:T.text,paddingBottom:30}}>
     <div style={{background:T.headerBg,borderBottom:`1px solid ${T.cardBorder}`,padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
@@ -942,6 +1126,39 @@ function AdminApp({session,onLogout}){
               <TextArea dark={isDark} value={editorPodcastHighlights} onChange={e=>setEditorPodcastHighlights(e.target.value)} rows={6} placeholder="Descobre o segredo por trás dos novos LLMs&#10;Mostra como agentes mudam programação para sempre&#10;Revela 3 ferramentas que acabaram de chegar..."/>
             </div>
 
+            <div style={{marginTop:14,padding:14,background:`${BRAND.navy}08`,border:`1px solid ${BRAND.navy}30`,borderRadius:11}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontWeight:700,fontSize:13,color:isDark?"#a8c8e8":BRAND.navy}}>🏷️ Empresas & Tópicos</div>
+                <Btn onClick={()=>extractCompaniesAndTopics()} disabled={!keyValidated||editorHeadlines.length===0}>🪄 Extrair com IA</Btn>
+              </div>
+              <div style={{fontSize:10,color:T.textMuted,marginBottom:8,fontStyle:"italic"}}>Aparecem como chips na newsletter para facilitar a leitura.</div>
+              {editorCompanies.length>0&&<div style={{marginBottom:8}}>
+                <div style={{fontSize:9,fontWeight:700,color:T.textMuted,letterSpacing:".1em",marginBottom:5}}>EMPRESAS</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                  {editorCompanies.map((c,i)=><span key={i} style={{fontSize:11,padding:"3px 9px",borderRadius:5,background:`${BRAND.navy}20`,color:isDark?"#a8c8e8":BRAND.navy,fontWeight:600,display:"inline-flex",alignItems:"center",gap:5}}>{c} <button onClick={()=>setEditorCompanies(editorCompanies.filter((_,j)=>j!==i))} style={{background:"transparent",border:"none",color:"inherit",cursor:"pointer",padding:0,fontSize:12,opacity:.6}}>×</button></span>)}
+                </div>
+              </div>}
+              {editorTopics.length>0&&<div>
+                <div style={{fontSize:9,fontWeight:700,color:T.textMuted,letterSpacing:".1em",marginBottom:5}}>TÓPICOS</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                  {editorTopics.map((t,i)=><span key={i} style={{fontSize:11,padding:"3px 9px",borderRadius:5,background:`${BRAND.gold}25`,color:BRAND.goldDark,fontWeight:600,display:"inline-flex",alignItems:"center",gap:5}}>#{t} <button onClick={()=>setEditorTopics(editorTopics.filter((_,j)=>j!==i))} style={{background:"transparent",border:"none",color:"inherit",cursor:"pointer",padding:0,fontSize:12,opacity:.6}}>×</button></span>)}
+                </div>
+              </div>}
+              {editorCompanies.length===0&&editorTopics.length===0&&<div style={{fontSize:11,color:T.textMuted,padding:"8px 0",fontStyle:"italic"}}>Clique em "Extrair com IA" após buscar manchetes</div>}
+            </div>
+
+            <div style={{marginTop:14,padding:14,background:`${BRAND.gold}10`,border:`1px solid ${BRAND.gold}40`,borderRadius:11}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontWeight:700,fontSize:13,color:BRAND.goldDark}}>🎧 Podcast em Áudio (NotebookLM/AutoContent)</div>
+                <Btn gold onClick={generateAudioPodcast} disabled={isGenAudioPodcast||!autoContentApiKey.trim()||editorHeadlines.length===0}>{isGenAudioPodcast?<><Spinner/> Gerando...</>:"🎙️ Gerar Podcast"}</Btn>
+              </div>
+              <div style={{fontSize:10,color:T.textMuted,marginBottom:8,fontStyle:"italic"}}>Gera podcast dual-host a partir do resumo + URLs das manchetes. 2-5 min de processamento.</div>
+              {!autoContentApiKey.trim()&&<div style={{fontSize:10,color:BRAND.goldDark,marginBottom:8,padding:"6px 10px",background:`${BRAND.gold}20`,borderRadius:6}}>⚠️ Configure a chave AutoContent em Diagnóstico primeiro</div>}
+              <Field label="URL do áudio (preenchido automaticamente após gerar)" mt={0} dark={isDark}><TextInput dark={isDark} value={editorAudioPodcastUrl} onChange={e=>setEditorAudioPodcastUrl(e.target.value)} placeholder="https://..."/></Field>
+              {audioPodcastMsg&&<div style={{marginTop:8,padding:"7px 10px",borderRadius:6,fontSize:11,background:audioPodcastMsg.startsWith("✅")?`${BRAND.sage}15`:audioPodcastMsg.startsWith("❌")?"rgba(200,69,69,.1)":`${BRAND.gold}15`,color:audioPodcastMsg.startsWith("✅")?BRAND.sageDark:audioPodcastMsg.startsWith("❌")?"#c84545":BRAND.goldDark}}>{audioPodcastMsg}</div>}
+              {editorAudioPodcastUrl&&<div style={{marginTop:10}}><audio controls src={editorAudioPodcastUrl} style={{width:"100%",borderRadius:6}}/></div>}
+            </div>
+
             {episodes.filter(e=>e.videoUrl).length>0&&<div style={{marginTop:14,padding:14,background:T.cardBg,border:`1px solid ${T.cardBorder}`,borderRadius:11}}>
               <div style={{fontWeight:700,fontSize:12,color:T.text,marginBottom:8}}>📚 Usar episódio gerado</div>
               <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:160,overflowY:"auto"}}>
@@ -1006,6 +1223,16 @@ function AdminApp({session,onLogout}){
             <Btn onClick={testTeams} disabled={testing.teams||!teamsWebhook.trim()} style={{marginTop:10,width:"100%"}}>{testing.teams?<><Spinner/> ...</>:"▶️ Testar"}</Btn>
             {testResults.teams&&<div style={{marginTop:10,padding:8,borderRadius:6,fontSize:11,background:testResults.teams.status==="ok"?`${BRAND.sage}15`:"rgba(200,69,69,.1)",color:testResults.teams.status==="ok"?BRAND.sageDark:"#c84545"}}>{testResults.teams.msg}</div>}
           </div>
+        </div>
+
+        <div style={{marginTop:24,padding:16,background:`${BRAND.gold}10`,border:`1px solid ${BRAND.gold}40`,borderRadius:11}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span>🎧</span><div style={{flex:1,fontWeight:700,fontSize:13,color:BRAND.goldDark}}>NotebookLM / AutoContent (Podcast Áudio)</div><span style={{fontSize:9,padding:"2px 7px",borderRadius:4,background:autoContentValidated?`${BRAND.sage}30`:T.cardBg,color:autoContentValidated?BRAND.sageDark:T.textMuted,fontWeight:700}}>{autoContentValidated?"✓":"OPCIONAL"}</span></div>
+          <div style={{fontSize:11,color:T.textMuted,marginBottom:10,lineHeight:1.5}}>
+            ℹ️ NotebookLM (Google) <strong>não tem API pública</strong>. Use o <a href="https://autocontentapi.com/" target="_blank" style={{color:BRAND.navy,textDecoration:"underline"}}>AutoContent API</a> — alternativa não-oficial que gera podcast dual-host estilo NotebookLM via REST. Cadastre-se e cole a chave abaixo.
+          </div>
+          <TextInput dark={isDark} type="password" value={autoContentApiKey} onChange={e=>setAutoContentApiKey(e.target.value)} placeholder="Bearer token do AutoContent"/>
+          <Btn gold onClick={testAutoContent} disabled={testing.autocontent||!autoContentApiKey.trim()} style={{marginTop:10,width:"100%"}}>{testing.autocontent?<><Spinner/> ...</>:"▶️ Testar AutoContent"}</Btn>
+          {testResults.autocontent&&<div style={{marginTop:10,padding:8,borderRadius:6,fontSize:11,background:testResults.autocontent.status==="ok"?`${BRAND.sage}15`:testResults.autocontent.status==="warn"?`${BRAND.gold}15`:"rgba(200,69,69,.1)",color:testResults.autocontent.status==="ok"?BRAND.sageDark:testResults.autocontent.status==="warn"?BRAND.goldDark:"#c84545"}}>{testResults.autocontent.msg}</div>}
         </div>
 
         <div style={{marginTop:24,padding:16,background:`${BRAND.navy}10`,border:`1px solid ${BRAND.navy}30`,borderRadius:11}}>
@@ -1195,7 +1422,50 @@ function AdminApp({session,onLogout}){
         </div>
       </div>}
 
-      {tab>2&&!keyValidated&&<div className="fade" style={{textAlign:"center",padding:80}}>
+      {tab===8&&<div className="fade">
+        <div style={{borderBottom:`1px solid ${T.cardBorder}`,paddingBottom:14,marginBottom:14}}>
+          <h2 style={{margin:0,fontSize:24,fontWeight:800,fontFamily:"'Fraunces',serif",color:T.text}}>📰 Fontes de Notícias</h2>
+          <p style={{margin:"4px 0 0",fontSize:12,color:T.textMuted,fontStyle:"italic"}}>Cadastre fontes que a IA vai usar ao buscar manchetes</p>
+        </div>
+
+        <div style={{background:`${BRAND.sage}10`,border:`1px solid ${BRAND.sage}40`,borderRadius:11,padding:16,marginBottom:18}}>
+          <div style={{fontWeight:700,fontSize:13,color:BRAND.sageDark,marginBottom:10}}>➕ Adicionar nova fonte</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 130px auto",gap:10,alignItems:"end"}}>
+            <Field label="Nome" mt={0} dark={isDark}><TextInput dark={isDark} value={srcName} onChange={e=>setSrcName(e.target.value)} placeholder="ex: TechCrunch"/></Field>
+            <Field label="URL da seção/feed" mt={0} dark={isDark}><TextInput dark={isDark} value={srcUrl} onChange={e=>setSrcUrl(e.target.value)} placeholder="https://..."/></Field>
+            <Field label="Categoria" mt={0} dark={isDark}>
+              <select value={srcCategory} onChange={e=>setSrcCategory(e.target.value)} style={{width:"100%",background:isDark?"rgba(255,255,255,.04)":"#fff",border:`1px solid ${isDark?"rgba(255,255,255,.1)":BRAND.sage+"40"}`,borderRadius:7,color:isDark?BRAND.cream:BRAND.ink,fontSize:12,padding:"9px 12px",fontFamily:"'Outfit',sans-serif"}}>
+                <option value="IA">IA</option><option value="LLM">LLM</option><option value="Produtividade">Produtividade</option><option value="Sistêmico">Sistêmico</option><option value="Hardware">Hardware</option><option value="Software">Software</option>
+              </select>
+            </Field>
+            <Btn sage onClick={handleAddSource}>➕ Adicionar</Btn>
+          </div>
+          {srcMsg.text&&<div style={{marginTop:10,padding:"8px 12px",borderRadius:7,fontSize:11,background:srcMsg.type==="ok"?`${BRAND.sage}15`:"rgba(200,69,69,.1)",color:srcMsg.type==="ok"?BRAND.sageDark:"#c84545"}}>{srcMsg.text}</div>}
+        </div>
+
+        <div style={{fontSize:12,color:T.text,fontWeight:700,fontFamily:"'Fraunces',serif",marginBottom:10}}>Fontes cadastradas ({newsSources.length} · {newsSources.filter(s=>s.active).length} ativas)</div>
+        {newsSources.length===0?
+          <div style={{border:`1px dashed ${T.cardBorder}`,borderRadius:10,padding:30,textAlign:"center",color:T.textMuted,fontSize:12}}>Nenhuma fonte cadastrada</div>:
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:10}}>
+            {newsSources.map(s=>
+              <div key={s.id} style={{background:s.active?T.cardBg:"rgba(200,69,69,.04)",border:`1px solid ${s.active?T.cardBorder:"rgba(200,69,69,.2)"}`,borderRadius:10,padding:12,opacity:s.active?1:.65}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:0}}>
+                    <span style={{fontSize:9,padding:"2px 7px",borderRadius:4,background:catStyle(s.category||"IA",isDark).background,color:catStyle(s.category||"IA",isDark).color,fontWeight:700,letterSpacing:".04em",flexShrink:0}}>{s.category||"IA"}</span>
+                    <div style={{fontWeight:700,fontSize:13,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</div>
+                    {!s.active&&<span style={{fontSize:9,padding:"2px 6px",borderRadius:4,background:"rgba(200,69,69,.15)",color:"#c84545",fontWeight:700}}>INATIVA</span>}
+                  </div>
+                </div>
+                <a href={s.url} target="_blank" rel="noreferrer" style={{fontSize:10,color:BRAND.muted,fontFamily:"'JetBrains Mono',monospace",textDecoration:"none",wordBreak:"break-all",display:"block",marginBottom:8}}>↗ {s.url}</a>
+                <div style={{display:"flex",gap:5}}>
+                  <button onClick={()=>handleToggleSource(s.id)} style={{flex:1,background:s.active?"rgba(255,160,0,.15)":`${BRAND.sage}25`,border:`1px solid ${s.active?"#cc8800":BRAND.sage}40`,color:s.active?"#aa7700":BRAND.sageDark,borderRadius:5,padding:"4px 10px",fontSize:10,cursor:"pointer",fontWeight:600}}>{s.active?"🚫 Desativar":"✅ Ativar"}</button>
+                  <button onClick={()=>handleDeleteSource(s.id)} style={{background:"rgba(200,69,69,.1)",border:"1px solid rgba(200,69,69,.3)",color:"#c84545",borderRadius:5,padding:"4px 10px",fontSize:10,cursor:"pointer",fontWeight:600}}>🗑️</button>
+                </div>
+              </div>)}
+          </div>}
+      </div>}
+
+      {tab>2&&tab!==8&&!keyValidated&&<div className="fade" style={{textAlign:"center",padding:80}}>
         <div style={{fontSize:48}}>🔒</div>
         <div style={{fontSize:18,fontWeight:700,color:BRAND.goldDark,marginTop:14}}>Bloqueado</div>
         <Btn onClick={()=>setTab(1)} style={{marginTop:14}}>← Diagnóstico</Btn>
