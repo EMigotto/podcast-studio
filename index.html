@@ -152,9 +152,8 @@ const { useState, useRef, useEffect, useCallback, useMemo, memo } = React;
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 
 // SUPABASE — cole aqui o URL e a anon key do seu projeto (Settings → API)
-const SUPABASE_URL =  "https://lmqwegtbwgvfumoaagag.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXdlZ3Rid2d2ZnVtb2FhZ2FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNzMzODgsImV4cCI6MjA5Mzg0OTM4OH0.rERsOrp1nrInxXhAqjTmk8w-qGacXcrcjlkGj7DjMPc";
-
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
 
 const sb = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true } })
@@ -168,12 +167,12 @@ const BRAND = {
 };
 
 const ADMIN_TABS = [
-  { id:"newsletter",  label:"Edição",       icon:"📰" },
-  { id:"briefing",    label:"Briefing IA",  icon:"🎙️" },
-  { id:"fontes",      label:"Fontes",       icon:"📡" },
-  { id:"audiencia",   label:"Audiência",    icon:"📊" },
-  { id:"diagnostico", label:"Configurações",icon:"⚙️" },
-  { id:"historico",   label:"Arquivo",      icon:"📚" },
+  { id:"newsletter",  label:"Newsletter",    icon:"📰" },
+  { id:"podcast",     label:"Podcast Semanal", icon:"🎬" },
+  { id:"fontes",      label:"Fontes",        icon:"📡" },
+  { id:"audiencia",   label:"Audiência",     icon:"📊" },
+  { id:"diagnostico", label:"Configurações", icon:"⚙️" },
+  { id:"historico",   label:"Arquivo",       icon:"📚" },
 ];
 
 const FOCUS_AREAS = [
@@ -187,7 +186,7 @@ const CAT_LABELS = ["IA","LLM","Produtividade","Sistêmico","Hardware","Software
 // ═══════════════════════════════════════════════════════════════════════════
 // DB (Supabase + localStorage fallback)
 // ═══════════════════════════════════════════════════════════════════════════
-const TABLE_MAP = { "newsletter":"newsletters", "comment":"comments", "view":"views", "episode":"episodes", "videoblob":"videoblobs", "user":"settings", "source":"news_sources", "audioblob":"audioblobs" };
+const TABLE_MAP = { "newsletter":"newsletters", "comment":"comments", "view":"views", "episode":"episodes", "videoblob":"videoblobs", "user":"settings", "source":"news_sources", "audioblob":"audioblobs", "podcast":"podcasts", "podview":"podviews" };
 const tableForKey = k => TABLE_MAP[k.split(":")[0]] || null;
 
 const db = {
@@ -272,6 +271,22 @@ const newsSourcesApi = {
   async upsert(src){const id=src.id||`source:${Date.now()}-${Math.random().toString(36).slice(2,6)}`;const s={...src,id};await db.set(id,s);return s},
   async remove(id){await db.delete(id)},
   async toggleActive(id){const s=await db.get(id);if(!s)return null;s.active=!s.active;await db.set(id,s);return s},
+};
+
+// PODCASTS API (weekly video summary)
+const podcastsApi = {
+  async list(){return(await db.listByPrefix("podcast:")).sort((a,b)=>(b.week||"").localeCompare(a.week||""))},
+  async get(id){return await db.get(id)},
+  async upsert(p){const id=p.id||`podcast:${p.week||today()}`;const obj={...p,id,updatedAt:Date.now()};if(!obj.createdAt)obj.createdAt=Date.now();await db.set(id,obj);return obj},
+  async remove(id){const p=await db.get(id);if(p?.videoBlobRef)await db.delete(p.videoBlobRef);await db.delete(id)},
+  async incrementView(id){const p=await db.get(id);if(!p)return;p.viewCount=(p.viewCount||0)+1;await db.set(id,p);return p},
+  async trackView(id){
+    const k=`viewed_session:podcast:${id}`; if(sessionStorage.getItem(k))return; sessionStorage.setItem(k,"1");
+    const vid=`podview:${id}:${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    const ua=(navigator.userAgent||"").slice(0,250);
+    await db.set(vid,{id:vid,podcastId:id,timestamp:Date.now(),ua,device:parseDevice(ua),browser:parseBrowser(ua),os:parseOS(ua)});
+    await this.incrementView(id);
+  },
 };
 
 const parseBrowser = ua => /Edg\//.test(ua)?"Edge":/OPR\/|Opera/.test(ua)?"Opera":/Firefox\//.test(ua)?"Firefox":/Chrome\//.test(ua)&&!/Edg\//.test(ua)?"Chrome":/Safari\//.test(ua)&&!/Chrome\//.test(ua)?"Safari":"Outro";
@@ -462,10 +477,11 @@ const Nav = memo(function Nav({ activeSection, isAdmin, onLogout, session }){
         <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem",color:BRAND.mute,letterSpacing:".12em",textTransform:"uppercase"}}>● {session?.username||"admin"}</span>
         <a href="?view=landing">↗ Landing</a>
         <a href="?view=public">↗ Pública</a>
+        <a href="?view=podcasts">↗ Podcasts</a>
         <a href="#" onClick={e=>{e.preventDefault();onLogout?.();}} className="nav-cta">Sair →</a>
       </> : <>
-        <a href="?view=landing#feature">Edição Atual</a>
-        <a href="?view=landing#archive">Arquivo</a>
+        <a href="?view=landing#feature">Newsletter</a>
+        <a href="?view=podcasts">Podcast Semanal</a>
         <a href="?view=landing#manifesto">Manifesto</a>
         <a href="?view=admin" className="nav-cta">Admin →</a>
       </>}
@@ -595,23 +611,27 @@ function CommentsSidebar({ open, onClose, newsletterDate }){
 // ═══════════════════════════════════════════════════════════════════════════
 function LandingPage(){
   const [newsletters,setNewsletters] = useState([]);
+  const [podcasts,setPodcasts] = useState([]);
   const [loading,setLoading] = useState(true);
   const [emailInput,setEmailInput] = useState("");
   const [emailSent,setEmailSent] = useState(false);
 
-  useEffect(()=>{(async()=>{ setNewsletters(await db.listNewsletters()); setLoading(false); })()},[]);
+  useEffect(()=>{(async()=>{ 
+    setNewsletters(await db.listNewsletters());
+    setPodcasts(await podcastsApi.list());
+    setLoading(false); 
+  })()},[]);
 
-  const featured = newsletters[0];
+  const featuredNl = newsletters[0];
   const archive = newsletters;
   const totalEpisodes = newsletters.length;
+  const featuredPod = podcasts[0];
 
-  // Try to estimate next publication (every Thursday)
   const nextThursday = useMemo(()=>{
     const d=new Date(); const dow=d.getDay(); const add=(4-dow+7)%7 || 7;
     d.setDate(d.getDate()+add); return fmtDateMag(d.toISOString().slice(0,10));
   },[]);
 
-  // Signal bar bars
   const signalBars = useMemo(()=>Array.from({length:80},(_,i)=>({
     height: 10 + Math.abs(Math.sin(i*0.4))*70,
     acc: [3,7,15,23,31,42,58,67,71].includes(i),
@@ -619,7 +639,7 @@ function LandingPage(){
   })),[]);
 
   return <>
-    <Ticker vol="01" episodes={totalEpisodes} nextDate={featured ? null : nextThursday}/>
+    <Ticker vol="01" episodes={totalEpisodes} nextDate={featuredNl ? null : nextThursday}/>
     <Nav/>
 
     {/* HERO */}
@@ -630,34 +650,36 @@ function LandingPage(){
             <span>Periódico</span><span style={{color:BRAND.ink,fontWeight:500}}>VOL. 01 / 2026</span>
           </div>
           <div style={{gridColumn:"4/7",display:"flex",flexDirection:"column",gap:4}}>
-            <span>Edição Corrente</span><span style={{color:BRAND.ink,fontWeight:500}}>{featured ? `№ ${padNum(totalEpisodes)} — ${fmtDateMag(featured.date).slice(0,6)}` : "EM CURADORIA"}</span>
+            <span>Edição Corrente</span><span style={{color:BRAND.ink,fontWeight:500}}>{featuredNl ? `№ ${padNum(totalEpisodes)} — ${fmtDateMag(featuredNl.date).slice(0,6)}` : "EM CURADORIA"}</span>
           </div>
           <div style={{gridColumn:"7/10",display:"flex",flexDirection:"column",gap:4}}>
             <span>Frequência</span><span style={{color:BRAND.ink,fontWeight:500}}>SEMANAL · QUI 19:00</span>
           </div>
           <div style={{gridColumn:"10/13",display:"flex",flexDirection:"column",gap:4,textAlign:"right"}}>
             <span>Status</span><span style={{color:BRAND.ink,fontWeight:500,display:"inline-flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
-              <span style={{width:8,height:8,borderRadius:"50%",background:BRAND.accent,animation:"live 1.6s infinite"}}></span>{featured?"NO AR":"AGUARDANDO"}
+              <span style={{width:8,height:8,borderRadius:"50%",background:BRAND.accent,animation:"live 1.6s infinite"}}></span>{featuredNl?"NO AR":"AGUARDANDO"}
             </span>
           </div>
         </div>
 
         <h1 className="display" style={{fontSize:"clamp(3rem, 9vw, 8rem)", margin:"0 0 36px"}}>
           Sincronize-se com a <em className="acc">IA</em>.<br/>
-          Em <em className="acc">5 minutos</em>,<br/>
-          uma vez por semana.
+          <em className="acc">Leia</em> em 5 min,<br/>
+          <em className="acc">assista</em> em 5 min.
         </h1>
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:48,marginBottom:56,alignItems:"end"}}>
-          <p style={{fontFamily:"'Fraunces',serif",fontVariationSettings:"'opsz' 36, 'SOFT' 50",fontWeight:400,fontSize:"clamp(1.2rem, 2vw, 1.55rem)",lineHeight:1.35,color:BRAND.inkSoft,maxWidth:"36ch",margin:0}}>
-            Newsletter e podcast curados para quem <em className="acc">não tem tempo</em> a perder, mas <em className="acc">não pode ficar para trás</em>. Tudo o que importou nesta semana em IA — destilado, contextualizado, sem hype.
+          <p style={{fontFamily:"'Fraunces',serif",fontVariationSettings:"'opsz' 36, 'SOFT' 50",fontWeight:400,fontSize:"clamp(1.2rem, 2vw, 1.55rem)",lineHeight:1.35,color:BRAND.inkSoft,maxWidth:"42ch",margin:0}}>
+            Tem <em className="acc">5 minutos</em>? Leia a <em className="acc">Newsletter</em> diária — destilando tudo que importou em IA. <br/><br/>
+            <em className="acc">Perdeu a semana inteira</em>? Assista ao <em className="acc">Podcast Semanal</em> em vídeo: um resumo prático dos principais temas, com exemplos claros.
           </p>
           <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"flex-end"}}>
-            {featured && <a href={`?view=public&date=${featured.date}`} className="btn btn-primary">
-              Ler Edição Atual
+            {featuredNl && <a href={`?view=public&date=${featuredNl.date}`} className="btn btn-primary">
+              Ler Edição
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="arrow"><path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </a>}
-            <a href="#archive" className="btn btn-ghost">Ver Arquivo</a>
+            {featuredPod ? <a href={`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`} className="btn btn-ghost">▶ Assistir Podcast</a>
+            : <a href="#podcast" className="btn btn-ghost">Podcast Semanal</a>}
           </div>
         </div>
 
@@ -669,16 +691,30 @@ function LandingPage(){
       </div>
     </header>
 
-    {/* FEATURED EDITION */}
-    {featured && <section id="feature" style={{padding:"100px 0"}}>
+    {/* SECTION INTRO — NEWSLETTER */}
+    <section id="feature" style={{padding:"80px 0 40px"}}>
       <div className="container">
-        <SectionLabel num="01">Edição Em Destaque</SectionLabel>
+        <div style={{display:"grid",gridTemplateColumns:"4fr 8fr",gap:48,paddingBottom:40,borderBottom:`1px solid ${BRAND.rule}`,marginBottom:48,alignItems:"start"}}>
+          <div className="mono small-caps" style={{color:BRAND.accent,paddingTop:8}}>№ 01 / Newsletter Diária</div>
+          <div>
+            <h2 className="display" style={{fontSize:"clamp(2rem, 4.5vw, 3.5rem)",margin:"0 0 18px"}}>
+              A <em className="acc">leitura</em> de 5 minutos.
+            </h2>
+            <p style={{fontFamily:"'Fraunces',serif",fontVariationSettings:"'opsz' 36, 'SOFT' 50",fontSize:"1.2rem",lineHeight:1.45,color:BRAND.inkSoft,margin:0,maxWidth:"58ch"}}>
+              Manchetes do dia, curadoria editorial e o que realmente <em className="acc">importa</em> em IA — empresas, modelos, ferramentas. Direto ao ponto, com exemplos claros.
+            </p>
+          </div>
+        </div>
+
+        {/* FEATURED NEWSLETTER */}
+        {featuredNl && <>
+          <SectionLabel num="01.A">Edição Em Destaque</SectionLabel>
         <article style={{display:"grid",gridTemplateColumns:"5fr 7fr",gap:0,background:BRAND.paperLight,border:`1px solid ${BRAND.rule}`,borderRadius:4,overflow:"hidden",boxShadow:"var(--shadow-lg)"}}>
           <div style={{background:BRAND.ink,color:BRAND.paper,padding:40,position:"relative",aspectRatio:"1/1",display:"flex",flexDirection:"column",justifyContent:"space-between",overflow:"hidden"}}>
             <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 70% 30%, rgba(197,57,28,.4) 0%, transparent 50%), radial-gradient(circle at 30% 80%, rgba(212,165,46,.25) 0%, transparent 50%)",pointerEvents:"none"}}></div>
             <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(to bottom, transparent, transparent 6px, rgba(241,233,214,.04) 6px, rgba(241,233,214,.04) 7px)",pointerEvents:"none"}}></div>
             <div style={{position:"relative",zIndex:2,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div className="mono small-caps" style={{opacity:.7}}>EP.{padNum(totalEpisodes)} · {fmtDateMag(featured.date)}</div>
+              <div className="mono small-caps" style={{opacity:.7}}>NL.{padNum(totalEpisodes)} · {fmtDateMag(featuredNl.date)}</div>
               <div className="mono small-caps" style={{color:BRAND.signal}}>▲ NO AR</div>
             </div>
             <div style={{position:"relative",zIndex:2}}>
@@ -686,44 +722,43 @@ function LandingPage(){
                 {Array.from({length:40},(_,i)=>(<span key={i} style={{flex:1,background:BRAND.paper,opacity:.7,borderRadius:1,height:`${15+Math.abs(Math.sin(i*.6))*85}%`}}></span>))}
               </div>
               <h3 className="display" style={{fontSize:"clamp(1.6rem, 3.5vw, 2.4rem)",letterSpacing:"-.025em",margin:0}}>
-                {featured.title || "Edição sem título"}
+                {featuredNl.title || "Edição sem título"}
               </h3>
             </div>
           </div>
           <div style={{padding:48,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
             <div>
               <div style={{display:"flex",gap:24,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem",textTransform:"uppercase",letterSpacing:".14em",color:BRAND.mute,marginBottom:24,flexWrap:"wrap"}}>
-                {featured.podcastDuration && <span><span style={{color:BRAND.accent}}>●</span> {featured.podcastDuration}min PODCAST</span>}
                 <span>5 MIN LEITURA</span>
-                <span>{(featured.headlines||[]).length} TÓPICOS</span>
-                {featured.audioPodcastUrl && <span style={{color:BRAND.accent}}>🎧 ÁUDIO RESUMO</span>}
+                <span>{(featuredNl.headlines||[]).length} TÓPICOS</span>
+                {featuredNl.audioPodcastUrl && <span style={{color:BRAND.accent}}>🎧 ÁUDIO RESUMO</span>}
               </div>
               <h2 className="display" style={{fontVariationSettings:"'opsz' 100, 'SOFT' 30",fontSize:"clamp(1.8rem, 3.5vw, 2.8rem)",lineHeight:1.05,letterSpacing:"-.02em",margin:"0 0 20px"}}>
-                {featured.subtitle ? <span dangerouslySetInnerHTML={{__html: featured.subtitle.replace(/\b(IA|inovação|trilhões|agentes|controle|economia)\b/gi, '<em class="acc">$1</em>')}}/> : featured.title}
+                {featuredNl.subtitle ? <span dangerouslySetInnerHTML={{__html: featuredNl.subtitle.replace(/\b(IA|inovação|trilhões|agentes|controle|economia)\b/gi, '<em class="acc">$1</em>')}}/> : featuredNl.title}
               </h2>
               <p style={{fontSize:"1.02rem",lineHeight:1.6,color:BRAND.inkSoft,margin:"0 0 32px",maxWidth:"56ch"}}>
-                {(featured.aiSummary||"").slice(0,260)}{(featured.aiSummary||"").length>260?"…":""}
+                {(featuredNl.aiSummary||"").slice(0,260)}{(featuredNl.aiSummary||"").length>260?"…":""}
               </p>
             </div>
             <div>
-              {featured.audioPodcastUrl && <div style={{marginBottom:20}}><AudioPlayer url={featured.audioPodcastUrl} title={featured.title}/></div>}
+              {featuredNl.audioPodcastUrl && <div style={{marginBottom:20}}><AudioPlayer url={featuredNl.audioPodcastUrl} title={featuredNl.title}/></div>}
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                <a href={`?view=public&date=${featured.date}`} className="btn btn-primary">
+                <a href={`?view=public&date=${featuredNl.date}`} className="btn btn-primary">
                   Ler Edição Completa
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="arrow"><path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                 </a>
-                {featured.podcastUrl && <a href={featured.podcastUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">Vídeo Original</a>}
               </div>
             </div>
           </div>
         </article>
+        </>}
       </div>
-    </section>}
+    </section>
 
-    {/* ARCHIVE */}
-    <section id="archive" style={{padding:"80px 0 100px"}}>
+    {/* ARCHIVE OF NEWSLETTERS */}
+    <section id="archive" style={{padding:"40px 0 80px"}}>
       <div className="container">
-        <SectionLabel num="02">Arquivo de Edições</SectionLabel>
+        <SectionLabel num="01.B">Arquivo de Edições</SectionLabel>
         {loading ? <div style={{padding:"60px 20px",textAlign:"center",color:BRAND.mute}}><Spin/></div>
         : archive.length === 0 ? <div style={{padding:"80px 20px",textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4}}>
             <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.6rem",fontStyle:"italic",color:BRAND.mute}}>Nenhuma edição publicada ainda.</div>
@@ -736,7 +771,7 @@ function LandingPage(){
               return <a key={n.date} href={`?view=public&date=${n.date}`} style={{display:"grid",gridTemplateColumns:"80px 110px 1fr 130px 100px 80px",gap:24,alignItems:"center",padding:"28px 0",borderBottom:`1px solid ${BRAND.rule}`,textDecoration:"none",color:BRAND.ink,transition:"all .3s ease",position:"relative"}}
                 onMouseEnter={e=>{e.currentTarget.style.background=`linear-gradient(to right, rgba(197,57,28,.04), transparent)`;e.currentTarget.style.paddingLeft="32px";}}
                 onMouseLeave={e=>{e.currentTarget.style.background="";e.currentTarget.style.paddingLeft="0";}}>
-                <div className="mono" style={{fontSize:".78rem",color:BRAND.mute,letterSpacing:".05em"}}>№ {padNum(num)}</div>
+                <div className="mono" style={{fontSize:".78rem",color:BRAND.mute,letterSpacing:".05em"}}>NL.{padNum(num)}</div>
                 <div className="mono" style={{fontSize:".82rem",color:BRAND.inkSoft,textTransform:"uppercase",letterSpacing:".08em"}}>{fmtDateMag(n.date)}</div>
                 <div style={{fontFamily:"'Fraunces',serif",fontVariationSettings:"'opsz' 24",fontSize:"1.4rem",lineHeight:1.15,letterSpacing:"-.015em"}}>
                   {n.title || "Edição sem título"}
@@ -744,9 +779,7 @@ function LandingPage(){
                 <div style={{justifySelf:"start"}}>
                   {isLatest ? <span className="chip acc">NO AR</span> : <span className="chip">PUBLICADO</span>}
                 </div>
-                <div className="mono" style={{fontSize:".78rem",color:BRAND.mute,letterSpacing:".05em",textAlign:"right"}}>
-                  {n.podcastDuration?`${n.podcastDuration}min · `:""}5min
-                </div>
+                <div className="mono" style={{fontSize:".78rem",color:BRAND.mute,letterSpacing:".05em",textAlign:"right"}}>5min leitura</div>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{justifySelf:"end",color:BRAND.inkSoft}}>
                   <path d="M3 13L13 3M13 3H6M13 3V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
@@ -755,6 +788,92 @@ function LandingPage(){
           </div>}
       </div>
     </section>
+
+    {/* SECTION INTRO — PODCAST */}
+    <section id="podcast" style={{padding:"80px 0 40px",background:`linear-gradient(180deg,transparent 0%,rgba(212,165,46,.05) 100%)`,borderTop:`1px solid ${BRAND.rule}`}}>
+      <div className="container">
+        <div style={{display:"grid",gridTemplateColumns:"4fr 8fr",gap:48,paddingBottom:40,borderBottom:`1px solid ${BRAND.rule}`,marginBottom:48,alignItems:"start"}}>
+          <div className="mono small-caps" style={{color:BRAND.accent,paddingTop:8}}>№ 02 / Podcast Semanal</div>
+          <div>
+            <h2 className="display" style={{fontSize:"clamp(2rem, 4.5vw, 3.5rem)",margin:"0 0 18px"}}>
+              <em className="acc">Perdeu</em> a semana? Assista em 5 min.
+            </h2>
+            <p style={{fontFamily:"'Fraunces',serif",fontVariationSettings:"'opsz' 36, 'SOFT' 50",fontSize:"1.2rem",lineHeight:1.45,color:BRAND.inkSoft,margin:0,maxWidth:"58ch"}}>
+              Toda <em className="acc">sexta</em>, um vídeo curto explicando os <em className="acc">principais temas</em> da semana — com exemplos práticos, sem rodeios. Para quem não conseguiu ler a Newsletter no dia.
+            </p>
+          </div>
+        </div>
+
+        {/* FEATURED PODCAST */}
+        <SectionLabel num="02.A">Vídeo da Semana</SectionLabel>
+        {featuredPod ? <article style={{display:"grid",gridTemplateColumns:"7fr 5fr",gap:32,alignItems:"start"}}>
+          <a href={`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}>
+            <div style={{position:"relative",borderRadius:4,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
+              {featuredPod.thumbnailUrl ? <img src={featuredPod.thumbnailUrl} alt={featuredPod.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(197,57,28,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(212,165,46,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{fontFamily:"'Fraunces',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.02em",lineHeight:1.1}}>{featuredPod.title}</div>
+              </div>}
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 60%,rgba(20,17,13,.7) 100%)"}}></div>
+              <div style={{position:"absolute",left:24,bottom:24,right:24,display:"flex",alignItems:"center",justifyContent:"space-between",color:BRAND.paper}}>
+                <div style={{width:64,height:64,background:BRAND.paper,borderRadius:"50%",display:"grid",placeItems:"center",boxShadow:"0 6px 24px rgba(0,0,0,.4)"}}>
+                  <svg width="22" height="22" viewBox="0 0 14 14" fill={BRAND.ink}><path d="M3 1.5l9 5.5-9 5.5V1.5z"/></svg>
+                </div>
+                <div className="mono small-caps" style={{color:BRAND.signal}}>▲ PUBLICADO</div>
+              </div>
+            </div>
+          </a>
+          <div>
+            <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:10,display:"flex",gap:16,flexWrap:"wrap"}}>
+              <span>POD.{padNum(podcasts.length)}</span>
+              <span>· {fmtDateMag(featuredPod.week||featuredPod.createdAt&&new Date(featuredPod.createdAt).toISOString().slice(0,10))}</span>
+              {featuredPod.duration && <span>· {featuredPod.duration} MIN</span>}
+              <span style={{color:BRAND.accent}}>· {featuredPod.viewCount||0} views</span>
+            </div>
+            <h3 className="display" style={{fontSize:"clamp(1.6rem, 3vw, 2.4rem)",lineHeight:1.1,letterSpacing:"-.02em",margin:"0 0 16px"}}>
+              {featuredPod.title}
+            </h3>
+            <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.05rem",lineHeight:1.5,color:BRAND.inkSoft,margin:"0 0 20px"}}>
+              {(featuredPod.description||"").slice(0,200)}{(featuredPod.description||"").length>200?"…":""}
+            </p>
+            {featuredPod.highlights?.length>0 && <div style={{marginBottom:20}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:8}}>✨ NESTE EPISÓDIO</div>
+              <ul style={{margin:0,paddingLeft:20,fontSize:".95rem",lineHeight:1.55,color:BRAND.inkSoft}}>
+                {featuredPod.highlights.slice(0,4).map((h,i)=><li key={i} style={{marginBottom:4}}>{h}</li>)}
+              </ul>
+            </div>}
+            <a href={`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`} className="btn btn-primary">▶ Assistir Agora</a>
+          </div>
+        </article>
+        : <div style={{padding:"80px 20px",textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4}}>
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.4rem",fontStyle:"italic",color:BRAND.mute}}>Primeiro podcast em produção.</div>
+            <div style={{marginTop:12,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem",textTransform:"uppercase",letterSpacing:".14em",color:BRAND.mute}}>Sexta-feira, 5min, direto ao ponto.</div>
+          </div>}
+      </div>
+    </section>
+
+    {/* PODCAST GRID (other episodes) */}
+    {podcasts.length>1 && <section style={{padding:"40px 0 80px",background:`rgba(212,165,46,.04)`}}>
+      <div className="container">
+        <SectionLabel num="02.B">Episódios Anteriores</SectionLabel>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:24}}>
+          {podcasts.slice(1).map((p)=>
+            <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}
+              onMouseEnter={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1.02)"}
+              onMouseLeave={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1)"}>
+              <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:4,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:12}}>
+                {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(197,57,28,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Fraunces',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
+                {p.duration && <div style={{position:"absolute",right:8,bottom:8,padding:"3px 8px",background:"rgba(20,17,13,.85)",color:BRAND.paper,borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem"}}>{p.duration}:00</div>}
+              </div>
+              <h4 style={{fontFamily:"'Fraunces',serif",fontSize:"1.1rem",lineHeight:1.25,margin:"0 0 6px",letterSpacing:"-.01em"}}>{p.title}</h4>
+              <div className="mono" style={{fontSize:".7rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".08em"}}>
+                {fmtDateMag(p.week||"").trim()} · {p.viewCount||0} views
+              </div>
+            </a>
+          )}
+        </div>
+      </div>
+    </section>}
 
     {/* MANIFESTO */}
     <section id="manifesto" style={{padding:"120px 0",background:BRAND.ink,color:BRAND.paper,position:"relative",overflow:"hidden"}}>
@@ -1095,6 +1214,253 @@ function PublicNewsletter(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PODCASTS PAGE — YouTube-style grid listing
+// ═══════════════════════════════════════════════════════════════════════════
+function PodcastsPage(){
+  const [podcasts,setPodcasts] = useState([]);
+  const [loading,setLoading] = useState(true);
+  useEffect(()=>{(async()=>{ setPodcasts(await podcastsApi.list()); setLoading(false); })()},[]);
+
+  const featured = podcasts[0];
+  const rest = podcasts.slice(1);
+
+  return <>
+    <Ticker vol="01" episodes={podcasts.length}/>
+    <Nav/>
+
+    <main className="container" style={{padding:"60px 32px 80px"}}>
+      <div style={{marginBottom:48,paddingBottom:24,borderBottom:`1px solid ${BRAND.rule}`}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>№ PODCAST SEMANAL · SYNC·MI</div>
+        <h1 className="display" style={{fontSize:"clamp(2.5rem, 7vw, 5rem)",margin:"0 0 18px",color:BRAND.ink}}>
+          <em className="acc">Perdeu</em> a semana?<br/>Assista em <em className="acc">5 minutos</em>.
+        </h1>
+        <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.2rem",lineHeight:1.5,color:BRAND.inkSoft,maxWidth:"58ch",margin:0}}>
+          Toda sexta, um vídeo curto explicando os principais temas da semana em IA — com exemplos práticos e direto ao ponto.
+        </p>
+      </div>
+
+      {loading ? <div style={{padding:"60px 20px",textAlign:"center",color:BRAND.mute}}><Spin/></div>
+      : podcasts.length===0 ? <div style={{padding:"100px 20px",textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4}}>
+          <div style={{fontSize:"3rem",marginBottom:16}}>🎬</div>
+          <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.8rem",fontStyle:"italic",color:BRAND.mute,marginBottom:8}}>Primeiro episódio em produção.</div>
+          <div className="mono small-caps" style={{color:BRAND.mute}}>Volte sexta-feira</div>
+        </div>
+      : <>
+        {/* FEATURED */}
+        <div style={{marginBottom:64}}>
+          <SectionLabel num="01">Vídeo da Semana</SectionLabel>
+          <article style={{display:"grid",gridTemplateColumns:"7fr 5fr",gap:32,alignItems:"start"}}>
+            <a href={`?view=podcast&id=${encodeURIComponent(featured.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}>
+              <div style={{position:"relative",borderRadius:4,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
+                {featured.thumbnailUrl ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(197,57,28,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(212,165,46,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <div style={{fontFamily:"'Fraunces',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.02em",lineHeight:1.1}}>{featured.title}</div>
+                </div>}
+                <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 60%,rgba(20,17,13,.7) 100%)"}}></div>
+                <div style={{position:"absolute",left:24,bottom:24,right:24,display:"flex",alignItems:"center",justifyContent:"space-between",color:BRAND.paper}}>
+                  <div style={{width:64,height:64,background:BRAND.paper,borderRadius:"50%",display:"grid",placeItems:"center",boxShadow:"0 6px 24px rgba(0,0,0,.4)"}}>
+                    <svg width="22" height="22" viewBox="0 0 14 14" fill={BRAND.ink}><path d="M3 1.5l9 5.5-9 5.5V1.5z"/></svg>
+                  </div>
+                  {featured.duration && <div style={{padding:"4px 10px",background:"rgba(20,17,13,.85)",color:BRAND.paper,borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".82rem"}}>{featured.duration} MIN</div>}
+                </div>
+              </div>
+            </a>
+            <div>
+              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:10,display:"flex",gap:16,flexWrap:"wrap"}}>
+                <span>POD.{padNum(podcasts.length)}</span>
+                {featured.week && <span>· SEMANA DE {fmtDateMag(featured.week)}</span>}
+                <span style={{color:BRAND.accent}}>· {featured.viewCount||0} views</span>
+              </div>
+              <h2 className="display" style={{fontSize:"clamp(1.8rem, 3.5vw, 2.6rem)",lineHeight:1.1,letterSpacing:"-.02em",margin:"0 0 16px"}}>{featured.title}</h2>
+              <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.05rem",lineHeight:1.5,color:BRAND.inkSoft,margin:"0 0 20px"}}>
+                {(featured.description||"").slice(0,240)}{(featured.description||"").length>240?"…":""}
+              </p>
+              {featured.highlights?.length>0 && <div style={{marginBottom:20}}>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:8}}>✨ NESTE EPISÓDIO</div>
+                <ul style={{margin:0,paddingLeft:20,fontSize:".95rem",lineHeight:1.55,color:BRAND.inkSoft}}>
+                  {featured.highlights.slice(0,5).map((h,i)=><li key={i} style={{marginBottom:4}}>{h}</li>)}
+                </ul>
+              </div>}
+              <a href={`?view=podcast&id=${encodeURIComponent(featured.id)}`} className="btn btn-primary">▶ Assistir Agora</a>
+            </div>
+          </article>
+        </div>
+
+        {/* GRID */}
+        {rest.length>0 && <div>
+          <SectionLabel num="02">Episódios Anteriores</SectionLabel>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:24}}>
+            {rest.map(p=>
+              <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}
+                onMouseEnter={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1.02)"}
+                onMouseLeave={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1)"}>
+                <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:4,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:12}}>
+                  {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(197,57,28,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Fraunces',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
+                  {p.duration && <div style={{position:"absolute",right:8,bottom:8,padding:"3px 8px",background:"rgba(20,17,13,.85)",color:BRAND.paper,borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem"}}>{p.duration}:00</div>}
+                </div>
+                <h4 style={{fontFamily:"'Fraunces',serif",fontSize:"1.1rem",lineHeight:1.25,margin:"0 0 6px",letterSpacing:"-.01em"}}>{p.title}</h4>
+                <div className="mono" style={{fontSize:".7rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".08em"}}>
+                  {p.week ? fmtDateMag(p.week) : ""} · {p.viewCount||0} views
+                </div>
+              </a>
+            )}
+          </div>
+        </div>}
+      </>}
+    </main>
+  </>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PODCAST DETAIL — YouTube-style player view
+// ═══════════════════════════════════════════════════════════════════════════
+function PodcastDetail(){
+  const [podcast,setPodcast] = useState(null);
+  const [related,setRelated] = useState([]);
+  const [loading,setLoading] = useState(true);
+  const [videoBlob,setVideoBlob] = useState(null);
+  const [relatedNls,setRelatedNls] = useState([]);
+
+  useEffect(()=>{(async()=>{
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    if(!id){setLoading(false);return;}
+    const p = await podcastsApi.get(id);
+    if(!p){setLoading(false);return;}
+    setPodcast(p);
+    podcastsApi.trackView(id).catch(()=>{});
+    const all = await podcastsApi.list();
+    setRelated(all.filter(x=>x.id!==id).slice(0,6));
+    if(p.videoBlobRef) db.getBlob(p.videoBlobRef).then(setVideoBlob);
+    // Load source newsletters
+    if(p.newsletterDates?.length>0){
+      const nls = [];
+      for(const d of p.newsletterDates){
+        const nl = await db.get(`newsletter:${d}`);
+        if(nl) nls.push(nl);
+      }
+      setRelatedNls(nls);
+    }
+    setLoading(false);
+  })()},[]);
+
+  if(loading) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.mute}}><Spin/></div>;
+  if(!podcast) return <>
+    <Ticker vol="01" episodes={0}/>
+    <Nav/>
+    <main className="container" style={{padding:"100px 32px",textAlign:"center"}}>
+      <div style={{fontSize:"3rem",marginBottom:16}}>🚫</div>
+      <h1 className="display" style={{fontSize:"2rem",margin:"0 0 16px"}}>Podcast não encontrado.</h1>
+      <a href="?view=podcasts" className="btn btn-ghost">← Voltar para todos</a>
+    </main>
+  </>;
+
+  const effectiveVideoUrl = videoBlob || podcast.videoUrl;
+  const aspectRatio = podcast.aspectRatio || "16/9";
+
+  return <>
+    <Ticker vol="01" episodes={related.length+1}/>
+    <Nav/>
+
+    <main className="container" style={{padding:"32px 32px 80px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:32,alignItems:"start"}}>
+        {/* LEFT: Player + meta */}
+        <div>
+          {/* Video player */}
+          {effectiveVideoUrl ? <div style={{marginBottom:24}}>
+            <VideoPlayer url={effectiveVideoUrl} aspectRatio={aspectRatio} maxWidth="100%"/>
+          </div>
+          : <div style={{aspectRatio:"16/9",background:BRAND.ink,borderRadius:4,display:"grid",placeItems:"center",color:BRAND.paper,marginBottom:24}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:48,marginBottom:8}}>🎬</div>
+              <div className="mono small-caps">Vídeo em produção</div>
+            </div>
+          </div>}
+
+          {/* Title + meta */}
+          <h1 className="display" style={{fontSize:"clamp(1.6rem, 4vw, 2.4rem)",margin:"0 0 14px",lineHeight:1.1}}>
+            {podcast.title}
+          </h1>
+          <div style={{display:"flex",alignItems:"center",gap:18,marginBottom:24,paddingBottom:18,borderBottom:`1px solid ${BRAND.rule}`,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:42,height:42,borderRadius:"50%",background:BRAND.ink,display:"grid",placeItems:"center",color:BRAND.paper,fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1rem"}}>·</div>
+              <div>
+                <div style={{fontFamily:"'Fraunces',serif",fontWeight:500,fontSize:".95rem"}}>Sync<em className="acc" style={{fontStyle:"italic"}}>·MI</em></div>
+                <div className="mono" style={{fontSize:".68rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".1em"}}>Newsletter & Podcast</div>
+              </div>
+            </div>
+            <div style={{flex:1}}/>
+            <div className="mono" style={{fontSize:".78rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".1em"}}>
+              {podcast.viewCount||0} views · {podcast.week?fmtDateMag(podcast.week):fmtRelative(podcast.createdAt)}
+            </div>
+            {podcast.videoUrl && <a href={podcast.videoUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">↗ Abrir externamente</a>}
+          </div>
+
+          {/* Description card (YouTube-style) */}
+          <div className="card" style={{padding:24,marginBottom:24}}>
+            <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>📝 DESCRIÇÃO</div>
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.05rem",lineHeight:1.6,color:BRAND.ink,whiteSpace:"pre-wrap",marginBottom:podcast.highlights?.length>0?20:0}}>
+              {podcast.description || <span style={{fontStyle:"italic",color:BRAND.mute}}>(sem descrição)</span>}
+            </div>
+            {podcast.highlights?.length>0 && <div style={{paddingTop:18,borderTop:`1px solid ${BRAND.rule}`}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>✨ HIGHLIGHTS DO VÍDEO</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {podcast.highlights.map((h,i)=>
+                  <div key={i} style={{display:"flex",gap:14,alignItems:"flex-start"}}>
+                    <div className="mono" style={{flexShrink:0,fontSize:".82rem",color:BRAND.accent,fontWeight:600,paddingTop:2,minWidth:36}}>№ {padNum(i+1,2)}</div>
+                    <div style={{fontFamily:"'Fraunces',serif",fontSize:"1rem",lineHeight:1.45,color:BRAND.ink}}>{h}</div>
+                  </div>
+                )}
+              </div>
+            </div>}
+          </div>
+
+          {/* Source newsletters */}
+          {relatedNls.length>0 && <div className="card" style={{padding:24}}>
+            <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>📰 NEWSLETTERS QUE ORIGINARAM ESTE EPISÓDIO</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {relatedNls.map(nl=>
+                <a key={nl.date} href={`?view=public&date=${nl.date}`} style={{display:"flex",alignItems:"center",gap:14,padding:"10px 14px",background:BRAND.paperDark,borderRadius:4,textDecoration:"none",color:BRAND.ink,transition:"all .2s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background=BRAND.paperLight;e.currentTarget.style.transform="translateX(4px)"}}
+                  onMouseLeave={e=>{e.currentTarget.style.background=BRAND.paperDark;e.currentTarget.style.transform="translateX(0)"}}>
+                  <div className="mono" style={{fontSize:".72rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".1em",minWidth:80}}>{fmtDateMag(nl.date)}</div>
+                  <div style={{fontFamily:"'Fraunces',serif",fontSize:"1rem",lineHeight:1.2,flex:1}}>{nl.title}</div>
+                  <span style={{color:BRAND.accent,fontSize:".8rem"}}>→</span>
+                </a>
+              )}
+            </div>
+          </div>}
+        </div>
+
+        {/* RIGHT: Related podcasts */}
+        <aside>
+          <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:14}}>📺 OUTROS EPISÓDIOS</div>
+          {related.length===0 ? <div style={{padding:30,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4,color:BRAND.mute,fontFamily:"'Fraunces',serif",fontStyle:"italic"}}>Nenhum outro ainda</div>
+          : <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {related.map(p=>
+              <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} style={{display:"grid",gridTemplateColumns:"160px 1fr",gap:12,textDecoration:"none",color:"inherit"}}>
+                <div style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:4,overflow:"hidden",border:`1px solid ${BRAND.rule}`}}>
+                  {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(197,57,28,.3) 0%, transparent 50%)",display:"grid",placeItems:"center",color:BRAND.paper,fontFamily:"'Fraunces',serif",fontSize:".82rem",padding:8,textAlign:"center",lineHeight:1.1}}>{(p.title||"").slice(0,40)}</div>}
+                  {p.duration && <div style={{position:"absolute",right:4,bottom:4,padding:"1px 6px",background:"rgba(20,17,13,.85)",color:BRAND.paper,borderRadius:2,fontFamily:"'JetBrains Mono',monospace",fontSize:".62rem"}}>{p.duration}m</div>}
+                </div>
+                <div>
+                  <div style={{fontFamily:"'Fraunces',serif",fontSize:".95rem",lineHeight:1.2,marginBottom:4,letterSpacing:"-.005em"}}>{p.title}</div>
+                  <div className="mono" style={{fontSize:".62rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".08em"}}>
+                    {p.week?fmtDateMag(p.week):""} · {p.viewCount||0} views
+                  </div>
+                </div>
+              </a>
+            )}
+          </div>}
+        </aside>
+      </div>
+    </main>
+  </>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // AUDIENCE PANEL (admin: comments moderation + analytics)
 // ═══════════════════════════════════════════════════════════════════════════
 function BreakdownCard({ title, data, keyFmt }){
@@ -1308,6 +1674,32 @@ function AdminApp({ session, onLogout }){
   // Briefing tab
   const [briefingCopied,setBriefingCopied] = useState(false);
   const [audioUploadMsg,setAudioUploadMsg] = useState("");
+
+  // Wizard
+  const [wizardStep,setWizardStep] = useState(1);
+  // Step 1: source candidates (raw fetched news before user selection)
+  const [sourceCandidates,setSourceCandidates] = useState([]);
+  const [selectedIdx,setSelectedIdx] = useState(new Set());
+  const [featuredIdx,setFeaturedIdx] = useState(new Set());
+  const [translateMsg,setTranslateMsg] = useState("");
+  const [isTranslating,setIsTranslating] = useState(false);
+
+  // Podcast Studio
+  const [allPodcasts,setAllPodcasts] = useState([]);
+  const [podSelectedNls,setPodSelectedNls] = useState(new Set());
+  const [podScript,setPodScript] = useState("");
+  const [podHighlights,setPodHighlights] = useState([]);
+  const [podTitle,setPodTitle] = useState("");
+  const [podDescription,setPodDescription] = useState("");
+  const [podVideoUrl,setPodVideoUrl] = useState("");
+  const [podVideoBlobRef,setPodVideoBlobRef] = useState("");
+  const [podDuration,setPodDuration] = useState(5);
+  const [podAspect,setPodAspect] = useState("16/9");
+  const [podThumbnailUrl,setPodThumbnailUrl] = useState("");
+  const [podWeek,setPodWeek] = useState(today());
+  const [isGenScript,setIsGenScript] = useState(false);
+  const [podMsg,setPodMsg] = useState({type:"",text:""});
+  const [editingPodId,setEditingPodId] = useState(null);
 
   // Load on mount
   useEffect(()=>{let cancelled=false;(async()=>{
@@ -1613,6 +2005,239 @@ ${sources || "(sem fontes com URL)"}
     setTimeout(()=>setBriefingCopied(false),2500);
   };
 
+  // ════ WIZARD HANDLERS ════
+  // STEP 1: Fetch news + translate to PT + selection
+  const wizardFetchNews = async () => {
+    if(!keyValidated){setNlError("Configure a chave Anthropic em Configurações.");return;}
+    setIsLoadingNl(true);setNlError("");setNlSuccess("");
+    const activeSources = newsSources.filter(s=>s.active);
+    const sourcesHint = activeSources.length>0
+      ? `\n\nPRIORIZE PESQUISAR NESTAS FONTES:\n${activeSources.map(s=>`- ${s.name} (${s.url})`).join("\n")}\nRetorne em "url" o link da matéria e em "source" o nome da fonte.`
+      : "";
+    try {
+      const t = await callClaude(apiKey,
+        `Pesquise as 12 principais notícias de IA, produtividade e desenvolvimento de software desta semana (referência: ${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, desenvolvimento sistêmico.${sourcesHint}\n\nResponda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases EM PORTUGUÊS","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://...","originalLang":"pt|en"}]\n\nIMPORTANTE: traduza title e summary para português brasileiro sempre. Se original em inglês, marque originalLang:"en".`,
+        true, 3500);
+      const m = t.match(/\[[\s\S]*\]/);
+      if(m){
+        const arr = JSON.parse(m[0]).slice(0,12);
+        setSourceCandidates(arr);
+        // Pre-select all by default
+        setSelectedIdx(new Set(arr.map((_,i)=>i)));
+        setFeaturedIdx(new Set());
+        setNlSuccess(`${arr.length} manchetes buscadas${activeSources.length>0?` em ${activeSources.length} fontes`:""}.`);
+      } else throw new Error("Sem JSON");
+    } catch(err){setNlError("Erro: "+err.message);}
+    setIsLoadingNl(false);
+  };
+  const toggleSel = (i) => {
+    setSelectedIdx(prev=>{const s=new Set(prev);s.has(i)?s.delete(i):s.add(i);return s});
+  };
+  const toggleFeatured = (i) => {
+    setFeaturedIdx(prev=>{const s=new Set(prev);s.has(i)?s.delete(i):s.add(i);return s});
+    setSelectedIdx(prev=>{const s=new Set(prev);s.add(i);return s}); // ensure selected
+  };
+  const wizardConfirmStep1 = () => {
+    const selected = sourceCandidates
+      .map((h,i)=>({...h,featured:featuredIdx.has(i),_idx:i}))
+      .filter((h,i)=>selectedIdx.has(i));
+    if(selected.length===0){setNlError("Selecione pelo menos uma manchete.");return;}
+    setEditorHeadlines(selected);
+    setNlError("");setNlSuccess(`${selected.length} manchetes confirmadas.`);
+    setWizardStep(2);
+  };
+
+  // STEP 2: Curation summary with "direct, simple, enthusiastic" tone
+  const wizardGenSummary = async () => {
+    if(!keyValidated){setNlError("Configure a chave.");return;}
+    if(editorHeadlines.length===0){setNlError("Volte ao passo 1 e selecione manchetes.");return;}
+    setIsGenSummary(true);setNlError("");
+    try {
+      const t = await callClaude(apiKey,
+        `Crie um RESUMO EDITORIAL (~280 palavras) das manchetes abaixo.
+
+TOM OBRIGATÓRIO:
+- DIRETO: vá direto ao ponto, sem rodeios
+- SIMPLES: linguagem acessível, evite jargão técnico desnecessário
+- ENTUSIASTA: transmita interesse genuíno, sem ser hype
+- EXEMPLOS CLAROS: cite casos práticos sempre que possível
+
+FOCO em três áreas: 1) Produtividade 2) Desenvolvimento Sistêmico 3) Modelos LLM/IA.
+
+MANCHETES${featuredIdx.size>0?" (com destaques marcados *)":""}:
+${editorHeadlines.map((h,i)=>`${i+1}.${h.featured?" *":""} ${h.title} — ${h.summary}`).join("\n")}
+
+Retorne APENAS o resumo, em português brasileiro.`,
+        false, 1500, "Editor sênior de newsletter de IA. Português brasileiro. Tom direto, simples e entusiasta.");
+      setEditorAiSummary(t.trim());
+      // Also extract companies/topics here
+      await extractCompaniesAndTopics(editorHeadlines);
+      setNlSuccess("Resumo, empresas e tópicos gerados!");
+    } catch(err){setNlError("Erro: "+err.message);}
+    setIsGenSummary(false);
+  };
+
+  // STEP 3 handler is generateFocusInsights (already exists)
+  // STEP 4 handlers: generateTitle + generateSubtitle (already exist)
+
+  // STEP 6: Publish newsletter
+  const wizardPublish = async () => {
+    if(!editorDate){setNlError("Selecione uma data.");return;}
+    setNlError("");setNlSuccess("");
+    const expiresAt = (editorPodcastUrl||editorPodcastBlobRef)&&editorPodcastTtlDays>0?Date.now()+editorPodcastTtlDays*86400000:null;
+    const nl = {
+      id:`newsletter:${editorDate}`, date:editorDate,
+      title:editorTitle||`Highlights de IA · ${fmtDate(editorDate)}`,
+      subtitle:editorSubtitle, headlines:editorHeadlines,
+      sourceCandidates: sourceCandidates.length>0 ? sourceCandidates : (await db.get(`newsletter:${editorDate}`))?.sourceCandidates || [],
+      aiSummary:editorAiSummary, focusInsights:editorFocusInsights,
+      podcastUrl:editorPodcastUrl, podcastBlobRef:editorPodcastBlobRef,
+      podcastTitle:editorPodcastTitle, podcastDuration:editorPodcastDuration,
+      podcastExpiresAt:expiresAt, podcastAspectRatio:editorPodcastAspect,
+      podcastHighlights:editorPodcastHighlights,
+      audioPodcastUrl:editorAudioPodcastUrl, audioPodcastBlobRef:editorAudioPodcastBlobRef,
+      companies:editorCompanies, topics:editorTopics,
+      updatedAt:Date.now(),
+    };
+    const r = await db.set(nl.id,nl);
+    if(r.ok){setNlSuccess(`✓ Edição publicada! Veja na landing.`);setNewsletters(await db.listNewsletters());}
+    else setNlError(`Falha: ${r.error}`);
+  };
+
+  // ════ PODCAST STUDIO HANDLERS ════
+  useEffect(()=>{(async()=>{if(storageReady)setAllPodcasts(await podcastsApi.list())})()},[storageReady]);
+
+  const podSelectedList = useMemo(()=>newsletters.filter(n=>podSelectedNls.has(n.date)),[newsletters,podSelectedNls]);
+
+  const togglePodNl = (date) => {
+    setPodSelectedNls(prev=>{const s=new Set(prev);s.has(date)?s.delete(date):s.add(date);return s});
+  };
+
+  const generateHeyGenScript = async () => {
+    if(!keyValidated){setPodMsg({type:"err",text:"Configure a chave em Configurações."});return;}
+    if(podSelectedList.length===0){setPodMsg({type:"err",text:"Selecione ao menos 1 newsletter."});return;}
+    setIsGenScript(true);setPodMsg({type:"",text:""});
+    try {
+      const ctx = podSelectedList.map(nl=>
+        `═══ NEWSLETTER ${fmtDateMag(nl.date)}: ${nl.title} ═══\n` +
+        `Subtítulo: ${nl.subtitle||"(s/)"}\n\n` +
+        `Resumo:\n${nl.aiSummary||"(s/)"}\n\n` +
+        `Empresas: ${(nl.companies||[]).join(", ")}\n` +
+        `Tópicos: ${(nl.topics||[]).join(", ")}\n\n` +
+        `Manchetes:\n${(nl.headlines||[]).map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`
+      ).join("\n\n═══════════════════\n\n");
+
+      const t = await callClaude(apiKey,
+        `Crie um ROTEIRO DE PODCAST EM VÍDEO para o HeyGen.
+
+CONTEXTO: Sync·MI é um podcast semanal de IA. Tom DIRETO, SIMPLES e ENTUSIASTA. Foco em INOVAÇÕES de IA com EXEMPLOS CLAROS. 5-7 minutos, português brasileiro.
+
+INSTRUÇÕES DE FORMATO (HeyGen lê isto literalmente):
+- Use blocos [CENA N · Reação: <descritor> · ~<segundos>s] antes de cada cena para que o operador configure no HeyGen Studio
+- Reações disponíveis: animada, focada, surpresa, séria, animadora, reflexiva
+- Use [QUEBRA · Xs] entre cenas (transições do HeyGen)
+- Dentro da fala, use texto normal — HeyGen lê literal. Use "..." para pausas curtas.
+- NÃO use marcação em colchetes dentro da fala — apenas nas separações entre cenas
+- 4 a 6 cenas no total (abertura, 2-3 temas, fechamento)
+
+NEWSLETTERS DE BASE:
+${ctx}
+
+ESTRUTURA:
+- Cena 1: abertura entusiasmada (~20s) — apresenta a semana
+- Cenas 2-4: 2-3 temas principais com exemplos práticos (~45-60s cada)
+- Cena final: fechamento + chamada para newsletter (~20s)
+
+Retorne APENAS o roteiro formatado, em português brasileiro.`,
+        false, 3500, "Roteirista de podcasts de IA. Português brasileiro. Direto, claro, entusiasta.");
+
+      setPodScript(t.trim());
+
+      // Also generate title, description, highlights
+      const meta = await callClaude(apiKey,
+        `A partir do roteiro abaixo, gere o METADADO do vídeo.
+Responda APENAS JSON: {"title":"título magnético max 10 palavras","description":"descrição YouTube 2-3 parágrafos, tom direto e entusiasta","highlights":["highlight 1","highlight 2","highlight 3","highlight 4","highlight 5"]}
+
+ROTEIRO:
+${t.slice(0,3000)}`,
+        false, 1200);
+      const mm = meta.match(/\{[\s\S]*\}/);
+      if(mm){
+        const p = JSON.parse(mm[0]);
+        setPodTitle(p.title||"");
+        setPodDescription(p.description||"");
+        setPodHighlights(p.highlights||[]);
+      }
+      setPodMsg({type:"ok",text:"✓ Roteiro + metadados gerados!"});
+    } catch(err){setPodMsg({type:"err",text:"Erro: "+err.message});}
+    setIsGenScript(false);
+  };
+
+  const savePodcast = async () => {
+    if(!podTitle.trim()){setPodMsg({type:"err",text:"Título é obrigatório."});return;}
+    const id = editingPodId || `podcast:${podWeek}`;
+    const p = {
+      id, week:podWeek, title:podTitle, description:podDescription,
+      videoUrl:podVideoUrl, videoBlobRef:podVideoBlobRef,
+      aspectRatio:podAspect, duration:podDuration, highlights:podHighlights,
+      scriptText:podScript, newsletterDates:Array.from(podSelectedNls),
+      thumbnailUrl:podThumbnailUrl,
+      viewCount: editingPodId ? (await podcastsApi.get(editingPodId))?.viewCount||0 : 0,
+    };
+    const r = await podcastsApi.upsert(p);
+    setPodMsg({type:"ok",text:`✓ Podcast salvo! ${editingPodId?"":"Aparece em /?view=podcasts"}`});
+    setAllPodcasts(await podcastsApi.list());
+    setEditingPodId(r.id);
+  };
+
+  const loadPodcastForEdit = async (id) => {
+    const p = await podcastsApi.get(id);
+    if(!p) return;
+    setEditingPodId(id);
+    setPodTitle(p.title||""); setPodDescription(p.description||"");
+    setPodVideoUrl(p.videoUrl||""); setPodVideoBlobRef(p.videoBlobRef||"");
+    setPodAspect(p.aspectRatio||"16/9"); setPodDuration(p.duration||5);
+    setPodHighlights(p.highlights||[]); setPodScript(p.scriptText||"");
+    setPodSelectedNls(new Set(p.newsletterDates||[]));
+    setPodThumbnailUrl(p.thumbnailUrl||"");
+    setPodWeek(p.week||today());
+    setPodMsg({type:"ok",text:`Carregado: ${p.title}`});
+  };
+
+  const newPodcast = () => {
+    setEditingPodId(null);
+    setPodTitle(""); setPodDescription(""); setPodVideoUrl(""); setPodVideoBlobRef("");
+    setPodAspect("16/9"); setPodDuration(5); setPodHighlights([]); setPodScript("");
+    setPodSelectedNls(new Set()); setPodThumbnailUrl(""); setPodWeek(today());
+    setPodMsg({type:"",text:""});
+  };
+
+  const deletePodcast = async (id) => {
+    if(!confirm("Apagar este podcast?")) return;
+    await podcastsApi.remove(id);
+    setAllPodcasts(await podcastsApi.list());
+    if(editingPodId===id) newPodcast();
+  };
+
+  const handlePodVideoUpload = async (e) => {
+    const f = e.target.files?.[0]; if(!f) return;
+    if(f.size > 30*1024*1024) {setPodMsg({type:"err",text:`Grande (${(f.size/(1024*1024)).toFixed(1)}MB). Prefira URL externa.`}); return;}
+    setPodMsg({type:"",text:"Convertendo vídeo..."});
+    try {
+      const dataUrl = await fileToDataUrl(f);
+      const blobKey = `videoblob:pod:${podWeek}:${Date.now()}`;
+      const r = await db.saveBlob(blobKey,dataUrl);
+      if(r.ok){setPodVideoBlobRef(blobKey);setPodVideoUrl("");setPodMsg({type:"ok",text:`Vídeo salvo (${(f.size/(1024*1024)).toFixed(1)}MB)`});}
+      else setPodMsg({type:"err",text:`Falha: ${r.error}`});
+    } catch(err){setPodMsg({type:"err",text:"Erro: "+err.message});}
+  };
+
+  const copyScript = () => {
+    navigator.clipboard.writeText(podScript);
+    setPodMsg({type:"ok",text:"✓ Roteiro copiado pro clipboard"});
+    setTimeout(()=>setPodMsg(p=>p.text==="✓ Roteiro copiado pro clipboard"?{type:"",text:""}:p),2500);
+  };
+
   return <>
     <Ticker vol="01" episodes={newsletters.length}/>
     <Nav isAdmin={true} session={session} onLogout={onLogout}/>
@@ -1629,217 +2254,454 @@ ${sources || "(sem fontes com URL)"}
         ))}
       </div>
 
-      {/* TAB 0: NEWSLETTER EDITOR */}
+      {/* TAB 0: NEWSLETTER WIZARD (6 steps) */}
       {tab===0 && <div className="fade">
-        <SectionLabel num="📰">Edição da Newsletter</SectionLabel>
+        <SectionLabel num="📰">Newsletter · Wizard de Publicação</SectionLabel>
 
-        <div style={{display:"flex",gap:14,alignItems:"end",marginBottom:24,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:14,alignItems:"end",marginBottom:24,flexWrap:"wrap",paddingBottom:18,borderBottom:`1px solid ${BRAND.rule}`}}>
           <Field label="Data da edição" style={{minWidth:200}}>
             <Input type="date" value={editorDate} onChange={e=>setEditorDate(e.target.value)}/>
           </Field>
           <div style={{flex:1,display:"flex",gap:6,flexWrap:"wrap"}}>
             {newsletters.slice(0,5).map(n=>
-              <button key={n.date} onClick={()=>setEditorDate(n.date)} className={editorDate===n.date?"btn btn-primary btn-sm":"btn btn-ghost btn-sm"}>{fmtDate(n.date)}</button>
+              <button key={n.date} onClick={()=>{setEditorDate(n.date);}} className={editorDate===n.date?"btn btn-primary btn-sm":"btn btn-ghost btn-sm"}>{fmtDate(n.date)}</button>
             )}
           </div>
-          <Btn onClick={saveNewsletter}>💾 Publicar</Btn>
-          <a href={`?view=public&date=${editorDate}`} target="_blank" className="btn btn-ghost btn-sm">👁 Pré-visualizar</a>
           {newsletters.find(n=>n.date===editorDate) && <button onClick={()=>deleteNewsletter(editorDate)} className="btn btn-ghost btn-sm" style={{borderColor:BRAND.accent,color:BRAND.accent}}>🗑 Apagar</button>}
+        </div>
+
+        {/* WIZARD STEP TRACKER */}
+        <div style={{display:"flex",gap:0,marginBottom:32,padding:14,background:BRAND.paperDark,borderRadius:4,overflowX:"auto"}}>
+          {[
+            {n:1,label:"Buscar Notícias",icon:"🔍"},
+            {n:2,label:"Curadoria",icon:"✍️"},
+            {n:3,label:"Temas em Destaque",icon:"🎯"},
+            {n:4,label:"Título & Subtítulo",icon:"📰"},
+            {n:5,label:"Briefing IA",icon:"🎙️"},
+            {n:6,label:"Rascunho & Publicar",icon:"✓"},
+          ].map((s,i,arr)=>(
+            <div key={s.n} onClick={()=>setWizardStep(s.n)} style={{flex:1,minWidth:130,padding:"10px 12px",cursor:"pointer",borderRight:i<arr.length-1?`1px solid ${BRAND.rule}`:"none",background:wizardStep===s.n?BRAND.ink:wizardStep>s.n?`${BRAND.signal}25`:"transparent",color:wizardStep===s.n?BRAND.paper:wizardStep>s.n?BRAND.inkSoft:BRAND.mute,transition:"all .2s",position:"relative"}}>
+              <div className="mono small-caps" style={{fontSize:".58rem",opacity:.8,marginBottom:4}}>PASSO {s.n}</div>
+              <div style={{fontSize:".78rem",fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+                <span>{wizardStep>s.n?"✓":s.icon}</span><span>{s.label}</span>
+              </div>
+            </div>
+          ))}
         </div>
 
         {nlError && <div className="alert-error">⚠ {nlError}</div>}
         {nlSuccess && <div className="alert-ok">{nlSuccess}</div>}
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,marginTop:24}}>
-          {/* LEFT — content */}
-          <div>
-            <div className="card card-pad" style={{padding:24,marginBottom:14,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(212,165,46,.08) 100%)`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.accent}}>📰 TÍTULO PRINCIPAL</div>
-                <Btn size="sm" onClick={generateTitle} disabled={isGenTitle||!keyValidated||editorHeadlines.length===0}>{isGenTitle?<><Spin/> Gerando</>:"✨ Gerar"}</Btn>
-              </div>
-              <Input value={editorTitle} onChange={e=>setEditorTitle(e.target.value)} placeholder="Título magnético da edição"
-                style={{fontFamily:"'Fraunces',serif",fontSize:"1.5rem",fontWeight:500,letterSpacing:"-.02em",padding:"14px 18px"}}/>
-            </div>
-
-            <div className="card card-pad" style={{padding:20,marginBottom:14}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.accentDeep}}>💭 SUBTÍTULO / FRASE DE IMPACTO</div>
-                <Btn size="sm" onClick={generateSubtitle} disabled={isGenSubtitle||!keyValidated||editorHeadlines.length===0}>{isGenSubtitle?<><Spin/></>:"✨ Gerar"}</Btn>
-              </div>
-              <TArea value={editorSubtitle} onChange={e=>setEditorSubtitle(e.target.value)} rows={2} placeholder="Frase que captura a tese editorial"
-                style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.05rem"}}/>
-            </div>
-
-            <div className="card card-pad" style={{padding:20,marginBottom:14}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.ink}}>📡 MANCHETES ({editorHeadlines.length})</div>
-                <Btn size="sm" onClick={fetchNewsForNewsletter} disabled={isLoadingNl||!keyValidated}>{isLoadingNl?<><Spin/> Buscando</>:"🔍 Buscar IA"}</Btn>
-              </div>
-              {editorHeadlines.length===0 ? <div style={{padding:24,textAlign:"center",color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif"}}>Clique "Buscar IA" para popular automaticamente</div>
-              : <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:300,overflowY:"auto"}}>
-                {editorHeadlines.map((h,i)=>
-                  <div key={i} style={{padding:10,background:BRAND.paperDark,borderRadius:6,fontSize:".82rem"}}>
-                    <div style={{fontWeight:600,marginBottom:3}}>{i+1}. {h.title}</div>
-                    <div style={{color:BRAND.mute,fontSize:".75rem"}}>{h.source||"?"} · {h.category||"IA"} {h.url && <a href={h.url} target="_blank" style={{color:BRAND.accent,marginLeft:6}}>↗</a>}</div>
-                  </div>
-                )}
-              </div>}
-            </div>
-
-            <div className="card card-pad" style={{padding:20,marginBottom:14}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.ink}}>🧠 RESUMO EDITORIAL</div>
-                <Btn size="sm" onClick={generateAiSummary} disabled={isGenSummary||!keyValidated||editorHeadlines.length===0}>{isGenSummary?<><Spin/></>:"✨ Gerar"}</Btn>
-              </div>
-              <TArea value={editorAiSummary} onChange={e=>setEditorAiSummary(e.target.value)} rows={8} placeholder="Resumo de ~250 palavras"/>
-            </div>
-
-            <div className="card card-pad" style={{padding:20,marginBottom:14}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.accent}}>🏢 EMPRESAS & TÓPICOS</div>
-                <Btn size="sm" onClick={()=>extractCompaniesAndTopics()} disabled={isExtracting||!keyValidated||editorHeadlines.length===0}>{isExtracting?<><Spin/></>:"✨ Extrair"}</Btn>
-              </div>
-              <div style={{marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".62rem"}}>EMPRESAS</div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {editorCompanies.map((c,i)=><span key={i} className="chip solid" style={{cursor:"pointer"}} onClick={()=>setEditorCompanies(editorCompanies.filter((_,j)=>j!==i))}>{c} ×</span>)}
-                  {editorCompanies.length===0 && <span style={{fontSize:".8rem",color:BRAND.mute,fontStyle:"italic"}}>—</span>}
-                </div>
-              </div>
+        {/* ═══ STEP 1: Buscar Notícias ═══ */}
+        {wizardStep===1 && <div className="fade">
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(197,57,28,.04) 100%)`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
               <div>
-                <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".62rem"}}>TÓPICOS</div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {editorTopics.map((t,i)=><span key={i} className="chip acc" style={{cursor:"pointer"}} onClick={()=>setEditorTopics(editorTopics.filter((_,j)=>j!==i))}>#{t} ×</span>)}
-                  {editorTopics.length===0 && <span style={{fontSize:".8rem",color:BRAND.mute,fontStyle:"italic"}}>—</span>}
-                </div>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 1 · BUSCAR NOTÍCIAS</div>
+                <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>Pesquise as principais notícias nas fontes cadastradas. Tradução automática para português.</div>
+              </div>
+              <Btn onClick={wizardFetchNews} disabled={isLoadingNl||!keyValidated}>{isLoadingNl?<><Spin/> Buscando...</>:"🔍 Buscar Notícias da Semana"}</Btn>
+            </div>
+            <div className="mono" style={{fontSize:".72rem",color:BRAND.mute}}>
+              Fontes ativas: {newsSources.filter(s=>s.active).length} de {newsSources.length}
+            </div>
+          </div>
+
+          {sourceCandidates.length===0 ? <div style={{padding:60,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4,color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif",fontSize:"1.15rem"}}>Clique em "Buscar Notícias da Semana" para popular</div>
+          : <>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+              <div className="mono small-caps" style={{color:BRAND.mute}}>
+                {selectedIdx.size} de {sourceCandidates.length} selecionadas · {featuredIdx.size} em destaque
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>setSelectedIdx(new Set(sourceCandidates.map((_,i)=>i)))} className="btn btn-ghost btn-sm">✓ Marcar todas</button>
+                <button onClick={()=>setSelectedIdx(new Set())} className="btn btn-ghost btn-sm">✗ Desmarcar</button>
               </div>
             </div>
-
-            <div className="card card-pad" style={{padding:20}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.signal}}>🎯 INSIGHTS POR ÁREA</div>
-                <Btn size="sm" onClick={generateFocusInsights} disabled={isGenInsights||!keyValidated||editorHeadlines.length===0}>{isGenInsights?<><Spin/></>:"✨ Gerar"}</Btn>
-              </div>
-              {FOCUS_AREAS.map((area,i)=>{
-                const cur = editorFocusInsights.find(x=>x.area===area.id);
-                return <div key={area.id} style={{marginBottom:10}}>
-                  <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:5,fontSize:".62rem"}}>{area.icon} {area.label}</div>
-                  <TArea value={cur?.summary||""} onChange={e=>{const v=e.target.value;setEditorFocusInsights(prev=>{const arr=[...prev];const idx=arr.findIndex(x=>x.area===area.id);if(idx>=0)arr[idx]={...arr[idx],summary:v};else arr.push({area:area.id,summary:v});return arr;});}} rows={2}/>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+              {sourceCandidates.map((h,i)=>{
+                const sel = selectedIdx.has(i), feat = featuredIdx.has(i);
+                return <div key={i} style={{display:"grid",gridTemplateColumns:"auto 1fr auto",gap:14,padding:16,background:sel?BRAND.paperLight:BRAND.paperDark,border:`1px solid ${feat?BRAND.accent:BRAND.rule}`,borderRadius:4,opacity:sel?1:.55,transition:"all .2s",borderLeft:feat?`4px solid ${BRAND.accent}`:sel?`4px solid ${BRAND.signal}`:`4px solid ${BRAND.rule}`}}>
+                  <input type="checkbox" checked={sel} onChange={()=>toggleSel(i)} style={{width:20,height:20,marginTop:4,accentColor:BRAND.ink,cursor:"pointer"}}/>
+                  <div style={{minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:5}}>
+                      <span className="chip acc" style={{fontSize:".58rem"}}>{h.category||"IA"}</span>
+                      {h.source && <span className="mono" style={{fontSize:".68rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".08em"}}>{h.source}</span>}
+                      {h.originalLang==="en" && <span className="chip" style={{fontSize:".58rem",borderColor:BRAND.signal,color:BRAND.signal}}>🇺🇸→🇧🇷 traduzido</span>}
+                      {feat && <span className="chip acc" style={{fontSize:".58rem",background:BRAND.accent,color:BRAND.paper}}>⭐ DESTAQUE</span>}
+                    </div>
+                    <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.05rem",lineHeight:1.25,marginBottom:5,letterSpacing:"-.005em"}}>{h.title}</div>
+                    <div style={{fontSize:".88rem",color:BRAND.inkSoft,lineHeight:1.45}}>{h.summary}</div>
+                    {h.url && <a href={h.url} target="_blank" rel="noreferrer" className="mono" style={{fontSize:".68rem",color:BRAND.accent,textDecoration:"none",marginTop:6,display:"inline-block",letterSpacing:".08em",textTransform:"uppercase"}}>↗ Ver fonte original</a>}
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
+                    <button onClick={()=>toggleFeatured(i)} className={feat?"btn btn-primary btn-sm":"btn btn-ghost btn-sm"} style={{whiteSpace:"nowrap"}}>{feat?"⭐ Destaque":"☆ Marcar destaque"}</button>
+                  </div>
                 </div>;
               })}
             </div>
+            <div style={{display:"flex",justifyContent:"flex-end",gap:10}}>
+              <Btn onClick={wizardConfirmStep1} disabled={selectedIdx.size===0}>Confirmar e Avançar →</Btn>
+            </div>
+          </>}
+        </div>}
+
+        {/* ═══ STEP 2: Curadoria ═══ */}
+        {wizardStep===2 && <div className="fade">
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(197,57,28,.04) 100%)`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
+              <div>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 2 · CURADORIA</div>
+                <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>Gere o resumo editorial em tom <em className="acc">direto, simples e entusiasta</em>. Edite à vontade.</div>
+              </div>
+              <Btn onClick={wizardGenSummary} disabled={isGenSummary||!keyValidated||editorHeadlines.length===0}>{isGenSummary?<><Spin/> Gerando...</>:"✨ Gerar Resumo com IA"}</Btn>
+            </div>
+            <div className="mono" style={{fontSize:".72rem",color:BRAND.mute}}>
+              {editorHeadlines.length} manchetes selecionadas · {editorHeadlines.filter(h=>h.featured).length} em destaque
+            </div>
           </div>
 
-          {/* RIGHT — podcast video + highlights */}
-          <div>
-            <div className="card card-pad" style={{padding:24,marginBottom:14}}>
-              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>🎬 EPISÓDIO EM VÍDEO</div>
-              <Field label="URL do vídeo (HeyGen, YouTube, etc)" style={{marginBottom:10}}>
-                <Input value={editorPodcastUrl} onChange={e=>{setEditorPodcastUrl(e.target.value);setEditorPodcastBlobRef("");}} placeholder="https://app.heygen.com/videos/..."/>
-              </Field>
-              <Field label="Formato do vídeo" style={{marginBottom:10}}>
+          <div className="card card-pad" style={{padding:24,marginBottom:18}}>
+            <div className="mono small-caps" style={{color:BRAND.ink,marginBottom:12}}>📝 RESUMO EDITORIAL (EDITÁVEL)</div>
+            <TArea value={editorAiSummary} onChange={e=>setEditorAiSummary(e.target.value)} rows={12} placeholder="O resumo aparecerá aqui após clicar em 'Gerar Resumo com IA'..." style={{fontFamily:"'Fraunces',serif",fontSize:"1.05rem",lineHeight:1.6}}/>
+          </div>
+
+          <div className="card card-pad" style={{padding:24,marginBottom:24}}>
+            <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>🏢 EMPRESAS & TÓPICOS</div>
+            <div style={{marginBottom:14}}>
+              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".6rem"}}>EMPRESAS (clique pra remover)</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {editorCompanies.map((c,i)=><span key={i} className="chip solid" style={{cursor:"pointer"}} onClick={()=>setEditorCompanies(editorCompanies.filter((_,j)=>j!==i))}>{c} ×</span>)}
+                {editorCompanies.length===0 && <span style={{fontSize:".85rem",color:BRAND.mute,fontStyle:"italic"}}>— (gere primeiro)</span>}
+              </div>
+            </div>
+            <div>
+              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".6rem"}}>TÓPICOS</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {editorTopics.map((t,i)=><span key={i} className="chip acc" style={{cursor:"pointer"}} onClick={()=>setEditorTopics(editorTopics.filter((_,j)=>j!==i))}>#{t} ×</span>)}
+                {editorTopics.length===0 && <span style={{fontSize:".85rem",color:BRAND.mute,fontStyle:"italic"}}>—</span>}
+              </div>
+            </div>
+          </div>
+
+          <div style={{display:"flex",justifyContent:"space-between",gap:10}}>
+            <button onClick={()=>setWizardStep(1)} className="btn btn-ghost">← Voltar</button>
+            <Btn onClick={()=>setWizardStep(3)} disabled={!editorAiSummary.trim()}>Confirmar e Avançar →</Btn>
+          </div>
+        </div>}
+
+        {/* ═══ STEP 3: Insights ═══ */}
+        {wizardStep===3 && <div className="fade">
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(212,165,46,.06) 100%)`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
+              <div>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 3 · TEMAS EM DESTAQUE</div>
+                <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>Insights por área. Editáveis após geração.</div>
+              </div>
+              <Btn onClick={generateFocusInsights} disabled={isGenInsights||!keyValidated||editorHeadlines.length===0}>{isGenInsights?<><Spin/> Gerando...</>:"✨ Gerar Insights com IA"}</Btn>
+            </div>
+          </div>
+
+          {FOCUS_AREAS.map((area,i)=>{
+            const cur = editorFocusInsights.find(x=>x.area===area.id);
+            return <div key={area.id} className="card card-pad" style={{padding:22,marginBottom:14,borderLeft:`4px solid ${i===0?BRAND.accent:i===1?BRAND.signal:BRAND.ink}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                <span style={{fontSize:24}}>{area.icon}</span>
+                <div className="mono small-caps" style={{color:BRAND.ink,fontSize:".75rem"}}>{area.label}</div>
+              </div>
+              <TArea value={cur?.summary||""} onChange={e=>{const v=e.target.value;setEditorFocusInsights(prev=>{const arr=[...prev];const idx=arr.findIndex(x=>x.area===area.id);if(idx>=0)arr[idx]={...arr[idx],summary:v};else arr.push({area:area.id,summary:v});return arr;});}} rows={3} placeholder={`Insight sobre ${area.label}...`}/>
+            </div>;
+          })}
+
+          <div style={{display:"flex",justifyContent:"space-between",gap:10,marginTop:24}}>
+            <button onClick={()=>setWizardStep(2)} className="btn btn-ghost">← Voltar</button>
+            <Btn onClick={()=>setWizardStep(4)}>Confirmar e Avançar →</Btn>
+          </div>
+        </div>}
+
+        {/* ═══ STEP 4: Título & Subtítulo ═══ */}
+        {wizardStep===4 && <div className="fade">
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(197,57,28,.04) 100%)`}}>
+            <div>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 4 · TÍTULO PRINCIPAL & FRASE DE IMPACTO</div>
+              <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>A capa da edição. Gere com IA, edite à mão.</div>
+            </div>
+          </div>
+
+          <div className="card card-pad" style={{padding:24,marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
+              <div className="mono small-caps" style={{color:BRAND.accent}}>📰 TÍTULO PRINCIPAL</div>
+              <Btn size="sm" onClick={generateTitle} disabled={isGenTitle||!keyValidated||editorHeadlines.length===0}>{isGenTitle?<><Spin/></>:"✨ Gerar"}</Btn>
+            </div>
+            <Input value={editorTitle} onChange={e=>setEditorTitle(e.target.value)} placeholder="Título magnético da edição"
+              style={{fontFamily:"'Fraunces',serif",fontSize:"1.5rem",fontWeight:500,letterSpacing:"-.02em",padding:"16px 20px"}}/>
+          </div>
+
+          <div className="card card-pad" style={{padding:24,marginBottom:24}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
+              <div className="mono small-caps" style={{color:BRAND.accent}}>💭 SUBTÍTULO / FRASE DE IMPACTO</div>
+              <Btn size="sm" onClick={generateSubtitle} disabled={isGenSubtitle||!keyValidated||editorHeadlines.length===0}>{isGenSubtitle?<><Spin/></>:"✨ Gerar"}</Btn>
+            </div>
+            <TArea value={editorSubtitle} onChange={e=>setEditorSubtitle(e.target.value)} rows={3} placeholder="Tese editorial da semana — frase de impacto"
+              style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.1rem"}}/>
+          </div>
+
+          <div style={{display:"flex",justifyContent:"space-between",gap:10}}>
+            <button onClick={()=>setWizardStep(3)} className="btn btn-ghost">← Voltar</button>
+            <Btn onClick={()=>setWizardStep(5)} disabled={!editorTitle.trim()}>Confirmar e Avançar →</Btn>
+          </div>
+        </div>}
+
+        {/* ═══ STEP 5: Briefing IA (NotebookLM) ═══ */}
+        {wizardStep===5 && <div className="fade">
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(197,57,28,.04) 100%)`}}>
+            <div>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 5 · BRIEFING PARA NOTEBOOKLM</div>
+              <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>Copie, cole no NotebookLM, gere o áudio, suba aqui.</div>
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:20}}>
+            <div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div className="mono small-caps" style={{color:BRAND.accent}}>📋 BRIEFING · {fmtDateMag(editorDate)}</div>
                 <div style={{display:"flex",gap:6}}>
-                  {[
-                    {v:"9/16",l:"📱 Vertical"},{v:"16/9",l:"💻 Horizontal"},{v:"1/1",l:"⏹ Quadrado"}
-                  ].map(o=>
-                    <button key={o.v} onClick={()=>setEditorPodcastAspect(o.v)} className={editorPodcastAspect===o.v?"btn btn-primary btn-sm":"btn btn-ghost btn-sm"} style={{flex:1,justifyContent:"center"}}>{o.l}</button>
-                  )}
+                  <Btn size="sm" onClick={copyBriefing}>{briefingCopied?"✓ COPIADO":"📋 Copiar"}</Btn>
+                  <a href="https://notebooklm.google.com/" target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">↗ NotebookLM</a>
                 </div>
-              </Field>
-              <Field label="Ou faça upload (.mp4 até 30MB)" style={{marginBottom:10}}>
-                <input type="file" accept="video/*" onChange={handleVideoUpload} style={{fontSize:".82rem"}}/>
-                {editorPodcastBlobRef && <div className="mono" style={{fontSize:".68rem",color:BRAND.signal,marginTop:5,textTransform:"uppercase",letterSpacing:".1em"}}>✓ Vídeo carregado · {editorPodcastBlobRef.slice(-12)}</div>}
-              </Field>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <Field label="Duração (min)">
-                  <Input type="number" value={editorPodcastDuration} onChange={e=>setEditorPodcastDuration(+e.target.value||0)}/>
-                </Field>
-                <Field label="Expirar em (dias)">
-                  <Input type="number" value={editorPodcastTtlDays} onChange={e=>setEditorPodcastTtlDays(+e.target.value||0)}/>
-                </Field>
               </div>
-              {(editorPodcastUrl||editorPodcastBlobRef) && <div style={{marginTop:14,padding:10,background:BRAND.paperDark,borderRadius:6}}>
-                <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".62rem"}}>PREVIEW</div>
-                <VideoPlayer url={editorPodcastBlobRef ? null : editorPodcastUrl} aspectRatio={editorPodcastAspect} maxWidth={editorPodcastAspect==="9/16"?"220px":"100%"}/>
-                {editorPodcastBlobRef && <div style={{fontSize:".8rem",color:BRAND.mute,textAlign:"center",padding:14}}>(preview de uploads inline disponível só após salvar)</div>}
-              </div>}
+              <pre className="card" style={{padding:20,whiteSpace:"pre-wrap",fontFamily:"'JetBrains Mono',monospace",fontSize:".78rem",lineHeight:1.55,color:BRAND.ink,maxHeight:500,overflowY:"auto"}}>{briefingText}</pre>
             </div>
 
-            <div className="card card-pad" style={{padding:20,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(212,165,46,.08))`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div className="mono small-caps" style={{color:BRAND.accent}}>✨ HIGHLIGHTS DO EPISÓDIO</div>
-                <Btn size="sm" onClick={generateHighlights} disabled={isGenHighlights||!keyValidated}>{isGenHighlights?<><Spin/></>:"✨ Gerar"}</Btn>
+            <div>
+              <div className="card card-pad" style={{padding:20,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(197,57,28,.04))`}}>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>📥 UPLOAD DO ÁUDIO</div>
+                <Field label="Arquivo MP3 (até 25MB)" style={{marginBottom:12}}>
+                  <input type="file" accept="audio/*" onChange={handleAudioUpload} style={{fontSize:".82rem"}}/>
+                </Field>
+                <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".6rem",textAlign:"center"}}>— OU —</div>
+                <Field label="URL pública do áudio">
+                  <Input value={editorAudioPodcastUrl} onChange={e=>{setEditorAudioPodcastUrl(e.target.value);setEditorAudioPodcastBlobRef("");}} placeholder="https://.../podcast.mp3"/>
+                </Field>
+                {audioUploadMsg && <div className={audioUploadMsg.startsWith("✓")?"alert-ok":audioUploadMsg.startsWith("❌")?"alert-error":"alert-info"}>{audioUploadMsg}</div>}
+                {(editorAudioPodcastUrl||editorAudioPodcastBlobRef) && <div style={{marginTop:14}}>
+                  <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".58rem"}}>PREVIEW</div>
+                  {!editorAudioPodcastBlobRef && <AudioPlayer url={editorAudioPodcastUrl}/>}
+                  {editorAudioPodcastBlobRef && <div style={{fontSize:".82rem",color:BRAND.signal,fontStyle:"italic",padding:8,background:BRAND.paperDark,borderRadius:4}}>✓ Áudio salvo (preview no rascunho)</div>}
+                </div>}
               </div>
-              <TArea value={editorPodcastHighlights} onChange={e=>setEditorPodcastHighlights(e.target.value)} rows={6} placeholder="Um highlight por linha. Aparecem ao lado do vídeo."/>
+
+              <div className="card card-pad" style={{padding:16}}>
+                <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8}}>📖 INSTRUÇÕES</div>
+                <ol style={{margin:0,paddingLeft:18,fontSize:".82rem",lineHeight:1.5,color:BRAND.inkSoft}}>
+                  <li>Copie o briefing</li>
+                  <li>Abra NotebookLM, novo notebook</li>
+                  <li>Cole o briefing como "Text source"</li>
+                  <li>Adicione também as URLs das fontes</li>
+                  <li>Click "Audio Overview" → "Generate"</li>
+                  <li>Aguarde 5-10 min, baixe o MP3</li>
+                  <li>Faça upload aqui ou cole URL</li>
+                </ol>
+              </div>
             </div>
           </div>
-        </div>
+
+          <div style={{display:"flex",justifyContent:"space-between",gap:10,marginTop:24}}>
+            <button onClick={()=>setWizardStep(4)} className="btn btn-ghost">← Voltar</button>
+            <Btn onClick={()=>setWizardStep(6)}>Avançar para Rascunho →</Btn>
+          </div>
+        </div>}
+
+        {/* ═══ STEP 6: Rascunho + Publicar ═══ */}
+        {wizardStep===6 && <div className="fade">
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(212,165,46,.08) 100%)`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+              <div>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 6 · RASCUNHO & PUBLICAÇÃO</div>
+                <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>Confira como ficará. Confirme para publicar.</div>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <a href={`?view=public&date=${editorDate}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">👁 Abrir pré-visualização</a>
+                <Btn onClick={wizardPublish}>✅ Publicar Edição</Btn>
+              </div>
+            </div>
+          </div>
+
+          {/* Rascunho preview - mimics public newsletter */}
+          <div style={{background:BRAND.paperLight,border:`1px solid ${BRAND.rule}`,borderRadius:4,padding:36,boxShadow:"var(--shadow-lg)"}}>
+            <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:10,fontSize:".62rem"}}>RASCUNHO · COMO APARECERÁ NA NEWSLETTER</div>
+            <div style={{paddingBottom:20,borderBottom:`1px solid ${BRAND.rule}`,marginBottom:24}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:8}}>NL.{padNum(newsletters.length+1)} · {fmtDateMag(editorDate)}</div>
+              <h1 className="display" style={{fontSize:"clamp(1.8rem, 4vw, 3rem)",margin:"0 0 12px"}}>{editorTitle||<span style={{color:BRAND.mute,fontStyle:"italic"}}>(sem título — volte ao passo 4)</span>}</h1>
+              {editorSubtitle && <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.15rem",color:BRAND.inkSoft,margin:0,lineHeight:1.4}}>{editorSubtitle}</p>}
+            </div>
+
+            {editorAiSummary && <div style={{marginBottom:24}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>🧠 ANÁLISE DA SEMANA</div>
+              <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.02rem",lineHeight:1.65,color:BRAND.ink,whiteSpace:"pre-wrap",background:BRAND.paper,padding:20,borderRadius:4,border:`1px solid ${BRAND.rule}`}}>{editorAiSummary}</div>
+            </div>}
+
+            {(editorAudioPodcastUrl||editorAudioPodcastBlobRef) && <div style={{marginBottom:24}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>🎧 PODCAST DE RESUMO (NotebookLM)</div>
+              {!editorAudioPodcastBlobRef && <AudioPlayer url={editorAudioPodcastUrl}/>}
+              {editorAudioPodcastBlobRef && <div style={{padding:14,background:BRAND.paperDark,borderRadius:4,fontSize:".9rem",color:BRAND.inkSoft,fontStyle:"italic"}}>🎧 Áudio gerado pelo NotebookLM salvo (toca na newsletter pública)</div>}
+            </div>}
+
+            {(editorCompanies.length>0||editorTopics.length>0) && <div style={{marginBottom:24}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>🏷 EM DISCUSSÃO</div>
+              {editorCompanies.length>0 && <div style={{marginBottom:8}}>
+                <div className="mono" style={{fontSize:".62rem",color:BRAND.mute,marginBottom:5}}>EMPRESAS</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{editorCompanies.map((c,i)=><span key={i} className="chip solid">{c}</span>)}</div>
+              </div>}
+              {editorTopics.length>0 && <div>
+                <div className="mono" style={{fontSize:".62rem",color:BRAND.mute,marginBottom:5}}>TÓPICOS</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{editorTopics.map((t,i)=><span key={i} className="chip acc">#{t}</span>)}</div>
+              </div>}
+            </div>}
+
+            {editorFocusInsights.some(x=>x.summary) && <div style={{marginBottom:24}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>🎯 TEMAS EM DESTAQUE</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10}}>
+                {FOCUS_AREAS.map((area,i)=>{const ins=editorFocusInsights.find(x=>x.area===area.id);if(!ins?.summary)return null;return <div key={area.id} style={{padding:14,background:BRAND.paper,border:`1px solid ${BRAND.rule}`,borderRadius:4,borderLeft:`3px solid ${i===0?BRAND.accent:i===1?BRAND.signal:BRAND.ink}`}}>
+                  <div className="mono small-caps" style={{fontSize:".6rem",color:BRAND.ink,marginBottom:6}}>{area.icon} {area.label}</div>
+                  <div style={{fontSize:".88rem",lineHeight:1.5,color:BRAND.inkSoft}}>{ins.summary}</div>
+                </div>;})}
+              </div>
+            </div>}
+
+            {editorHeadlines.length>0 && <div>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>📡 MANCHETES ({editorHeadlines.length})</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
+                {editorHeadlines.map((h,i)=><div key={i} style={{padding:14,background:BRAND.paper,border:`1px solid ${h.featured?BRAND.accent:BRAND.rule}`,borderRadius:4,borderLeft:h.featured?`4px solid ${BRAND.accent}`:undefined}}>
+                  {h.featured && <span className="chip acc" style={{fontSize:".55rem",marginBottom:6,display:"inline-block"}}>⭐ DESTAQUE</span>}
+                  <div style={{fontFamily:"'Fraunces',serif",fontSize:".98rem",lineHeight:1.25,marginBottom:5,letterSpacing:"-.005em"}}>{h.title}</div>
+                  <div style={{fontSize:".82rem",lineHeight:1.45,color:BRAND.inkSoft}}>{h.summary}</div>
+                </div>)}
+              </div>
+            </div>}
+          </div>
+
+          <div style={{display:"flex",justifyContent:"space-between",gap:10,marginTop:24}}>
+            <button onClick={()=>setWizardStep(5)} className="btn btn-ghost">← Voltar</button>
+            <Btn onClick={wizardPublish}>✅ Confirmar e Publicar</Btn>
+          </div>
+        </div>}
       </div>}
 
-      {/* TAB 1: BRIEFING IA (NotebookLM) */}
+      {/* TAB 1: PODCAST SEMANAL STUDIO */}
       {tab===1 && <div className="fade">
-        <SectionLabel num="🎙️">Briefing para NotebookLM</SectionLabel>
-        <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",color:BRAND.inkSoft,fontSize:"1.05rem",marginTop:-24,marginBottom:32,maxWidth:"60ch"}}>
-          Copie o briefing abaixo, cole no NotebookLM, gere o Audio Overview, baixe o MP3 e faça upload aqui. O áudio aparece automaticamente ao lado do resumo na newsletter pública.
+        <SectionLabel num="🎬">Podcast Semanal · Estúdio</SectionLabel>
+        <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",color:BRAND.inkSoft,fontSize:"1.05rem",marginTop:-24,marginBottom:32,maxWidth:"68ch"}}>
+          Selecione newsletters da semana, gere o roteiro com IA pronto pro HeyGen, e publique o vídeo. Aparece na página pública de podcasts (estilo YouTube).
         </p>
 
-        <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:24}}>
-          {/* LEFT — Briefing text */}
-          <div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <div className="mono small-caps" style={{color:BRAND.accent}}>📋 BRIEFING · EDIÇÃO {fmtDateMag(editorDate)}</div>
-              <div style={{display:"flex",gap:6}}>
-                <Btn size="sm" onClick={copyBriefing}>{briefingCopied?"✓ COPIADO":"📋 Copiar tudo"}</Btn>
-                <a href="https://notebooklm.google.com/" target="_blank" className="btn btn-ghost btn-sm">↗ Abrir NotebookLM</a>
-              </div>
-            </div>
-            <pre className="card" style={{padding:24,whiteSpace:"pre-wrap",fontFamily:"'JetBrains Mono',monospace",fontSize:".82rem",lineHeight:1.55,color:BRAND.ink,maxHeight:600,overflowY:"auto"}}>{briefingText}</pre>
+        {/* Episode picker / new */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:24,paddingBottom:18,borderBottom:`1px solid ${BRAND.rule}`,flexWrap:"wrap",gap:14}}>
+          <div style={{display:"flex",gap:12,alignItems:"end",flexWrap:"wrap",flex:1}}>
+            <Field label="Episódio" style={{minWidth:280}}>
+              <select value={editingPodId||""} onChange={e=>e.target.value?loadPodcastForEdit(e.target.value):newPodcast()} style={{width:"100%"}}>
+                <option value="">— Novo episódio —</option>
+                {allPodcasts.map(p=><option key={p.id} value={p.id}>{p.title} · {p.week}</option>)}
+              </select>
+            </Field>
+            <Field label="Semana (data de referência)" style={{minWidth:200}}>
+              <Input type="date" value={podWeek} onChange={e=>setPodWeek(e.target.value)}/>
+            </Field>
           </div>
-
-          {/* RIGHT — Upload audio */}
-          <div>
-            <div className="card card-pad" style={{padding:24,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(197,57,28,.05))`}}>
-              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>📥 UPLOAD DO ÁUDIO</div>
-              <p style={{fontSize:".88rem",lineHeight:1.5,color:BRAND.inkSoft,marginTop:0,marginBottom:14}}>
-                Após gerar no NotebookLM, baixe o MP3 e selecione aqui.
-              </p>
-
-              <Field label="Arquivo de áudio (.mp3, máx 25MB)" style={{marginBottom:14}}>
-                <input type="file" accept="audio/*" onChange={handleAudioUpload} style={{fontSize:".82rem"}}/>
-              </Field>
-
-              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".62rem"}}>— OU —</div>
-
-              <Field label="URL pública do áudio" style={{marginBottom:14}}>
-                <Input value={editorAudioPodcastUrl} onChange={e=>{setEditorAudioPodcastUrl(e.target.value);setEditorAudioPodcastBlobRef("");}} placeholder="https://.../podcast.mp3"/>
-              </Field>
-
-              {audioUploadMsg && <div className={audioUploadMsg.startsWith("✓")?"alert-ok":audioUploadMsg.startsWith("❌")?"alert-error":"alert-info"}>{audioUploadMsg}</div>}
-
-              {(editorAudioPodcastUrl||editorAudioPodcastBlobRef) && <div style={{marginTop:14}}>
-                <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".62rem"}}>PREVIEW</div>
-                {editorAudioPodcastBlobRef ? <div style={{fontSize:".82rem",color:BRAND.inkSoft,fontStyle:"italic"}}>Áudio salvo localmente. Disponível na newsletter pública.</div>
-                : <AudioPlayer url={editorAudioPodcastUrl}/>}
-              </div>}
-            </div>
-
-            <div className="card card-pad" style={{padding:18}}>
-              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:10}}>📖 INSTRUÇÕES</div>
-              <ol style={{margin:0,paddingLeft:20,fontSize:".88rem",lineHeight:1.65,color:BRAND.inkSoft}}>
-                <li>Copie o briefing à esquerda</li>
-                <li>Abra <a href="https://notebooklm.google.com/" target="_blank" style={{color:BRAND.accent}}>NotebookLM</a> e crie um novo notebook</li>
-                <li>Cole o briefing como uma "Text source"</li>
-                <li>Adicione também os URLs das fontes (uma por uma)</li>
-                <li>Clique em "Audio Overview" → "Generate"</li>
-                <li>Aguarde 5-10 min, depois clique em "Download"</li>
-                <li>Volte aqui e faça upload do MP3</li>
-                <li>Salve a edição em "Edição da Newsletter"</li>
-              </ol>
-            </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={newPodcast} className="btn btn-ghost btn-sm">+ Novo</button>
+            <Btn onClick={savePodcast} disabled={!podTitle.trim()}>💾 Salvar Podcast</Btn>
+            {editingPodId && <button onClick={()=>deletePodcast(editingPodId)} className="btn btn-ghost btn-sm" style={{borderColor:BRAND.accent,color:BRAND.accent}}>🗑</button>}
+            {editingPodId && <a href={`?view=podcast&id=${encodeURIComponent(editingPodId)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">👁 Ver público</a>}
           </div>
         </div>
+
+        {podMsg.text && <div className={podMsg.type==="ok"?"alert-ok":podMsg.type==="err"?"alert-error":"alert-info"}>{podMsg.text}</div>}
+
+        {/* STEP A: Select newsletters */}
+        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(197,57,28,.03) 100%)`}}>
+          <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>A · NEWSLETTERS-BASE ({podSelectedNls.size} selecionadas)</div>
+          {newsletters.length===0 ? <div style={{padding:24,textAlign:"center",color:BRAND.mute,fontStyle:"italic"}}>Nenhuma newsletter publicada ainda. Publique algumas em "Newsletter".</div>
+          : <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:260,overflowY:"auto"}}>
+            {newsletters.map(n=>{
+              const sel = podSelectedNls.has(n.date);
+              return <label key={n.date} style={{display:"grid",gridTemplateColumns:"auto 110px 1fr auto",gap:14,alignItems:"center",padding:"10px 14px",background:sel?BRAND.paperLight:"transparent",border:`1px solid ${sel?BRAND.accent:BRAND.rule}`,borderRadius:4,cursor:"pointer",transition:"all .15s"}}>
+                <input type="checkbox" checked={sel} onChange={()=>togglePodNl(n.date)} style={{accentColor:BRAND.ink,cursor:"pointer",width:18,height:18}}/>
+                <div className="mono" style={{fontSize:".72rem",color:BRAND.inkSoft,textTransform:"uppercase",letterSpacing:".08em"}}>{fmtDateMag(n.date)}</div>
+                <div style={{fontFamily:"'Fraunces',serif",fontSize:".98rem",lineHeight:1.2}}>{n.title}</div>
+                <div className="mono" style={{fontSize:".66rem",color:BRAND.mute}}>{(n.headlines||[]).length} manchetes</div>
+              </label>;
+            })}
+          </div>}
+        </div>
+
+        {/* STEP B: Generate script */}
+        <div className="card card-pad" style={{padding:24,marginBottom:18}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+            <div className="mono small-caps" style={{color:BRAND.accent}}>B · ROTEIRO PARA HEYGEN (com cenas, reações e quebras)</div>
+            <div style={{display:"flex",gap:6}}>
+              <Btn onClick={generateHeyGenScript} disabled={isGenScript||!keyValidated||podSelectedNls.size===0}>{isGenScript?<><Spin/> Gerando...</>:"✨ Gerar Roteiro com IA"}</Btn>
+              {podScript && <Btn size="sm" onClick={copyScript}>📋 Copiar</Btn>}
+            </div>
+          </div>
+          <TArea value={podScript} onChange={e=>setPodScript(e.target.value)} rows={14} placeholder="Roteiro será gerado com cenas marcadas para o HeyGen Studio. Edite à vontade depois..." style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".82rem",lineHeight:1.6}}/>
+          <div style={{marginTop:8,fontSize:".78rem",color:BRAND.mute,fontStyle:"italic"}}>
+            O roteiro usa marcadores [CENA N · Reação: animada · ~30s] e [QUEBRA · 1s]. Copie e cole cena por cena no HeyGen Studio.
+          </div>
+        </div>
+
+        {/* STEP C: Metadata + video URL */}
+        <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:18,marginBottom:18}}>
+          <div className="card card-pad" style={{padding:22}}>
+            <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>C · METADADOS DO VÍDEO</div>
+            <Field label="Título (como aparece no YouTube)" style={{marginBottom:12}}>
+              <Input value={podTitle} onChange={e=>setPodTitle(e.target.value)} placeholder="Sync·MI Semanal · 12-18 mai" style={{fontFamily:"'Fraunces',serif",fontSize:"1.15rem"}}/>
+            </Field>
+            <Field label="Descrição" style={{marginBottom:12}}>
+              <TArea value={podDescription} onChange={e=>setPodDescription(e.target.value)} rows={5} placeholder="O que aparece embaixo do vídeo (estilo YouTube)..."/>
+            </Field>
+            <Field label="Highlights (um por linha)">
+              <TArea value={podHighlights.join("\n")} onChange={e=>setPodHighlights(e.target.value.split("\n").map(s=>s.trim()).filter(Boolean))} rows={5} placeholder="OpenAI lança modelo agente que faz pesquisa autônoma&#10;Anthropic foca em segurança com nova versão Opus..."/>
+            </Field>
+          </div>
+
+          <div className="card card-pad" style={{padding:22}}>
+            <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>D · VÍDEO HEYGEN</div>
+            <Field label="URL do vídeo gerado" style={{marginBottom:10}}>
+              <Input value={podVideoUrl} onChange={e=>{setPodVideoUrl(e.target.value);setPodVideoBlobRef("");}} placeholder="https://app.heygen.com/videos/..."/>
+            </Field>
+            <Field label="Ou upload do .mp4 (até 30MB)" style={{marginBottom:10}}>
+              <input type="file" accept="video/*" onChange={handlePodVideoUpload} style={{fontSize:".82rem"}}/>
+              {podVideoBlobRef && <div className="mono" style={{fontSize:".66rem",color:BRAND.signal,marginTop:5}}>✓ Vídeo carregado</div>}
+            </Field>
+            <Field label="URL da thumbnail (opcional)" style={{marginBottom:10}}>
+              <Input value={podThumbnailUrl} onChange={e=>setPodThumbnailUrl(e.target.value)} placeholder="https://...jpg"/>
+            </Field>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+              <Field label="Formato">
+                <select value={podAspect} onChange={e=>setPodAspect(e.target.value)} style={{width:"100%"}}>
+                  <option value="16/9">💻 16:9 (horizontal)</option>
+                  <option value="9/16">📱 9:16 (vertical)</option>
+                  <option value="1/1">⏹ 1:1 (quadrado)</option>
+                </select>
+              </Field>
+              <Field label="Duração (min)">
+                <Input type="number" value={podDuration} onChange={e=>setPodDuration(+e.target.value||0)}/>
+              </Field>
+            </div>
+            {(podVideoUrl||podVideoBlobRef) && <div style={{marginTop:14,padding:12,background:BRAND.paperDark,borderRadius:4}}>
+              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".58rem"}}>PREVIEW</div>
+              <VideoPlayer url={podVideoBlobRef?null:podVideoUrl} aspectRatio={podAspect} maxWidth="100%"/>
+              {podVideoBlobRef && <div style={{padding:14,textAlign:"center",color:BRAND.mute,fontSize:".82rem",fontStyle:"italic"}}>Preview disponível após salvar e abrir página pública</div>}
+            </div>}
+          </div>
+        </div>
+
+        <div style={{display:"flex",justifyContent:"flex-end",gap:10}}>
+          <Btn onClick={savePodcast} disabled={!podTitle.trim()}>💾 Salvar Podcast</Btn>
+        </div>
       </div>}
+
 
       {/* TAB 2: FONTES */}
       {tab===2 && <div className="fade">
@@ -1982,6 +2844,8 @@ function App(){
   }
 
   if(view === "public") return <PublicNewsletter/>;
+  if(view === "podcasts") return <PodcastsPage/>;
+  if(view === "podcast") return <PodcastDetail/>;
 
   return <LandingPage/>;
 }
