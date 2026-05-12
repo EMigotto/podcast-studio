@@ -152,8 +152,9 @@ const { useState, useRef, useEffect, useCallback, useMemo, memo } = React;
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 
 // SUPABASE — cole aqui o URL e a anon key do seu projeto (Settings → API)
-const SUPABASE_URL = "";
-const SUPABASE_ANON_KEY = "";
+const SUPABASE_URL =  "https://lmqwegtbwgvfumoaagag.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXdlZ3Rid2d2ZnVtb2FhZ2FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNzMzODgsImV4cCI6MjA5Mzg0OTM4OH0.rERsOrp1nrInxXhAqjTmk8w-qGacXcrcjlkGj7DjMPc";
+
 
 const sb = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true } })
