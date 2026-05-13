@@ -182,7 +182,7 @@ const FOCUS_AREAS = [
   { id:"llm",           label:"Modelos LLM/IA",                icon:"🧠" },
 ];
 
-const CAT_LABELS = ["IA","LLM","Produtividade","Sistêmico","Hardware","Software","Cloud","Startups","Regulação","Podcast"];
+const CAT_LABELS = ["IA","LLM","Brasil","Produtividade","Sistêmico","Podcast","Hardware","Software","Cloud","Startups","Regulação"];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DB (Supabase + localStorage fallback)
@@ -253,22 +253,53 @@ const commentsApi = {
 };
 
 const DEFAULT_SOURCES = [
-  { id:"source:techcrunch",  name:"TechCrunch",       url:"https://techcrunch.com/category/artificial-intelligence/", category:"IA", active:true },
-  { id:"source:venturebeat", name:"VentureBeat AI",   url:"https://venturebeat.com/ai/",                              category:"IA", active:true },
-  { id:"source:theverge",    name:"The Verge AI",     url:"https://www.theverge.com/ai-artificial-intelligence",       category:"IA", active:true },
-  { id:"source:arstechnica", name:"Ars Technica",     url:"https://arstechnica.com/ai/",                               category:"IA", active:true },
-  { id:"source:wired",       name:"Wired AI",         url:"https://www.wired.com/tag/artificial-intelligence/",        category:"IA", active:true },
-  { id:"source:mit",         name:"MIT Tech Review",  url:"https://www.technologyreview.com/topic/artificial-intelligence/", category:"IA", active:true },
-  { id:"source:anthropic",   name:"Anthropic Blog",   url:"https://www.anthropic.com/news",                            category:"LLM", active:true },
-  { id:"source:openai",      name:"OpenAI Blog",      url:"https://openai.com/blog/",                                  category:"LLM", active:true },
-  { id:"source:googleai",    name:"Google AI Blog",   url:"https://blog.google/technology/ai/",                        category:"LLM", active:true },
-  { id:"source:huggingface", name:"Hugging Face Blog",url:"https://huggingface.co/blog",                                category:"LLM", active:true },
-  { id:"source:github",      name:"GitHub Blog AI",   url:"https://github.blog/tag/ai/",                                category:"Sistêmico", active:true },
-  { id:"source:hn",          name:"Hacker News",      url:"https://news.ycombinator.com/",                              category:"Sistêmico", active:true },
+  // ═══ BRASIL · PORTUGUÊS ═══
+  { id:"source:olhardigital",   name:"Olhar Digital · IA",        url:"https://olhardigital.com.br/inteligencia-artificial/",       category:"Brasil",    active:true },
+  { id:"source:tecmundo",       name:"Tecmundo · IA",             url:"https://www.tecmundo.com.br/inteligencia-artificial",         category:"Brasil",    active:true },
+  { id:"source:canaltech",      name:"Canaltech · IA",            url:"https://canaltech.com.br/inteligencia-artificial/",           category:"Brasil",    active:true },
+  { id:"source:mittechreviewbr",name:"MIT Tech Review Brasil",    url:"https://mittechreview.com.br/",                              category:"Brasil",    active:true },
+  { id:"source:tiltuol",        name:"Tilt UOL",                  url:"https://www.uol.com.br/tilt/",                                category:"Brasil",    active:true },
+  { id:"source:braziljournal",  name:"Brazil Journal",            url:"https://braziljournal.com/",                                  category:"Brasil",    active:true },
+  { id:"source:neofeed",        name:"Neofeed",                   url:"https://neofeed.com.br/",                                     category:"Brasil",    active:true },
+  { id:"source:infomoneytech",  name:"InfoMoney · Tecnologia",    url:"https://www.infomoney.com.br/tecnologia/",                    category:"Brasil",    active:true },
+  { id:"source:valortech",      name:"Valor Econômico · Tech",    url:"https://valor.globo.com/empresas/tecnologia/",                category:"Brasil",    active:true },
+  { id:"source:convergencia",   name:"Convergência Digital",      url:"https://www.convergenciadigital.com.br/",                     category:"Brasil",    active:true },
+  // ═══ INTERNACIONAL · IA ESPECIALIZADO ═══
+  { id:"source:techcrunch",     name:"TechCrunch · AI",           url:"https://techcrunch.com/category/artificial-intelligence/",    category:"IA",        active:true },
+  { id:"source:venturebeat",    name:"VentureBeat · AI",          url:"https://venturebeat.com/ai/",                                 category:"IA",        active:true },
+  { id:"source:theverge",       name:"The Verge · AI",            url:"https://www.theverge.com/ai-artificial-intelligence",         category:"IA",        active:true },
+  { id:"source:arstechnica",    name:"Ars Technica · AI",         url:"https://arstechnica.com/ai/",                                 category:"IA",        active:true },
+  { id:"source:wired",          name:"Wired · AI",                url:"https://www.wired.com/tag/artificial-intelligence/",          category:"IA",        active:true },
+  { id:"source:mittechreview",  name:"MIT Tech Review",           url:"https://www.technologyreview.com/topic/artificial-intelligence/", category:"IA",    active:true },
+  { id:"source:theinformation", name:"The Information",           url:"https://www.theinformation.com/",                             category:"IA",        active:true },
+  // ═══ LABS · FONTES PRIMÁRIAS ═══
+  { id:"source:anthropic",      name:"Anthropic Blog",            url:"https://www.anthropic.com/news",                              category:"LLM",       active:true },
+  { id:"source:openai",         name:"OpenAI Blog",               url:"https://openai.com/blog/",                                    category:"LLM",       active:true },
+  { id:"source:googleai",       name:"Google AI Blog",            url:"https://blog.google/technology/ai/",                          category:"LLM",       active:true },
+  { id:"source:deepmind",       name:"Google DeepMind",           url:"https://deepmind.google/discover/blog/",                      category:"LLM",       active:true },
+  { id:"source:meta",           name:"Meta AI",                   url:"https://ai.meta.com/blog/",                                   category:"LLM",       active:true },
+  { id:"source:huggingface",    name:"Hugging Face Blog",         url:"https://huggingface.co/blog",                                 category:"LLM",       active:true },
+  // ═══ PODCAST · ÁUDIO ═══
+  { id:"source:spotifynews",    name:"Spotify Newsroom",          url:"https://newsroom.spotify.com/",                               category:"Podcast",   active:true },
+  { id:"source:spotifyeng",     name:"Spotify Engineering",       url:"https://engineering.atspotify.com/",                          category:"Podcast",   active:true },
+  // ═══ DEV · SISTÊMICO ═══
+  { id:"source:github",         name:"GitHub Blog · AI",          url:"https://github.blog/tag/ai/",                                 category:"Sistêmico", active:true },
+  { id:"source:hn",             name:"Hacker News",               url:"https://news.ycombinator.com/",                               category:"Sistêmico", active:true },
 ];
 const newsSourcesApi = {
   async list(){return(await db.listByPrefix("source:")).sort((a,b)=>(a.name||"").localeCompare(b.name||""))},
+  // Initial seed: only runs when DB has zero sources
   async seedDefaults(){const ex=await this.list(); if(ex.length>0)return ex; for(const s of DEFAULT_SOURCES)await db.set(s.id,s); return await this.list();},
+  // Merge: adds missing defaults without removing custom sources. Returns count added.
+  async mergeDefaults(){
+    const ex = await this.list();
+    const exIds = new Set(ex.map(s=>s.id));
+    let added = 0;
+    for(const s of DEFAULT_SOURCES){
+      if(!exIds.has(s.id)){ await db.set(s.id,s); added++; }
+    }
+    return { added, total: DEFAULT_SOURCES.length };
+  },
   async upsert(src){const id=src.id||`source:${Date.now()}-${Math.random().toString(36).slice(2,6)}`;const s={...src,id};await db.set(id,s);return s},
   async remove(id){await db.delete(id)},
   async toggleActive(id){const s=await db.get(id);if(!s)return null;s.active=!s.active;await db.set(id,s);return s},
@@ -421,6 +452,68 @@ const estimateReadTime = t => t ? Math.max(1, Math.round(t.split(/\s+/).filter(B
 const padNum = (n,digits=3) => String(n).padStart(digits,"0");
 const getShareUrl = d => { const u=new URL(window.location.href); u.search=`?view=public&date=${d}`; return u.toString(); };
 const fileToDataUrl = file => new Promise((resolve,reject)=>{const r=new FileReader();r.onloadend=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});
+
+// Convert a highlights value (string OR legacy array) into a single string for editing
+const highlightsToText = h => {
+  if(!h) return "";
+  if(Array.isArray(h)) return h.filter(Boolean).join("\n\n");
+  return String(h);
+};
+// Split highlights text into individual blocks (separated by blank line)
+const splitHighlights = text => {
+  const t = highlightsToText(text);
+  if(!t.trim()) return [];
+  return t.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+};
+// Render a highlight block as HTML with markdown (escapes HTML, then bold, italic, line breaks)
+const renderHighlightHTML = text => {
+  if(!text) return "";
+  let html = String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  // Bold **text**
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  // Italic *text* (but not part of **)
+  html = html.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+  // Inline code `code`
+  html = html.replace(/`([^`\n]+)`/g, '<code style="background:rgba(20,17,13,.08);padding:1px 6px;border-radius:3px;font-family:\'JetBrains Mono\',monospace;font-size:.92em">$1</code>');
+  // Line breaks
+  html = html.replace(/\n/g, '<br>');
+  return html;
+};
+
+// Robust JSON extractor for AI model responses.
+// type: "array" or "object". Returns parsed value or throws Error with diagnostic preview.
+const parseJsonResponse = (text, type="array") => {
+  if(!text || !text.trim()){
+    throw new Error("O modelo retornou resposta vazia. Tente clicar de novo em alguns segundos.");
+  }
+  const openCh = type==="array" ? "[" : "{";
+  const closeCh = type==="array" ? "]" : "}";
+  // Strip markdown fences ```json ... ``` if present
+  let candidate = text;
+  const fenced = text.match(/```(?:json|JSON)?\s*([\s\S]*?)\s*```/);
+  if(fenced) candidate = fenced[1];
+  // Find the outermost brackets of the right type
+  const start = candidate.indexOf(openCh);
+  const end = candidate.lastIndexOf(closeCh);
+  if(start === -1 || end === -1 || end < start){
+    const preview = (text||"").trim().slice(0,260).replace(/\s+/g," ");
+    throw new Error(`Resposta sem JSON válido. Início: "${preview}${text.length>260?"…":""}"`);
+  }
+  candidate = candidate.slice(start, end+1);
+  // Try direct parse
+  try { return JSON.parse(candidate); } catch(e){}
+  // Cleanup pass: smart quotes, trailing commas, CR, comments
+  const cleaned = candidate
+    .replace(/[\u201C\u201D]/g, '"')   // " " → "
+    .replace(/[\u2018\u2019]/g, "'")   // ' ' → '
+    .replace(/,(\s*[\]}])/g, '$1')     // trailing commas
+    .replace(/\r/g, '')
+    .replace(/\/\/[^\n]*/g, '');       // line comments
+  try { return JSON.parse(cleaned); } catch(e2){
+    const preview = candidate.slice(0,200).replace(/\s+/g," ");
+    throw new Error(`JSON inválido. Fragmento: "${preview}…" — tente clicar em buscar de novo.`);
+  }
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BASE COMPONENTS (editorial style)
@@ -836,11 +929,16 @@ function LandingPage(){
             <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.05rem",lineHeight:1.5,color:BRAND.inkSoft,margin:"0 0 20px"}}>
               {(featuredPod.description||"").slice(0,200)}{(featuredPod.description||"").length>200?"…":""}
             </p>
-            {featuredPod.highlights?.length>0 && <div style={{marginBottom:20}}>
-              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:8}}>✨ NESTE EPISÓDIO</div>
-              <ul style={{margin:0,paddingLeft:20,fontSize:".95rem",lineHeight:1.55,color:BRAND.inkSoft}}>
-                {featuredPod.highlights.slice(0,4).map((h,i)=><li key={i} style={{marginBottom:4}}>{h}</li>)}
-              </ul>
+            {splitHighlights(featuredPod.highlights).length>0 && <div style={{marginBottom:20}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>✨ NESTE EPISÓDIO</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {splitHighlights(featuredPod.highlights).slice(0,4).map((h,i)=>
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"28px 1fr",gap:8,alignItems:"flex-start"}}>
+                    <div className="mono" style={{fontSize:".72rem",color:BRAND.accent,fontWeight:600,paddingTop:3}}>{padNum(i+1,2)}</div>
+                    <div style={{fontSize:".95rem",lineHeight:1.5,color:BRAND.inkSoft}} dangerouslySetInnerHTML={{__html: renderHighlightHTML(h)}}/>
+                  </div>
+                )}
+              </div>
             </div>}
             <a href={`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`} className="btn btn-primary">▶ Assistir Agora</a>
           </div>
@@ -974,7 +1072,6 @@ function PublicNewsletter(){
   const [newsletters,setNewsletters] = useState([]);
   const [selectedDate,setSelectedDate] = useState(null);
   const [loading,setLoading] = useState(true);
-  const [videoBlob,setVideoBlob] = useState(null);
   const [audioBlob,setAudioBlob] = useState(null);
   const [commentsOpen,setCommentsOpen] = useState(false);
   const [commentCount,setCommentCount] = useState(0);
@@ -1003,7 +1100,6 @@ function PublicNewsletter(){
   useEffect(()=>{
     if(!selectedDate) return;
     const c = newsletters.find(n=>n.date===selectedDate);
-    if(c?.podcastBlobRef) db.getBlob(c.podcastBlobRef).then(setVideoBlob); else setVideoBlob(null);
     if(c?.audioPodcastBlobRef) db.getBlob(c.audioPodcastBlobRef).then(setAudioBlob); else setAudioBlob(null);
   },[selectedDate,newsletters]);
 
@@ -1015,16 +1111,7 @@ function PublicNewsletter(){
   },[selectedDate,loading]);
 
   const current = newsletters.find(n=>n.date===selectedDate);
-  const effectiveVideoUrl = videoBlob || current?.podcastUrl;
-  const videoValid = effectiveVideoUrl && (!current?.podcastExpiresAt || !isExpired(current.podcastExpiresAt));
-  const aspectRatio = current?.podcastAspectRatio || "9/16";
   const effectiveAudioUrl = audioBlob || current?.audioPodcastUrl;
-
-  const highlightLines = useMemo(()=>{
-    const raw = (current?.podcastHighlights||"").trim();
-    if(!raw) return [];
-    return raw.split(/\n+/).map(s=>s.replace(/^[-•*\d.]+\s*/,"").trim()).filter(Boolean);
-  },[current]);
 
   const readTime = useMemo(()=>estimateReadTime((current?.aiSummary||"")+" "+(current?.headlines||[]).map(h=>h.summary).join(" ")),[current]);
 
@@ -1086,34 +1173,9 @@ function PublicNewsletter(){
           </div>
         </div>
 
-        {/* VIDEO + HIGHLIGHTS — fixed editorial side-by-side */}
-        {videoValid && <section style={{marginBottom:64}}>
-          <SectionLabel num="01">Episódio em Vídeo</SectionLabel>
-          <div style={{display:"grid",gridTemplateColumns:aspectRatio==="9/16"?"380px 1fr":"1fr",gap:48,alignItems:"start"}}>
-            <div style={{width:"100%"}}>
-              <VideoPlayer url={effectiveVideoUrl} aspectRatio={aspectRatio} maxWidth="100%"/>
-            </div>
-            {(highlightLines.length>0 || aspectRatio!=="9/16") && <div>
-              {highlightLines.length>0 ? <>
-                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:18}}>✨ HIGHLIGHTS DO EPISÓDIO</div>
-                <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                  {highlightLines.map((h,i)=>(
-                    <div key={i} style={{display:"flex",gap:18,alignItems:"flex-start",paddingBottom:14,borderBottom:`1px solid ${BRAND.rule}`}}>
-                      <div className="mono" style={{flexShrink:0,fontSize:".88rem",color:BRAND.accent,fontWeight:600,letterSpacing:".05em",paddingTop:2}}>№ {padNum(i+1,2)}</div>
-                      <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.1rem",fontWeight:500,lineHeight:1.4,color:BRAND.ink}}>{h}</div>
-                    </div>
-                  ))}
-                </div>
-              </> : null}
-            </div>}
-          </div>
-        </section>}
-
-        {current?.podcastUrl && !videoValid && <div className="alert-info" style={{marginBottom:48}}>⏰ O vídeo desta edição expirou.</div>}
-
         {/* AUDIO PODCAST + SUMMARY — side by side */}
         {current.aiSummary && <section style={{marginBottom:64}}>
-          <SectionLabel num="02">Análise da Semana</SectionLabel>
+          <SectionLabel num="01">Análise da Semana</SectionLabel>
           <div style={{display:"grid",gridTemplateColumns:effectiveAudioUrl?"2fr 1fr":"1fr",gap:32,alignItems:"start"}}>
             <div className="card card-pad" style={{padding:40}}>
               <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.15rem",lineHeight:1.65,color:BRAND.ink,whiteSpace:"pre-wrap"}}>
@@ -1132,7 +1194,7 @@ function PublicNewsletter(){
 
         {/* COMPANIES + TOPICS CHIPS */}
         {(current.companies?.length>0 || current.topics?.length>0) && <section style={{marginBottom:64}}>
-          <SectionLabel num="03">Em Discussão</SectionLabel>
+          <SectionLabel num="02">Em Discussão</SectionLabel>
           <div className="card card-pad" style={{padding:32}}>
             {current.companies?.length>0 && <div style={{marginBottom: current.topics?.length>0 ? 20 : 0}}>
               <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:10}}>EMPRESAS</div>
@@ -1151,7 +1213,7 @@ function PublicNewsletter(){
 
         {/* FOCUS INSIGHTS */}
         {current.focusInsights?.length>0 && <section style={{marginBottom:64}}>
-          <SectionLabel num="04">Temas em Destaque</SectionLabel>
+          <SectionLabel num="03">Temas em Destaque</SectionLabel>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:18}}>
             {FOCUS_AREAS.map((area,i)=>{
               const ins = current.focusInsights.find(x=>x.area===area.id);
@@ -1172,7 +1234,7 @@ function PublicNewsletter(){
 
         {/* HEADLINES */}
         {current.headlines?.length>0 && <section style={{marginBottom:64}}>
-          <SectionLabel num="05">Notícias da Semana</SectionLabel>
+          <SectionLabel num="04">Notícias da Semana</SectionLabel>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(360px, 1fr))",gap:18}}>
             {current.headlines.map((h,i)=>{
               const featured = i===0;
@@ -1195,14 +1257,21 @@ function PublicNewsletter(){
           </div>
         </section>}
 
-        {/* FOOTER */}
-        <div style={{marginTop:80,paddingTop:40,borderTop:`1px solid ${BRAND.rule}`,textAlign:"center"}}>
-          <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:16}}>FIM DA EDIÇÃO № {padNum(editionNum)}</div>
+        {/* FOOTER + cross-sell to Podcast */}
+        <div style={{marginTop:80,padding:"40px 40px",borderTop:`1px solid ${BRAND.rule}`,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(212,165,46,.08))`,borderRadius:4,textAlign:"center"}}>
+          <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>🎬 PROCURANDO O VÍDEO?</div>
+          <h3 className="display" style={{fontSize:"clamp(1.5rem, 3vw, 2.2rem)",margin:"0 0 14px",letterSpacing:"-.02em"}}>
+            O resumo em vídeo agora vive no <em className="acc">Podcast Semanal</em>.
+          </h3>
+          <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.05rem",color:BRAND.inkSoft,maxWidth:"54ch",margin:"0 auto 24px",lineHeight:1.5}}>
+            Se você perdeu a semana inteira, assista ao podcast em 5 min — com os principais temas explicados na prática.
+          </p>
           <div style={{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap"}}>
-            <button onClick={handleShare} className="btn btn-primary">↗ Compartilhar</button>
+            <a href="?view=podcasts" className="btn btn-primary">▶ Assistir Podcast Semanal</a>
+            <button onClick={handleShare} className="btn btn-ghost">↗ Compartilhar Edição</button>
             <button onClick={()=>setCommentsOpen(true)} className="btn btn-ghost">💬 Comentar ({commentCount})</button>
-            <a href="?view=landing#archive" className="btn btn-ghost">Próxima Edição →</a>
           </div>
+          <div className="mono small-caps" style={{color:BRAND.mute,marginTop:24,fontSize:".62rem"}}>FIM DA EDIÇÃO № {padNum(editionNum)}</div>
         </div>
       </div>}
     </main>
@@ -1276,11 +1345,16 @@ function PodcastsPage(){
               <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.05rem",lineHeight:1.5,color:BRAND.inkSoft,margin:"0 0 20px"}}>
                 {(featured.description||"").slice(0,240)}{(featured.description||"").length>240?"…":""}
               </p>
-              {featured.highlights?.length>0 && <div style={{marginBottom:20}}>
-                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:8}}>✨ NESTE EPISÓDIO</div>
-                <ul style={{margin:0,paddingLeft:20,fontSize:".95rem",lineHeight:1.55,color:BRAND.inkSoft}}>
-                  {featured.highlights.slice(0,5).map((h,i)=><li key={i} style={{marginBottom:4}}>{h}</li>)}
-                </ul>
+              {splitHighlights(featured.highlights).length>0 && <div style={{marginBottom:20}}>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>✨ NESTE EPISÓDIO</div>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {splitHighlights(featured.highlights).map((h,i)=>
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"28px 1fr",gap:8,alignItems:"flex-start"}}>
+                      <div className="mono" style={{fontSize:".72rem",color:BRAND.accent,fontWeight:600,paddingTop:3}}>{padNum(i+1,2)}</div>
+                      <div style={{fontSize:".95rem",lineHeight:1.55,color:BRAND.inkSoft}} dangerouslySetInnerHTML={{__html: renderHighlightHTML(h)}}/>
+                    </div>
+                  )}
+                </div>
               </div>}
               <a href={`?view=podcast&id=${encodeURIComponent(featured.id)}`} className="btn btn-primary">▶ Assistir Agora</a>
             </div>
@@ -1399,18 +1473,18 @@ function PodcastDetail(){
           </div>
 
           {/* Description card (YouTube-style) */}
-          <div className="card" style={{padding:24,marginBottom:24}}>
+          <div className="card" style={{padding:28,marginBottom:24}}>
             <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>📝 DESCRIÇÃO</div>
-            <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.05rem",lineHeight:1.6,color:BRAND.ink,whiteSpace:"pre-wrap",marginBottom:podcast.highlights?.length>0?20:0}}>
+            <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.05rem",lineHeight:1.65,color:BRAND.ink,whiteSpace:"pre-wrap",marginBottom:splitHighlights(podcast.highlights).length>0?24:0}}>
               {podcast.description || <span style={{fontStyle:"italic",color:BRAND.mute}}>(sem descrição)</span>}
             </div>
-            {podcast.highlights?.length>0 && <div style={{paddingTop:18,borderTop:`1px solid ${BRAND.rule}`}}>
-              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>✨ HIGHLIGHTS DO VÍDEO</div>
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                {podcast.highlights.map((h,i)=>
-                  <div key={i} style={{display:"flex",gap:14,alignItems:"flex-start"}}>
-                    <div className="mono" style={{flexShrink:0,fontSize:".82rem",color:BRAND.accent,fontWeight:600,paddingTop:2,minWidth:36}}>№ {padNum(i+1,2)}</div>
-                    <div style={{fontFamily:"'Fraunces',serif",fontSize:"1rem",lineHeight:1.45,color:BRAND.ink}}>{h}</div>
+            {splitHighlights(podcast.highlights).length>0 && <div style={{paddingTop:22,borderTop:`1px solid ${BRAND.rule}`}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:16}}>✨ HIGHLIGHTS DO VÍDEO</div>
+              <div style={{display:"flex",flexDirection:"column",gap:18}}>
+                {splitHighlights(podcast.highlights).map((h,i,arr)=>
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"48px 1fr",gap:14,alignItems:"flex-start",paddingBottom:i<arr.length-1?14:0,borderBottom:i<arr.length-1?`1px solid ${BRAND.rule}`:"none"}}>
+                    <div className="mono" style={{fontSize:".85rem",color:BRAND.accent,fontWeight:600,paddingTop:4,letterSpacing:".04em"}}>№ {padNum(i+1,2)}</div>
+                    <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.05rem",lineHeight:1.55,color:BRAND.ink,wordBreak:"break-word"}} dangerouslySetInnerHTML={{__html: renderHighlightHTML(h)}}/>
                   </div>
                 )}
               </div>
@@ -1689,7 +1763,7 @@ function AdminApp({ session, onLogout }){
   const [allPodcasts,setAllPodcasts] = useState([]);
   const [podSelectedNls,setPodSelectedNls] = useState(new Set());
   const [podScript,setPodScript] = useState("");
-  const [podHighlights,setPodHighlights] = useState([]);
+  const [podHighlights,setPodHighlights] = useState("");
   const [podTitle,setPodTitle] = useState("");
   const [podDescription,setPodDescription] = useState("");
   const [podVideoUrl,setPodVideoUrl] = useState("");
@@ -1793,15 +1867,13 @@ function AdminApp({ session, onLogout }){
       : "";
     try {
       const t = await callClaude(apiKey,
-        `Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, desenvolvimento sistêmico.${sourcesHint}\n\nResponda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,
-        true, 3000);
-      const m = t.match(/\[[\s\S]*\]/);
-      if(m){
-        const p = JSON.parse(m[0]).slice(0,10);
-        setEditorHeadlines(p);
-        setNlSuccess(`${p.length} manchetes${activeSources.length>0?` (${activeSources.length} fontes)`:""}`);
-        extractCompaniesAndTopics(p).catch(()=>{});
-      } else throw new Error("Sem JSON");
+        `Pesquise as 10 principais notícias de IA, produtividade e desenvolvimento de software desta semana (${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, desenvolvimento sistêmico.${sourcesHint}\n\nResponda APENAS um array JSON válido. Sem prosa antes ou depois. Sem markdown. Comece com [ e termine com ]:\n[{"title":"...","summary":"resumo de 1-2 frases em PT-BR","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://..."}]`,
+        true, 6000);
+      const arr = parseJsonResponse(t, "array");
+      const p = arr.slice(0,10);
+      setEditorHeadlines(p);
+      setNlSuccess(`${p.length} manchetes${activeSources.length>0?` (${activeSources.length} fontes)`:""}`);
+      extractCompaniesAndTopics(p).catch(()=>{});
     } catch(err){setNlError("Erro: "+err.message);}
     setIsLoadingNl(false);
   };
@@ -1812,11 +1884,12 @@ function AdminApp({ session, onLogout }){
     setIsExtracting(true);
     try {
       const t = await callClaude(apiKey,
-        `Extraia das manchetes as PRINCIPAIS empresas e tópicos.\nResponda SOMENTE JSON: {"companies":["OpenAI","Google",...],"topics":["agentes","RAG",...]}\nMáx 8 de cada, por relevância.\n\nMANCHETES:\n${hl.map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`,
-        false, 500);
-      const m = t.match(/\{[\s\S]*\}/);
-      if(m){const p=JSON.parse(m[0]); setEditorCompanies(p.companies||[]); setEditorTopics(p.topics||[]);}
-    } catch(err){console.warn(err.message);}
+        `Extraia das manchetes as PRINCIPAIS empresas e tópicos.\nResponda APENAS JSON válido (comece com { e termine com }). Sem markdown. Sem prosa.\n{"companies":["OpenAI","Google",...],"topics":["agentes","RAG",...]}\nMáx 8 de cada, por relevância.\n\nMANCHETES:\n${hl.map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`,
+        false, 800);
+      const p = parseJsonResponse(t, "object");
+      setEditorCompanies(p.companies||[]);
+      setEditorTopics(p.topics||[]);
+    } catch(err){console.warn("extractCompaniesAndTopics:", err.message);}
     setIsExtracting(false);
   };
 
@@ -1864,18 +1937,15 @@ function AdminApp({ session, onLogout }){
     setIsGenInsights(true);setNlError("");
     try {
       const t = await callClaude(apiKey,
-        `Insight curto (50-70 palavras) por área. JSON: {"produtividade":"...","sistemico":"...","llm":"..."}\nMANCHETES:\n${editorHeadlines.map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`,
-        false, 1000);
-      const m = t.match(/\{[\s\S]*\}/);
-      if(m){
-        const p=JSON.parse(m[0]);
-        setEditorFocusInsights([
-          {area:"produtividade",summary:p.produtividade||""},
-          {area:"sistemico",summary:p.sistemico||""},
-          {area:"llm",summary:p.llm||""},
-        ]);
-        setNlSuccess("Insights gerados!");
-      } else throw new Error("Sem JSON");
+        `Insight curto (50-70 palavras) por área, em português brasileiro.\nResponda APENAS JSON válido (comece com { termine com }). Sem markdown. Sem prosa.\n{"produtividade":"...","sistemico":"...","llm":"..."}\n\nMANCHETES:\n${editorHeadlines.map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`,
+        false, 1200);
+      const p = parseJsonResponse(t, "object");
+      setEditorFocusInsights([
+        {area:"produtividade",summary:p.produtividade||""},
+        {area:"sistemico",summary:p.sistemico||""},
+        {area:"llm",summary:p.llm||""},
+      ]);
+      setNlSuccess("Insights gerados!");
     } catch(err){setNlError("Erro: "+err.message);}
     setIsGenInsights(false);
   };
@@ -1963,6 +2033,14 @@ function AdminApp({ session, onLogout }){
     setSrcName("");setSrcUrl("");setSrcMsg({type:"ok",text:"✓ Fonte adicionada"});
     await reloadSources();
   };
+  const handleRestoreDefaults = async () => {
+    setSrcMsg({type:"",text:""});
+    if(!confirm(`Restaurar fontes padrão? Isso adiciona qualquer fonte do catálogo (${DEFAULT_SOURCES.length} no total) que estiver faltando — não remove suas fontes personalizadas.`)) return;
+    const { added, total } = await newsSourcesApi.mergeDefaults();
+    await reloadSources();
+    if(added === 0) setSrcMsg({type:"ok",text:`✓ Todas as ${total} fontes padrão já estão cadastradas.`});
+    else setSrcMsg({type:"ok",text:`✓ ${added} fonte${added===1?"":"s"} restaurada${added===1?"":"s"} (de ${total} padrão).`});
+  };
 
   // Briefing content for NotebookLM
   const briefingText = useMemo(()=>{
@@ -2012,23 +2090,44 @@ ${sources || "(sem fontes com URL)"}
     if(!keyValidated){setNlError("Configure a chave Anthropic em Configurações.");return;}
     setIsLoadingNl(true);setNlError("");setNlSuccess("");
     const activeSources = newsSources.filter(s=>s.active);
+    // Group sources by category for clearer prompt
+    const byCat = {};
+    activeSources.forEach(s=>{(byCat[s.category||"IA"]=byCat[s.category||"IA"]||[]).push(s);});
     const sourcesHint = activeSources.length>0
-      ? `\n\nPRIORIZE PESQUISAR NESTAS FONTES:\n${activeSources.map(s=>`- ${s.name} (${s.url})`).join("\n")}\nRetorne em "url" o link da matéria e em "source" o nome da fonte.`
+      ? `\n\nPRIORIZE PESQUISAR NESTAS FONTES (use a ferramenta web_search):\n` +
+        Object.entries(byCat).map(([cat,arr])=>`【${cat}】\n${arr.map(s=>`  • ${s.name} — ${s.url}`).join("\n")}`).join("\n") +
+        `\n\nPriorize fontes em português brasileiro (Brasil) quando houver matérias relevantes nelas. Em "source" coloque o nome da fonte e em "url" o link da matéria específica.`
       : "";
+
+    const prompt = `Pesquise as 12 principais notícias de IA, produtividade e desenvolvimento de software desta semana (referência de data: ${fmtDateLong(editorDate)}).
+Foque em: novos modelos LLM, ferramentas de IA para produtividade, desenvolvimento sistêmico, lançamentos de produtos, regulação e mercado brasileiro de IA.${sourcesHint}
+
+═══ FORMATO DE RESPOSTA (CRÍTICO) ═══
+Sua resposta DEVE ser APENAS um array JSON válido. Sem prosa antes. Sem markdown. Sem \`\`\`json. Sem texto depois.
+Comece IMEDIATAMENTE com [ e termine com ]. Nada mais.
+
+Estrutura de cada item:
+{"title":"título traduzido em PT-BR","summary":"resumo de 1-2 frases em PT-BR","source":"nome da fonte","category":"LLM|Produtividade|Sistêmico|IA|Hardware|Brasil","url":"https://link-da-materia","originalLang":"pt|en"}
+
+REGRAS:
+- title e summary SEMPRE em português brasileiro (traduza se original em inglês)
+- Se a matéria original estiver em inglês, marque "originalLang":"en"
+- Se já estiver em português, marque "originalLang":"pt"
+- 12 itens, do mais relevante ao menos
+- url deve ser o link da matéria específica, não a homepage`;
+
     try {
-      const t = await callClaude(apiKey,
-        `Pesquise as 12 principais notícias de IA, produtividade e desenvolvimento de software desta semana (referência: ${fmtDateLong(editorDate)}). Foque em: novos modelos LLM, ferramentas de IA para produtividade, desenvolvimento sistêmico.${sourcesHint}\n\nResponda SOMENTE JSON puro: [{"title":"...","summary":"resumo de 1-2 frases EM PORTUGUÊS","source":"...","category":"LLM|Produtividade|Sistêmico|IA|Hardware","url":"https://...","originalLang":"pt|en"}]\n\nIMPORTANTE: traduza title e summary para português brasileiro sempre. Se original em inglês, marque originalLang:"en".`,
-        true, 3500);
-      const m = t.match(/\[[\s\S]*\]/);
-      if(m){
-        const arr = JSON.parse(m[0]).slice(0,12);
-        setSourceCandidates(arr);
-        // Pre-select all by default
-        setSelectedIdx(new Set(arr.map((_,i)=>i)));
-        setFeaturedIdx(new Set());
-        setNlSuccess(`${arr.length} manchetes buscadas${activeSources.length>0?` em ${activeSources.length} fontes`:""}.`);
-      } else throw new Error("Sem JSON");
-    } catch(err){setNlError("Erro: "+err.message);}
+      const t = await callClaude(apiKey, prompt, true, 8000);
+      const arr = parseJsonResponse(t, "array");
+      if(!Array.isArray(arr) || arr.length===0){
+        throw new Error("Resposta veio mas não é uma lista. Tente buscar novamente.");
+      }
+      const list = arr.slice(0,12);
+      setSourceCandidates(list);
+      setSelectedIdx(new Set(list.map((_,i)=>i)));
+      setFeaturedIdx(new Set());
+      setNlSuccess(`${list.length} manchetes buscadas${activeSources.length>0?` em ${activeSources.length} fontes`:""}.`);
+    } catch(err){setNlError(err.message);}
     setIsLoadingNl(false);
   };
   const toggleSel = (i) => {
@@ -2157,17 +2256,23 @@ Retorne APENAS o roteiro formatado, em português brasileiro.`,
       // Also generate title, description, highlights
       const meta = await callClaude(apiKey,
         `A partir do roteiro abaixo, gere o METADADO do vídeo.
-Responda APENAS JSON: {"title":"título magnético max 10 palavras","description":"descrição YouTube 2-3 parágrafos, tom direto e entusiasta","highlights":["highlight 1","highlight 2","highlight 3","highlight 4","highlight 5"]}
+Responda APENAS JSON válido (comece com { termine com }). Sem markdown. Sem prosa antes ou depois.
+{"title":"título magnético max 10 palavras","description":"descrição YouTube 2-3 parágrafos, tom direto e entusiasta","highlights":["**Lançamento da semana** que importa\\nExemplo prático em 1 linha","🔒 *Segurança*: novo limite reduz X em Y%"]}
+
+NOTA sobre highlights: cada item pode usar **negrito**, *itálico* e emojis. Use \\n para quebrar linha dentro de um highlight. Retorne 5 highlights, escritos em PT-BR.
 
 ROTEIRO:
 ${t.slice(0,3000)}`,
-        false, 1200);
-      const mm = meta.match(/\{[\s\S]*\}/);
-      if(mm){
-        const p = JSON.parse(mm[0]);
+        false, 1500);
+      try {
+        const p = parseJsonResponse(meta, "object");
         setPodTitle(p.title||"");
         setPodDescription(p.description||"");
-        setPodHighlights(p.highlights||[]);
+        const hl = Array.isArray(p.highlights) ? p.highlights : (p.highlights ? [String(p.highlights)] : []);
+        setPodHighlights(hl.filter(Boolean).join("\n\n"));
+      } catch(metaErr){
+        console.warn("meta parse failed:", metaErr.message);
+        // Script was generated successfully; just couldn't parse metadata
       }
       setPodMsg({type:"ok",text:"✓ Roteiro + metadados gerados!"});
     } catch(err){setPodMsg({type:"err",text:"Erro: "+err.message});}
@@ -2198,7 +2303,7 @@ ${t.slice(0,3000)}`,
     setPodTitle(p.title||""); setPodDescription(p.description||"");
     setPodVideoUrl(p.videoUrl||""); setPodVideoBlobRef(p.videoBlobRef||"");
     setPodAspect(p.aspectRatio||"16/9"); setPodDuration(p.duration||5);
-    setPodHighlights(p.highlights||[]); setPodScript(p.scriptText||"");
+    setPodHighlights(highlightsToText(p.highlights)); setPodScript(p.scriptText||"");
     setPodSelectedNls(new Set(p.newsletterDates||[]));
     setPodThumbnailUrl(p.thumbnailUrl||"");
     setPodWeek(p.week||today());
@@ -2208,7 +2313,7 @@ ${t.slice(0,3000)}`,
   const newPodcast = () => {
     setEditingPodId(null);
     setPodTitle(""); setPodDescription(""); setPodVideoUrl(""); setPodVideoBlobRef("");
-    setPodAspect("16/9"); setPodDuration(5); setPodHighlights([]); setPodScript("");
+    setPodAspect("16/9"); setPodDuration(5); setPodHighlights(""); setPodScript("");
     setPodSelectedNls(new Set()); setPodThumbnailUrl(""); setPodWeek(today());
     setPodMsg({type:"",text:""});
   };
@@ -2658,11 +2763,8 @@ ${t.slice(0,3000)}`,
             <Field label="Título (como aparece no YouTube)" style={{marginBottom:12}}>
               <Input value={podTitle} onChange={e=>setPodTitle(e.target.value)} placeholder="Sync·MI Semanal · 12-18 mai" style={{fontFamily:"'Fraunces',serif",fontSize:"1.15rem"}}/>
             </Field>
-            <Field label="Descrição" style={{marginBottom:12}}>
-              <TArea value={podDescription} onChange={e=>setPodDescription(e.target.value)} rows={5} placeholder="O que aparece embaixo do vídeo (estilo YouTube)..."/>
-            </Field>
-            <Field label="Highlights (um por linha)">
-              <TArea value={podHighlights.join("\n")} onChange={e=>setPodHighlights(e.target.value.split("\n").map(s=>s.trim()).filter(Boolean))} rows={5} placeholder="OpenAI lança modelo agente que faz pesquisa autônoma&#10;Anthropic foca em segurança com nova versão Opus..."/>
+            <Field label="Descrição">
+              <TArea value={podDescription} onChange={e=>setPodDescription(e.target.value)} rows={7} placeholder="O que aparece embaixo do vídeo (estilo YouTube)..."/>
             </Field>
           </div>
 
@@ -2698,6 +2800,42 @@ ${t.slice(0,3000)}`,
           </div>
         </div>
 
+        {/* HIGHLIGHTS — full width with editor + live preview */}
+        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(197,57,28,.04))`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
+            <div className="mono small-caps" style={{color:BRAND.accent}}>E · HIGHLIGHTS DO EPISÓDIO</div>
+            <div className="mono" style={{fontSize:".68rem",color:BRAND.mute}}>
+              {splitHighlights(podHighlights).length} bloco{splitHighlights(podHighlights).length===1?"":"s"} · {podHighlights.length} caracteres
+            </div>
+          </div>
+          <div style={{fontSize:".8rem",color:BRAND.inkSoft,marginBottom:12,padding:"8px 12px",background:BRAND.paperDark,borderRadius:4,lineHeight:1.55}}>
+            <strong>Formatação:</strong> use <code style={{padding:"1px 6px",background:"rgba(20,17,13,.08)",borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".88em"}}>**negrito**</code>, <code style={{padding:"1px 6px",background:"rgba(20,17,13,.08)",borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".88em"}}>*itálico*</code>, <code style={{padding:"1px 6px",background:"rgba(20,17,13,.08)",borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".88em"}}>`código`</code> e emojis livremente 🚀.
+            Quebra de linha simples = nova linha dentro do mesmo bloco. <strong>Linha em branco</strong> entre blocos separa um highlight do próximo.
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,alignItems:"stretch"}}>
+            <div>
+              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".6rem"}}>EDITOR</div>
+              <TArea value={podHighlights} onChange={e=>setPodHighlights(e.target.value)} rows={16}
+                placeholder={`🚀 **OpenAI lança modelo agente** que faz pesquisa autônoma\nEle navega na web, lê artigos e produz relatórios em minutos.\n\n🔒 **Anthropic foca em segurança** com nova versão Claude\nNovos guardrails reduzem risco de jailbreak em 40%.\n\n💡 *Exemplo prático:* qualquer dev pode usar via API com 3 linhas de código.`}
+                style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".88rem",lineHeight:1.6,minHeight:380}}/>
+            </div>
+            <div style={{display:"flex",flexDirection:"column"}}>
+              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".6rem"}}>PREVIEW AO VIVO (como aparece publicado)</div>
+              <div style={{flex:1,minHeight:380,padding:"18px 22px",background:BRAND.paper,border:`1px solid ${BRAND.rule}`,borderRadius:8,overflowY:"auto"}}>
+                {splitHighlights(podHighlights).length===0 ? <div style={{color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif",fontSize:"1rem",textAlign:"center",paddingTop:40}}>O preview aparece aqui conforme você digita.</div>
+                : <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  {splitHighlights(podHighlights).map((h,i)=>(
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"36px 1fr",gap:10,alignItems:"flex-start",paddingBottom:12,borderBottom:i<splitHighlights(podHighlights).length-1?`1px solid ${BRAND.rule}`:"none"}}>
+                      <div className="mono" style={{fontSize:".78rem",color:BRAND.accent,fontWeight:600,paddingTop:3}}>{padNum(i+1,2)}</div>
+                      <div style={{fontFamily:"'Fraunces',serif",fontSize:"1rem",lineHeight:1.5,color:BRAND.ink}} dangerouslySetInnerHTML={{__html: renderHighlightHTML(h)}}/>
+                    </div>
+                  ))}
+                </div>}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div style={{display:"flex",justifyContent:"flex-end",gap:10}}>
           <Btn onClick={savePodcast} disabled={!podTitle.trim()}>💾 Salvar Podcast</Btn>
         </div>
@@ -2707,11 +2845,11 @@ ${t.slice(0,3000)}`,
       {/* TAB 2: FONTES */}
       {tab===2 && <div className="fade">
         <SectionLabel num="📡">Fontes de Notícias</SectionLabel>
-        <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",color:BRAND.inkSoft,fontSize:"1.05rem",marginTop:-24,marginBottom:32}}>
-          Fontes que a IA prioriza ao buscar manchetes. As 12 fontes padrão já vêm pré-cadastradas.
+        <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",color:BRAND.inkSoft,fontSize:"1.05rem",marginTop:-24,marginBottom:24}}>
+          Fontes que a IA prioriza ao buscar manchetes no Passo 1 da Newsletter. O catálogo padrão tem <strong>{DEFAULT_SOURCES.length}</strong> fontes (Brasil, internacional, labs de IA, podcasts e dev).
         </p>
 
-        <div className="card card-pad" style={{padding:24,marginBottom:24,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(212,165,46,.06))`}}>
+        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(212,165,46,.06))`}}>
           <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>➕ ADICIONAR NOVA FONTE</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 130px auto",gap:10,alignItems:"end"}}>
             <Field label="Nome"><Input value={srcName} onChange={e=>setSrcName(e.target.value)} placeholder="TechCrunch"/></Field>
@@ -2726,29 +2864,49 @@ ${t.slice(0,3000)}`,
           {srcMsg.text && <div className={srcMsg.type==="ok"?"alert-ok":"alert-error"}>{srcMsg.text}</div>}
         </div>
 
-        <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:14}}>
-          📡 FONTES CADASTRADAS ({newsSources.length} · {newsSources.filter(s=>s.active).length} ATIVAS)
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
+          <div className="mono small-caps" style={{color:BRAND.mute}}>
+            📡 FONTES CADASTRADAS ({newsSources.length} · {newsSources.filter(s=>s.active).length} ATIVAS)
+          </div>
+          <Btn size="sm" variant="ghost" onClick={handleRestoreDefaults}>↻ Restaurar fontes padrão</Btn>
         </div>
 
-        {newsSources.length===0 ? <div style={{padding:60,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4,color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif"}}>Nenhuma fonte ainda. Adicione acima.</div>
-        : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
-          {newsSources.map(s=>
-            <div key={s.id} className="card" style={{padding:14,opacity:s.active?1:.55,borderLeft:s.active?`4px solid ${BRAND.signal}`:`4px solid ${BRAND.mute}`}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:8}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:600,fontSize:".95rem",fontFamily:"'Fraunces',serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</div>
-                  <span className="chip" style={{marginTop:4,fontSize:".58rem"}}>{s.category||"IA"}</span>
+        {newsSources.length===0 ? <div style={{padding:60,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4,color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif"}}>Nenhuma fonte ainda. Adicione acima ou clique em "Restaurar fontes padrão".</div>
+        : (() => {
+            // Group sources by category
+            const groups = {};
+            newsSources.forEach(s=>{(groups[s.category||"Outros"]=groups[s.category||"Outros"]||[]).push(s);});
+            // Custom order: Brasil → IA → LLM → Podcast → Sistêmico → resto
+            const order = ["Brasil","IA","LLM","Podcast","Sistêmico","Produtividade","Hardware","Software","Cloud","Startups","Regulação","Outros"];
+            const sortedCats = Object.keys(groups).sort((a,b)=>{
+              const ia = order.indexOf(a), ib = order.indexOf(b);
+              return (ia===-1?99:ia) - (ib===-1?99:ib);
+            });
+            return sortedCats.map(cat=>(
+              <div key={cat} style={{marginBottom:22}}>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${BRAND.rule}`}}>
+                  {cat} ({groups[cat].length})
                 </div>
-                <span className={s.active?"chip sig":"chip"} style={{fontSize:".58rem"}}>{s.active?"● ATIVA":"○ INATIVA"}</span>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:10}}>
+                  {groups[cat].map(s=>
+                    <div key={s.id} className="card" style={{padding:14,opacity:s.active?1:.55,borderLeft:s.active?`4px solid ${BRAND.signal}`:`4px solid ${BRAND.mute}`}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:8}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:600,fontSize:".95rem",fontFamily:"'Fraunces',serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</div>
+                        </div>
+                        <span className={s.active?"chip sig":"chip"} style={{fontSize:".58rem"}}>{s.active?"● ATIVA":"○ INATIVA"}</span>
+                      </div>
+                      <a href={s.url} target="_blank" rel="noreferrer" className="mono" style={{fontSize:".7rem",color:BRAND.mute,textDecoration:"none",display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:10}}>↗ {s.url}</a>
+                      <div style={{display:"flex",gap:5}}>
+                        <button onClick={async()=>{await newsSourcesApi.toggleActive(s.id);await reloadSources();}} className="btn btn-ghost btn-sm" style={{flex:1,justifyContent:"center"}}>{s.active?"🚫 Desativar":"✓ Ativar"}</button>
+                        <button onClick={async()=>{if(confirm("Apagar?")){await newsSourcesApi.remove(s.id);await reloadSources();}}} className="btn btn-ghost btn-sm" style={{borderColor:BRAND.accent,color:BRAND.accent}}>🗑</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <a href={s.url} target="_blank" className="mono" style={{fontSize:".7rem",color:BRAND.mute,textDecoration:"none",display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:10}}>↗ {s.url}</a>
-              <div style={{display:"flex",gap:5}}>
-                <button onClick={async()=>{await newsSourcesApi.toggleActive(s.id);await reloadSources();}} className="btn btn-ghost btn-sm" style={{flex:1,justifyContent:"center"}}>{s.active?"🚫 Desativar":"✓ Ativar"}</button>
-                <button onClick={async()=>{if(confirm("Apagar?")){await newsSourcesApi.remove(s.id);await reloadSources();}}} className="btn btn-ghost btn-sm" style={{borderColor:BRAND.accent,color:BRAND.accent}}>🗑</button>
-              </div>
-            </div>
-          )}
-        </div>}
+            ));
+          })()}
       </div>}
 
       {/* TAB 3: AUDIÊNCIA */}
