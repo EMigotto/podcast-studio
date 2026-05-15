@@ -218,6 +218,57 @@ const db = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// STORAGE (Supabase Storage — for large files like audio/video, avoids base64 in DB)
+// ═══════════════════════════════════════════════════════════════════════════
+const STORAGE_BUCKET = "media";
+
+// Sanitize filename: keep letters, digits, dots, dashes; strip the rest
+const sanitizeFilename = name => (name||"file").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,80);
+
+// Is this URL pointing to our Supabase Storage? (used for cleanup on delete)
+const isStorageUrl = url => {
+  if(!url || typeof url !== "string") return false;
+  if(!SB_OK) return false;
+  return url.includes("/storage/v1/object/public/"+STORAGE_BUCKET+"/");
+};
+
+// Extract the path inside the bucket from a public URL
+const storageUrlToPath = url => {
+  if(!isStorageUrl(url)) return null;
+  const m = url.match(new RegExp("/storage/v1/object/public/"+STORAGE_BUCKET+"/(.+?)(?:\\?|$)"));
+  return m ? decodeURIComponent(m[1]) : null;
+};
+
+const storageApi = {
+  available(){ return SB_OK; },
+  // Upload file. folder="audio" or "video". Returns { url, path } on success
+  async upload(file, folder="audio"){
+    if(!SB_OK) throw new Error("Supabase Storage não disponível (configure SUPABASE_URL/KEY)");
+    const ext = (file.name.match(/\.[a-zA-Z0-9]+$/)||[""])[0].toLowerCase();
+    const base = sanitizeFilename(file.name.replace(ext,""));
+    const path = `${folder}/${Date.now()}-${base}${ext}`;
+    const { data, error } = await sb.storage.from(STORAGE_BUCKET).upload(path, file, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+    if(error) throw new Error(error.message || "Falha no upload");
+    const { data: pub } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(data.path);
+    return { url: pub.publicUrl, path: data.path };
+  },
+  // Delete by path (the part inside the bucket)
+  async deletePath(path){
+    if(!SB_OK || !path) return;
+    try { await sb.storage.from(STORAGE_BUCKET).remove([path]); } catch{}
+  },
+  // Delete by full public URL (for cleanup)
+  async deleteByUrl(url){
+    const p = storageUrlToPath(url);
+    if(p) await this.deletePath(p);
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // AUTH (Supabase Auth)
 // ═══════════════════════════════════════════════════════════════════════════
 const usernameToEmail = u => u.includes("@") ? u.trim().toLowerCase() : `${u.trim().toLowerCase()}@syncronize-mi.local`;
@@ -317,7 +368,12 @@ const podcastsApi = {
   async list(){return(await db.listByPrefix("podcast:")).sort((a,b)=>(b.week||"").localeCompare(a.week||""))},
   async get(id){return await db.get(id)},
   async upsert(p){const id=p.id||`podcast:${p.week||today()}`;const obj={...p,id,updatedAt:Date.now()};if(!obj.createdAt)obj.createdAt=Date.now();await db.set(id,obj);return obj},
-  async remove(id){const p=await db.get(id);if(p?.videoBlobRef)await db.delete(p.videoBlobRef);await db.delete(id)},
+  async remove(id){
+    const p = await db.get(id);
+    if(p?.videoBlobRef) await db.delete(p.videoBlobRef);   // legacy base64 blob
+    if(isStorageUrl(p?.videoUrl)) await storageApi.deleteByUrl(p.videoUrl); // Storage file
+    await db.delete(id);
+  },
   async incrementView(id){const p=await db.get(id);if(!p)return;p.viewCount=(p.viewCount||0)+1;await db.set(id,p);return p},
   async trackView(id){
     const k=`viewed_session:podcast:${id}`; if(sessionStorage.getItem(k))return; sessionStorage.setItem(k,"1");
@@ -380,6 +436,7 @@ function getVideoEmbedInfo(url){
   if(yt)return{type:"iframe",src:`https://www.youtube.com/embed/${yt[1]}`,brand:"YouTube"};
   const vm=url.match(/vimeo\.com\/(\d+)/);
   if(vm)return{type:"iframe",src:`https://player.vimeo.com/video/${vm[1]}`,brand:"Vimeo"};
+  if(isStorageUrl(url))return{type:"video",src:url,brand:"Sync·MI Storage"};
   if(url.startsWith("data:video")||/\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url))return{type:"video",src:url,brand:"Vídeo"};
   if(url.includes("heygen.ai")&&url.includes(".mp4"))return{type:"video",src:url,brand:"HeyGen"};
   return{type:"iframe",src:url,brand:"Externo"};
@@ -545,6 +602,26 @@ const Spin = memo(function Spin(){ return <span className="spin" style={{display
 const SectionLabel = memo(function SectionLabel({ num, children }){
   return <div className="section-label"><span className="num">{num}</span><span>{children}</span></div>;
 });
+
+// Editor guidance prompt field — appears below each AI generation button to refine the output
+const PromptHelper = memo(function PromptHelper({ value, onChange, placeholder, label }){
+  return <div style={{background:BRAND.paperDark,borderRadius:6,padding:"10px 14px",marginTop:12,marginBottom:8,borderLeft:`3px solid ${BRAND.accent}`}}>
+    <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6,fontSize:".62rem",display:"flex",alignItems:"center",gap:6}}>
+      💡 <span>{label || "ORIENTAÇÃO OPCIONAL DO EDITOR (refina a geração com IA)"}</span>
+    </div>
+    <TArea value={value} onChange={onChange} placeholder={placeholder} rows={2} style={{fontSize:".88rem",background:BRAND.paper,minHeight:54,lineHeight:1.5}}/>
+    <div style={{fontSize:".7rem",color:BRAND.mute,marginTop:5,fontStyle:"italic"}}>
+      Deixe em branco para usar o comportamento padrão. Preenchido, vira instrução adicional à IA.
+    </div>
+  </div>;
+});
+
+// Build editor guidance block to inject into AI prompts. Returns "" if input is empty.
+const buildEditorGuidance = (input, contextLabel="Orientação adicional do editor") => {
+  const t = (input||"").trim();
+  if(!t) return "";
+  return `\n\n═══ ${contextLabel.toUpperCase()} ═══\n${t}\nLeve isso em consideração na geração, sem ignorar as outras instruções.\n`;
+};
 
 // TICKER
 const Ticker = memo(function Ticker({ vol="01", episodes=0, nextDate }){
@@ -1766,6 +1843,12 @@ function AdminApp({ session, onLogout }){
   const [translateMsg,setTranslateMsg] = useState("");
   const [isTranslating,setIsTranslating] = useState(false);
 
+  // AI generation guidance prompts — optional editor input per generation step
+  const [aiPrompts,setAiPrompts] = useState({
+    search:"", summary:"", insights:"", title:"", subtitle:"", script:""
+  });
+  const updateAiPrompt = (k) => (e) => setAiPrompts(p=>({...p,[k]:e.target.value}));
+
   // Podcast Studio
   const [allPodcasts,setAllPodcasts] = useState([]);
   const [podSelectedNls,setPodSelectedNls] = useState(new Set());
@@ -1904,9 +1987,10 @@ function AdminApp({ session, onLogout }){
     if(!keyValidated){setNlError("Configure a chave.");return;}
     if(editorHeadlines.length===0){setNlError("Adicione manchetes primeiro.");return;}
     setIsGenTitle(true);setNlError("");
+    const guidance = buildEditorGuidance(aiPrompts.title, "Orientação do editor para o título");
     try {
       const t = await callClaude(apiKey,
-        `Crie um TÍTULO chamativo (max 7 palavras) para newsletter de IA, baseado em:\n${editorHeadlines.map((h,i)=>`${i+1}. ${h.title}`).join("\n")}\n\nTom: editorial, magnético, instigante. Português. Responda APENAS o título, sem aspas.`,
+        `Crie um TÍTULO chamativo (max 7 palavras) para newsletter de IA, baseado em:\n${editorHeadlines.map((h,i)=>`${i+1}. ${h.title}`).join("\n")}\n\nTom: editorial, magnético, instigante. Português.${guidance}\n\nResponda APENAS o título, sem aspas.`,
         false, 200);
       setEditorTitle(t.trim().replace(/^["']|["']$/g,""));
       setNlSuccess("Título gerado!");
@@ -1917,9 +2001,10 @@ function AdminApp({ session, onLogout }){
     if(!keyValidated){setNlError("Configure a chave.");return;}
     if(editorHeadlines.length===0){setNlError("Adicione manchetes.");return;}
     setIsGenSubtitle(true);setNlError("");
+    const guidance = buildEditorGuidance(aiPrompts.subtitle, "Orientação do editor para a frase de impacto");
     try {
       const t = await callClaude(apiKey,
-        `FRASE DE IMPACTO (max 25 palavras) para newsletter "${editorTitle||"(sem título)"}". Editorial, sofisticado, ponto de vista.\nManchetes:\n${editorHeadlines.slice(0,6).map(h=>`- ${h.title}: ${h.summary}`).join("\n")}\n\nResponda APENAS a frase.`,
+        `FRASE DE IMPACTO (max 25 palavras) para newsletter "${editorTitle||"(sem título)"}". Editorial, sofisticado, ponto de vista.\nManchetes:\n${editorHeadlines.slice(0,6).map(h=>`- ${h.title}: ${h.summary}`).join("\n")}${guidance}\n\nResponda APENAS a frase.`,
         false, 300);
       setEditorSubtitle(t.trim().replace(/^["']|["']$/g,""));
       setNlSuccess("Frase gerada!");
@@ -1942,9 +2027,10 @@ function AdminApp({ session, onLogout }){
     if(!keyValidated){setNlError("Configure a chave.");return;}
     if(editorHeadlines.length===0){setNlError("Adicione manchetes.");return;}
     setIsGenInsights(true);setNlError("");
+    const guidance = buildEditorGuidance(aiPrompts.insights, "Orientação do editor para os insights");
     try {
       const t = await callClaude(apiKey,
-        `Insight curto (50-70 palavras) por área, em português brasileiro.\nResponda APENAS JSON válido (comece com { termine com }). Sem markdown. Sem prosa.\n{"produtividade":"...","sistemico":"...","llm":"..."}\n\nMANCHETES:\n${editorHeadlines.map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`,
+        `Insight curto (50-70 palavras) por área, em português brasileiro.${guidance}\nResponda APENAS JSON válido (comece com { termine com }). Sem markdown. Sem prosa.\n{"produtividade":"...","sistemico":"...","llm":"..."}\n\nMANCHETES:\n${editorHeadlines.map(h=>`- ${h.title}: ${h.summary}`).join("\n")}`,
         false, 1200);
       const p = parseJsonResponse(t, "object");
       setEditorFocusInsights([
@@ -1996,6 +2082,8 @@ function AdminApp({ session, onLogout }){
     const ex = await db.get(`newsletter:${d}`);
     if(ex?.podcastBlobRef) await db.delete(ex.podcastBlobRef);
     if(ex?.audioPodcastBlobRef) await db.delete(ex.audioPodcastBlobRef);
+    if(isStorageUrl(ex?.audioPodcastUrl)) await storageApi.deleteByUrl(ex.audioPodcastUrl);
+    if(isStorageUrl(ex?.podcastUrl)) await storageApi.deleteByUrl(ex.podcastUrl);
     await db.delete(`newsletter:${d}`);
     setNewsletters(await db.listNewsletters());
     setNlSuccess("Apagada");
@@ -2016,18 +2104,20 @@ function AdminApp({ session, onLogout }){
 
   const handleAudioUpload = async (e) => {
     const f = e.target.files?.[0]; if(!f) return;
-    if(f.size > 25*1024*1024) {setAudioUploadMsg(`❌ Grande (${(f.size/(1024*1024)).toFixed(1)}MB). Máx 25MB ou use URL.`); return;}
-    setAudioUploadMsg("⏳ Convertendo áudio...");
+    const MB = 1024*1024;
+    const MAX_MB = 50;
+    if(f.size > MAX_MB*MB){setAudioUploadMsg(`❌ Arquivo de ${(f.size/MB).toFixed(1)}MB excede o limite de ${MAX_MB}MB. Use uma URL externa.`);return;}
+    if(!storageApi.available()){setAudioUploadMsg(`❌ Supabase Storage não configurado. Use o campo URL.`);return;}
+    const sizeStr = (f.size/MB).toFixed(1) + "MB";
+    setAudioUploadMsg(`⏳ Enviando áudio (${sizeStr})... pode levar alguns segundos.`);
     try {
-      const dataUrl = await fileToDataUrl(f);
-      const blobKey = `audioblob:${editorDate}:${Date.now()}`;
-      const r = await db.saveBlob(blobKey,dataUrl);
-      if(r.ok){
-        setEditorAudioPodcastBlobRef(blobKey);
-        setEditorAudioPodcastUrl("");
-        setAudioUploadMsg(`✓ Áudio carregado (${(f.size/(1024*1024)).toFixed(1)}MB)`);
-      } else setAudioUploadMsg(`❌ Falha: ${r.error}`);
-    } catch(err){setAudioUploadMsg("❌ Erro: "+err.message);}
+      // Clean up old Storage file if there was one (URL pointing to Storage)
+      if(isStorageUrl(editorAudioPodcastUrl)) await storageApi.deleteByUrl(editorAudioPodcastUrl);
+      const { url } = await storageApi.upload(f, "audio");
+      setEditorAudioPodcastUrl(url);          // ← new path: URL points to Storage CDN
+      setEditorAudioPodcastBlobRef("");        // ← clear legacy blobRef
+      setAudioUploadMsg(`✓ Áudio enviado (${sizeStr}). Aparece no rascunho e na newsletter pública.`);
+    } catch(err){setAudioUploadMsg(`❌ Falha no upload: ${err.message}`);}
   };
 
   // News sources handlers
@@ -2105,9 +2195,10 @@ ${sources || "(sem fontes com URL)"}
         Object.entries(byCat).map(([cat,arr])=>`【${cat}】\n${arr.map(s=>`  • ${s.name} — ${s.url}`).join("\n")}`).join("\n") +
         `\n\nPriorize fontes em português brasileiro (Brasil) quando houver matérias relevantes nelas. Em "source" coloque o nome da fonte e em "url" o link da matéria específica.`
       : "";
+    const guidance = buildEditorGuidance(aiPrompts.search, "Refinamento de busca solicitado pelo editor");
 
     const prompt = `Pesquise as 12 principais notícias de IA, produtividade e desenvolvimento de software desta semana (referência de data: ${fmtDateLong(editorDate)}).
-Foque em: novos modelos LLM, ferramentas de IA para produtividade, desenvolvimento sistêmico, lançamentos de produtos, regulação e mercado brasileiro de IA.${sourcesHint}
+Foque em: novos modelos LLM, ferramentas de IA para produtividade, desenvolvimento sistêmico, lançamentos de produtos, regulação e mercado brasileiro de IA.${sourcesHint}${guidance}
 
 ═══ FORMATO DE RESPOSTA (CRÍTICO) ═══
 Sua resposta DEVE ser APENAS um array JSON válido. Sem prosa antes. Sem markdown. Sem \`\`\`json. Sem texto depois.
@@ -2159,6 +2250,7 @@ REGRAS:
     if(!keyValidated){setNlError("Configure a chave.");return;}
     if(editorHeadlines.length===0){setNlError("Volte ao passo 1 e selecione manchetes.");return;}
     setIsGenSummary(true);setNlError("");
+    const guidance = buildEditorGuidance(aiPrompts.summary, "Orientação do editor para este resumo");
     try {
       const t = await callClaude(apiKey,
         `Crie um RESUMO EDITORIAL (~280 palavras) das manchetes abaixo.
@@ -2169,7 +2261,7 @@ TOM OBRIGATÓRIO:
 - ENTUSIASTA: transmita interesse genuíno, sem ser hype
 - EXEMPLOS CLAROS: cite casos práticos sempre que possível
 
-FOCO em três áreas: 1) Produtividade 2) Desenvolvimento Sistêmico 3) Modelos LLM/IA.
+FOCO em três áreas: 1) Produtividade 2) Desenvolvimento Sistêmico 3) Modelos LLM/IA.${guidance}
 
 MANCHETES${featuredIdx.size>0?" (com destaques marcados *)":""}:
 ${editorHeadlines.map((h,i)=>`${i+1}.${h.featured?" *":""} ${h.title} — ${h.summary}`).join("\n")}
@@ -2224,6 +2316,7 @@ Retorne APENAS o resumo, em português brasileiro.`,
     if(!keyValidated){setPodMsg({type:"err",text:"Configure a chave em Configurações."});return;}
     if(podSelectedList.length===0){setPodMsg({type:"err",text:"Selecione ao menos 1 newsletter."});return;}
     setIsGenScript(true);setPodMsg({type:"",text:""});
+    const guidance = buildEditorGuidance(aiPrompts.script, "Orientação do editor para este roteiro");
     try {
       const ctx = podSelectedList.map(nl=>
         `═══ NEWSLETTER ${fmtDateMag(nl.date)}: ${nl.title} ═══\n` +
@@ -2237,7 +2330,7 @@ Retorne APENAS o resumo, em português brasileiro.`,
       const t = await callClaude(apiKey,
         `Crie um ROTEIRO DE PODCAST EM VÍDEO para o HeyGen.
 
-CONTEXTO: Sync·MI é um podcast semanal de IA. Tom DIRETO, SIMPLES e ENTUSIASTA. Foco em INOVAÇÕES de IA com EXEMPLOS CLAROS. 5-7 minutos, português brasileiro.
+CONTEXTO: Sync·MI é um podcast semanal de IA. Tom DIRETO, SIMPLES e ENTUSIASTA. Foco em INOVAÇÕES de IA com EXEMPLOS CLAROS. 5-7 minutos, português brasileiro.${guidance}
 
 INSTRUÇÕES DE FORMATO (HeyGen lê isto literalmente):
 - Use blocos [CENA N · Reação: <descritor> · ~<segundos>s] antes de cada cena para que o operador configure no HeyGen Studio
@@ -2334,15 +2427,20 @@ ${t.slice(0,3000)}`,
 
   const handlePodVideoUpload = async (e) => {
     const f = e.target.files?.[0]; if(!f) return;
-    if(f.size > 30*1024*1024) {setPodMsg({type:"err",text:`Grande (${(f.size/(1024*1024)).toFixed(1)}MB). Prefira URL externa.`}); return;}
-    setPodMsg({type:"",text:"Convertendo vídeo..."});
+    const MB = 1024*1024;
+    const MAX_MB = 250;
+    if(f.size > MAX_MB*MB){setPodMsg({type:"err",text:`Arquivo de ${(f.size/MB).toFixed(1)}MB excede o limite de ${MAX_MB}MB. Use uma URL externa do HeyGen ou outro serviço.`});return;}
+    if(!storageApi.available()){setPodMsg({type:"err",text:"Supabase Storage não configurado. Use o campo URL externa."});return;}
+    const sizeStr = (f.size/MB).toFixed(1) + "MB";
+    setPodMsg({type:"info",text:`⏳ Enviando vídeo (${sizeStr})... pode levar alguns minutos dependendo da conexão. Não feche esta aba.`});
     try {
-      const dataUrl = await fileToDataUrl(f);
-      const blobKey = `videoblob:pod:${podWeek}:${Date.now()}`;
-      const r = await db.saveBlob(blobKey,dataUrl);
-      if(r.ok){setPodVideoBlobRef(blobKey);setPodVideoUrl("");setPodMsg({type:"ok",text:`Vídeo salvo (${(f.size/(1024*1024)).toFixed(1)}MB)`});}
-      else setPodMsg({type:"err",text:`Falha: ${r.error}`});
-    } catch(err){setPodMsg({type:"err",text:"Erro: "+err.message});}
+      // Clean up old Storage file if URL pointed to Storage
+      if(isStorageUrl(podVideoUrl)) await storageApi.deleteByUrl(podVideoUrl);
+      const { url } = await storageApi.upload(f, "video");
+      setPodVideoUrl(url);          // ← Storage CDN URL goes into the same URL field
+      setPodVideoBlobRef("");        // ← clear legacy blobRef
+      setPodMsg({type:"ok",text:`✓ Vídeo enviado (${sizeStr}). Aparece no preview abaixo e na página pública.`});
+    } catch(err){setPodMsg({type:"err",text:`Falha no upload: ${err.message}`});}
   };
 
   const copyScript = () => {
@@ -2415,6 +2513,11 @@ ${t.slice(0,3000)}`,
               </div>
               <Btn onClick={wizardFetchNews} disabled={isLoadingNl||!keyValidated}>{isLoadingNl?<><Spin/> Buscando...</>:"🔍 Buscar Notícias da Semana"}</Btn>
             </div>
+            <PromptHelper
+              value={aiPrompts.search}
+              onChange={updateAiPrompt("search")}
+              label="REFINAMENTO DE BUSCA (opcional)"
+              placeholder="Ex: foque em regulamentação de IA no Brasil, novidades em agentes autônomos, ou lançamentos da Anthropic e OpenAI esta semana..."/>
             <div className="mono" style={{fontSize:".72rem",color:BRAND.mute}}>
               Fontes ativas: {newsSources.filter(s=>s.active).length} de {newsSources.length}
             </div>
@@ -2469,6 +2572,11 @@ ${t.slice(0,3000)}`,
               </div>
               <Btn onClick={wizardGenSummary} disabled={isGenSummary||!keyValidated||editorHeadlines.length===0}>{isGenSummary?<><Spin/> Gerando...</>:"✨ Gerar Resumo com IA"}</Btn>
             </div>
+            <PromptHelper
+              value={aiPrompts.summary}
+              onChange={updateAiPrompt("summary")}
+              label="ORIENTAÇÃO PARA O RESUMO (opcional)"
+              placeholder="Ex: dê mais peso ao impacto para desenvolvedores brasileiros, ou conecte os lançamentos da semana ao tema de agentes autônomos..."/>
             <div className="mono" style={{fontSize:".72rem",color:BRAND.mute}}>
               {editorHeadlines.length} manchetes selecionadas · {editorHeadlines.filter(h=>h.featured).length} em destaque
             </div>
@@ -2513,6 +2621,11 @@ ${t.slice(0,3000)}`,
               </div>
               <Btn onClick={generateFocusInsights} disabled={isGenInsights||!keyValidated||editorHeadlines.length===0}>{isGenInsights?<><Spin/> Gerando...</>:"✨ Gerar Insights com IA"}</Btn>
             </div>
+            <PromptHelper
+              value={aiPrompts.insights}
+              onChange={updateAiPrompt("insights")}
+              label="ORIENTAÇÃO PARA OS INSIGHTS (opcional)"
+              placeholder="Ex: em Produtividade, fale sobre Cursor e Claude Code; em Sistêmico, foque em padrões de RAG; em LLM, compare Claude e GPT na semana..."/>
           </div>
 
           {FOCUS_AREAS.map((area,i)=>{
@@ -2548,6 +2661,11 @@ ${t.slice(0,3000)}`,
             </div>
             <Input value={editorTitle} onChange={e=>setEditorTitle(e.target.value)} placeholder="Título magnético da edição"
               style={{fontFamily:"'Fraunces',serif",fontSize:"1.5rem",fontWeight:500,letterSpacing:"-.02em",padding:"16px 20px"}}/>
+            <PromptHelper
+              value={aiPrompts.title}
+              onChange={updateAiPrompt("title")}
+              label="ORIENTAÇÃO PARA O TÍTULO (opcional)"
+              placeholder="Ex: use uma metáfora de corrida, ou destaque o nome OpenAI, ou foque na palavra 'agentes'..."/>
           </div>
 
           <div className="card card-pad" style={{padding:24,marginBottom:24}}>
@@ -2557,6 +2675,11 @@ ${t.slice(0,3000)}`,
             </div>
             <TArea value={editorSubtitle} onChange={e=>setEditorSubtitle(e.target.value)} rows={3} placeholder="Tese editorial da semana — frase de impacto"
               style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.1rem"}}/>
+            <PromptHelper
+              value={aiPrompts.subtitle}
+              onChange={updateAiPrompt("subtitle")}
+              label="ORIENTAÇÃO PARA A FRASE DE IMPACTO (opcional)"
+              placeholder="Ex: comece com 'Enquanto', ou conecte os 3 maiores temas em uma única tese, ou faça uma provocação..."/>
           </div>
 
           <div style={{display:"flex",justifyContent:"space-between",gap:10}}>
@@ -2589,18 +2712,23 @@ ${t.slice(0,3000)}`,
             <div>
               <div className="card card-pad" style={{padding:20,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(197,57,28,.04))`}}>
                 <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>📥 UPLOAD DO ÁUDIO</div>
-                <Field label="Arquivo MP3 (até 25MB)" style={{marginBottom:12}}>
+                <Field label="Arquivo MP3 (até 50MB) — vai pro Supabase Storage" style={{marginBottom:12}}>
                   <input type="file" accept="audio/*" onChange={handleAudioUpload} style={{fontSize:".82rem"}}/>
                 </Field>
                 <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".6rem",textAlign:"center"}}>— OU —</div>
                 <Field label="URL pública do áudio">
-                  <Input value={editorAudioPodcastUrl} onChange={e=>{setEditorAudioPodcastUrl(e.target.value);setEditorAudioPodcastBlobRef("");}} placeholder="https://.../podcast.mp3"/>
+                  <Input value={isStorageUrl(editorAudioPodcastUrl)?"":editorAudioPodcastUrl} onChange={e=>{setEditorAudioPodcastUrl(e.target.value);setEditorAudioPodcastBlobRef("");}} placeholder="https://.../podcast.mp3"/>
                 </Field>
+                {isStorageUrl(editorAudioPodcastUrl) && <div style={{marginTop:8,padding:"6px 10px",background:`rgba(212,165,46,.1)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
+                  <span>📦</span>
+                  <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>STORAGE · {(storageUrlToPath(editorAudioPodcastUrl)||"").split("/").pop()}</span>
+                  <button onClick={async()=>{if(confirm("Apagar arquivo do Storage e desvincular do podcast?")){await storageApi.deleteByUrl(editorAudioPodcastUrl);setEditorAudioPodcastUrl("");setAudioUploadMsg("Arquivo removido do Storage.");}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
+                </div>}
                 {audioUploadMsg && <div className={audioUploadMsg.startsWith("✓")?"alert-ok":audioUploadMsg.startsWith("❌")?"alert-error":"alert-info"}>{audioUploadMsg}</div>}
                 {(editorAudioPodcastUrl||editorAudioPodcastBlobRef) && <div style={{marginTop:14}}>
                   <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".58rem"}}>PREVIEW</div>
                   {!editorAudioPodcastBlobRef && <AudioPlayer url={editorAudioPodcastUrl}/>}
-                  {editorAudioPodcastBlobRef && <div style={{fontSize:".82rem",color:BRAND.signal,fontStyle:"italic",padding:8,background:BRAND.paperDark,borderRadius:4}}>✓ Áudio salvo (preview no rascunho)</div>}
+                  {editorAudioPodcastBlobRef && <div style={{fontSize:".82rem",color:BRAND.signal,fontStyle:"italic",padding:8,background:BRAND.paperDark,borderRadius:4}}>✓ Áudio legado salvo (preview no rascunho)</div>}
                 </div>}
               </div>
 
@@ -2757,6 +2885,11 @@ ${t.slice(0,3000)}`,
               {podScript && <Btn size="sm" onClick={copyScript}>📋 Copiar</Btn>}
             </div>
           </div>
+          <PromptHelper
+            value={aiPrompts.script}
+            onChange={updateAiPrompt("script")}
+            label="ORIENTAÇÃO PARA O ROTEIRO (opcional)"
+            placeholder="Ex: abra com uma manchete chocante; use Cena 3 pra criticar o hype; encerre convidando pra newsletter; mantenha tom irreverente..."/>
           <TArea value={podScript} onChange={e=>setPodScript(e.target.value)} rows={14} placeholder="Roteiro será gerado com cenas marcadas para o HeyGen Studio. Edite à vontade depois..." style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".82rem",lineHeight:1.6}}/>
           <div style={{marginTop:8,fontSize:".78rem",color:BRAND.mute,fontStyle:"italic"}}>
             O roteiro usa marcadores [CENA N · Reação: animada · ~30s] e [QUEBRA · 1s]. Copie e cole cena por cena no HeyGen Studio.
@@ -2776,14 +2909,22 @@ ${t.slice(0,3000)}`,
           </div>
 
           <div className="card card-pad" style={{padding:22}}>
-            <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>D · VÍDEO HEYGEN</div>
-            <Field label="URL do vídeo gerado" style={{marginBottom:10}}>
-              <Input value={podVideoUrl} onChange={e=>{setPodVideoUrl(e.target.value);setPodVideoBlobRef("");}} placeholder="https://app.heygen.com/videos/..."/>
+            <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>D · VÍDEO (HEYGEN OU UPLOAD)</div>
+            <Field label="URL externa do vídeo (HeyGen, Vimeo, YouTube...)" style={{marginBottom:8}}>
+              <Input value={podVideoUrl && !isStorageUrl(podVideoUrl) ? podVideoUrl : ""} onChange={e=>{setPodVideoUrl(e.target.value);setPodVideoBlobRef("");}} placeholder="https://app.heygen.com/videos/..."/>
             </Field>
-            <Field label="Ou upload do .mp4 (até 30MB)" style={{marginBottom:10}}>
+            <div style={{fontSize:".74rem",color:BRAND.mute,fontStyle:"italic",marginBottom:10,padding:"4px 8px",borderLeft:`2px solid ${BRAND.rule}`}}>
+              — OU, se preferir não depender de URL externa —
+            </div>
+            <Field label="Upload do arquivo (.mp4 .webm .mov · até 250MB)" style={{marginBottom:8}}>
               <input type="file" accept="video/*" onChange={handlePodVideoUpload} style={{fontSize:".82rem"}}/>
-              {podVideoBlobRef && <div className="mono" style={{fontSize:".66rem",color:BRAND.signal,marginTop:5}}>✓ Vídeo carregado</div>}
             </Field>
+            {isStorageUrl(podVideoUrl) && <div style={{padding:"6px 10px",background:`rgba(212,165,46,.1)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,marginBottom:10,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
+              <span>📦</span>
+              <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>STORAGE · {(storageUrlToPath(podVideoUrl)||"").split("/").pop()}</span>
+              <button onClick={async()=>{if(confirm("Apagar este arquivo do Storage e desvincular do podcast?")){await storageApi.deleteByUrl(podVideoUrl);setPodVideoUrl("");}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
+            </div>}
+            {podVideoBlobRef && <div className="mono" style={{fontSize:".66rem",color:BRAND.signal,marginBottom:10}}>✓ Vídeo legado carregado (base64, formato antigo)</div>}
             <Field label="URL da thumbnail (opcional)" style={{marginBottom:10}}>
               <Input value={podThumbnailUrl} onChange={e=>setPodThumbnailUrl(e.target.value)} placeholder="https://...jpg"/>
             </Field>
