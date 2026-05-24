@@ -1,5 +1,11 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/claude", "destination": "/api/claude" }
-  ]
+    { "source": "/share/:date", "destination": "/api/share?date=:date" }
+  ],
+  "functions": {
+    "api/share.js": {
+      "maxDuration": 10
+    }
+  }
 }
