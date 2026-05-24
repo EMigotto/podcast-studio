@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sync·MI · Atualizações de IA para quem tem pouco tempo</title>
 <meta name="description" content="Newsletter e podcast semanais de IA — curados, sucintos, sem hype.">
+
+<!-- Open Graph / LinkedIn / Facebook (preview profissional padrão; episódios específicos usam /api/share) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sync·MI">
+<meta property="og:title" content="Sync·MI · Atualizações de IA para quem tem pouco tempo">
+<meta property="og:description" content="Newsletter e podcast semanais de IA — curados, sucintos, sem hype. Leia em 5 min, assista em 5 min.">
+<meta property="og:image" content="https://podcast-studio-lac.vercel.app/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sync·MI · Atualizações de IA para quem tem pouco tempo">
+<meta name="twitter:description" content="Newsletter e podcast semanais de IA — curados, sucintos, sem hype.">
+<meta name="twitter:image" content="https://podcast-studio-lac.vercel.app/og-default.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&family=Geist:wght@100..900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -13,6 +29,7 @@
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   :root{
@@ -133,6 +150,35 @@
   .card { background:var(--paper-light); border:1px solid var(--rule); border-radius:4px; overflow:hidden; box-shadow:var(--shadow); }
   .card-pad { padding:32px; }
   @media (max-width:640px) { .card-pad { padding:24px; } }
+
+  /* ═══ INSTAGRAM POST TEMPLATES (Social Studio) ═══ */
+  .ig-post{ position:relative; overflow:hidden; font-family:'Geist',sans-serif; width:100%; }
+  .ig-1-1{ aspect-ratio:1/1; }
+  .ig-9-16{ aspect-ratio:9/16; }
+  .ig-bg-paper{ background:var(--paper); color:var(--ink);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .08 0 0 0 0 .07 0 0 0 0 .05 0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .ig-bg-ink{ background:var(--ink); color:var(--paper);
+    background-image:radial-gradient(circle at 30% 20%, rgba(197,57,28,.25) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(212,165,46,.15) 0%, transparent 50%); }
+  .ig-bg-accent{ background:var(--accent); color:var(--paper); }
+  .ig-frame{ padding:7%; height:100%; display:flex; flex-direction:column; position:relative; }
+  .ig-corner{ display:flex; justify-content:space-between; align-items:center; font-family:'JetBrains Mono',monospace; font-size:.62rem; text-transform:uppercase; letter-spacing:.14em; opacity:.8; }
+  .ig-mark{ display:inline-flex; align-items:center; gap:6px; font-family:'Fraunces',serif; font-weight:500; font-size:.9rem; letter-spacing:-.01em; }
+  .ig-mark em{ font-style:italic; color:var(--accent); }
+  .ig-bg-ink .ig-mark em, .ig-bg-accent .ig-mark em{ color:var(--signal); }
+  .ig-mark-dot{ width:8px; height:8px; background:var(--accent); border-radius:50%; }
+  .ig-bg-ink .ig-mark-dot{ background:var(--signal); }
+  .ig-bg-accent .ig-mark-dot{ background:var(--paper); }
+  .ig-headline{ font-family:'Fraunces',serif; line-height:.95; letter-spacing:-.025em; margin:0; font-weight:400; }
+  .ig-headline em{ font-style:italic; color:var(--accent); }
+  .ig-bg-ink .ig-headline em{ color:var(--signal); }
+  .ig-bg-accent .ig-headline em{ color:var(--ink); }
+  .ig-tag{ display:inline-block; padding:5px 12px; border:1px solid currentColor; border-radius:100px; font-family:'JetBrains Mono',monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.14em; }
+  .ig-tag-fill{ background:var(--accent); color:var(--paper); border-color:transparent; }
+  .ig-bg-ink .ig-tag-fill{ background:var(--signal); color:var(--ink); }
+  .ig-wave{ display:flex; align-items:center; gap:2px; }
+  .ig-wave span{ flex:1; background:currentColor; opacity:.55; border-radius:1px; }
+  .ig-wave span:nth-child(3n){ background:var(--accent); opacity:1; }
+  .ig-bg-ink .ig-wave span:nth-child(3n){ background:var(--signal); }
 </style>
 </head>
 <body>
@@ -152,9 +198,8 @@ const { useState, useRef, useEffect, useCallback, useMemo, memo } = React;
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 
 // SUPABASE — cole aqui o URL e a anon key do seu projeto (Settings → API)
-const SUPABASE_URL =  "https://lmqwegtbwgvfumoaagag.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXdlZ3Rid2d2ZnVtb2FhZ2FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNzMzODgsImV4cCI6MjA5Mzg0OTM4OH0.rERsOrp1nrInxXhAqjTmk8w-qGacXcrcjlkGj7DjMPc";
-
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
 
 const sb = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true } })
@@ -170,6 +215,7 @@ const BRAND = {
 const ADMIN_TABS = [
   { id:"newsletter",  label:"Newsletter",    icon:"📰" },
   { id:"podcast",     label:"Podcast Semanal", icon:"🎬" },
+  { id:"divulgacao",  label:"Divulgação",    icon:"📣" },
   { id:"fontes",      label:"Fontes",        icon:"📡" },
   { id:"audiencia",   label:"Audiência",     icon:"📊" },
   { id:"diagnostico", label:"Configurações", icon:"⚙️" },
@@ -1160,6 +1206,7 @@ function PublicNewsletter(){
   const [commentsOpen,setCommentsOpen] = useState(false);
   const [commentCount,setCommentCount] = useState(0);
   const [shareCopied,setShareCopied] = useState(false);
+  const [lightboxOpen,setLightboxOpen] = useState(false);
 
   useEffect(()=>{(async()=>{
     const items = await db.listNewsletters();
@@ -1276,9 +1323,23 @@ function PublicNewsletter(){
           </div>
         </section>}
 
+        {/* INFOGRÁFICO DO EPISÓDIO */}
+        {current.infographicUrl && <section style={{marginBottom:64}}>
+          <SectionLabel num="02">Infográfico</SectionLabel>
+          <figure style={{margin:0}}>
+            <div onClick={()=>setLightboxOpen(true)} style={{cursor:"zoom-in",borderRadius:10,overflow:"hidden",border:`1px solid ${BRAND.rule}`,boxShadow:"0 20px 60px -30px rgba(20,17,13,.4)",position:"relative",background:BRAND.paperLight}}>
+              <img src={current.infographicUrl} alt={current.infographicCaption||"Infográfico do episódio"} style={{width:"100%",display:"block"}}/>
+              <div className="mono small-caps" style={{position:"absolute",top:14,right:14,background:"rgba(20,17,13,.78)",color:BRAND.paper,padding:"6px 12px",borderRadius:100,fontSize:".58rem",letterSpacing:".12em",backdropFilter:"blur(4px)"}}>🔍 Ampliar</div>
+            </div>
+            {current.infographicCaption && <figcaption style={{marginTop:14,fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:".98rem",color:BRAND.mute,textAlign:"center"}}>
+              {current.infographicCaption}
+            </figcaption>}
+          </figure>
+        </section>}
+
         {/* COMPANIES + TOPICS CHIPS */}
         {(current.companies?.length>0 || current.topics?.length>0) && <section style={{marginBottom:64}}>
-          <SectionLabel num="02">Em Discussão</SectionLabel>
+          <SectionLabel num={current.infographicUrl?"03":"02"}>Em Discussão</SectionLabel>
           <div className="card card-pad" style={{padding:32}}>
             {current.companies?.length>0 && <div style={{marginBottom: current.topics?.length>0 ? 20 : 0}}>
               <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:10}}>EMPRESAS</div>
@@ -1297,7 +1358,7 @@ function PublicNewsletter(){
 
         {/* FOCUS INSIGHTS */}
         {current.focusInsights?.length>0 && <section style={{marginBottom:64}}>
-          <SectionLabel num="03">Temas em Destaque</SectionLabel>
+          <SectionLabel num={current.infographicUrl?"04":"03"}>Temas em Destaque</SectionLabel>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:18}}>
             {FOCUS_AREAS.map((area,i)=>{
               const ins = current.focusInsights.find(x=>x.area===area.id);
@@ -1318,7 +1379,7 @@ function PublicNewsletter(){
 
         {/* HEADLINES */}
         {current.headlines?.length>0 && <section style={{marginBottom:64}}>
-          <SectionLabel num="04">Notícias da Semana</SectionLabel>
+          <SectionLabel num={current.infographicUrl?"05":"04"}>Notícias da Semana</SectionLabel>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(360px, 1fr))",gap:18}}>
             {current.headlines.map((h,i)=>{
               const featured = i===0;
@@ -1364,6 +1425,12 @@ function PublicNewsletter(){
     {current && <button onClick={()=>setCommentsOpen(true)} style={{position:"fixed",bottom:24,right:24,zIndex:100,background:BRAND.ink,color:BRAND.paper,border:"none",borderRadius:50,padding:"14px 22px",fontSize:".88rem",fontWeight:500,fontFamily:"'Geist',sans-serif",cursor:"pointer",boxShadow:"0 6px 20px rgba(20,17,13,.3)",display:"flex",alignItems:"center",gap:8}}>💬 {commentCount>0?commentCount:""}</button>}
 
     <CommentsSidebar open={commentsOpen} onClose={()=>setCommentsOpen(false)} newsletterDate={selectedDate}/>
+
+    {/* INFOGRAPHIC LIGHTBOX */}
+    {lightboxOpen && current?.infographicUrl && <div onClick={()=>setLightboxOpen(false)} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(20,17,13,.92)",display:"flex",alignItems:"center",justifyContent:"center",padding:"4vh 4vw",cursor:"zoom-out",backdropFilter:"blur(6px)"}}>
+      <button onClick={()=>setLightboxOpen(false)} style={{position:"absolute",top:20,right:24,background:"transparent",border:"none",color:BRAND.paper,fontSize:"2rem",cursor:"pointer",lineHeight:1}}>×</button>
+      <img src={current.infographicUrl} alt={current.infographicCaption||"Infográfico"} onClick={e=>e.stopPropagation()} style={{maxWidth:"100%",maxHeight:"92vh",objectFit:"contain",borderRadius:8,boxShadow:"0 30px 80px -20px rgba(0,0,0,.6)",cursor:"default"}}/>
+    </div>}
   </>;
 }
 
@@ -1776,6 +1843,274 @@ function AudiencePanel(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SOCIAL STUDIO — Instagram post templates + LinkedIn post generator
+// ═══════════════════════════════════════════════════════════════════════════
+const IG_POST_TYPES = [
+  { id:"cover-ink",    label:"Capa · Ink",        group:"Capa de Episódio", aspect:"1/1",  bg:"ink"    },
+  { id:"cover-paper",  label:"Capa · Paper",      group:"Capa de Episódio", aspect:"1/1",  bg:"paper"  },
+  { id:"cover-accent", label:"Capa · Accent",     group:"Capa de Episódio", aspect:"1/1",  bg:"accent" },
+  { id:"quote",        label:"Quote Card",        group:"Citação",          aspect:"1/1",  bg:"paper"  },
+  { id:"stat",         label:"Dado em Destaque",  group:"Citação",          aspect:"1/1",  bg:"ink"    },
+  { id:"reels",        label:"Reels / Story",     group:"Vertical 9:16",    aspect:"9/16", bg:"ink"    },
+  { id:"infographic",  label:"Infográfico",       group:"Imagem",           aspect:"auto", bg:"paper"  },
+];
+
+function SocialStudio({ apiKey, keyValidated, newsletters }){
+  const [selDate,setSelDate] = useState("");
+  const [postType,setPostType] = useState("cover-ink");
+  const [igCaption,setIgCaption] = useState("");
+  const [liPost,setLiPost] = useState("");
+  const [genState,setGenState] = useState("");
+  const [msg,setMsg] = useState({type:"",text:""});
+  const [copied,setCopied] = useState("");
+  const postRef = useRef(null);
+
+  const eps = useMemo(()=>(newsletters||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")),[newsletters]);
+  useEffect(()=>{ if(eps.length>0 && !selDate) setSelDate(eps[0].date); },[eps,selDate]);
+
+  const ep = eps.find(e=>e.date===selDate);
+  // Edition number = chronological position (oldest = 1)
+  const epNum = useMemo(()=>{
+    if(!ep) return 1;
+    const asc = (newsletters||[]).slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+    return asc.findIndex(n=>n.date===ep.date)+1;
+  },[ep,newsletters]);
+
+  const epUrl = ep ? `${window.location.origin}/?view=public&date=${ep.date}` : "";
+  const shareUrl = ep ? `${window.location.origin}/api/share?date=${ep.date}` : "";
+
+  // Pull the top featured headline + a stat-ish topic for templates
+  const topHeadline = ep?.headlines?.find(h=>h.featured) || ep?.headlines?.[0];
+  const firstTopic = ep?.topics?.[0] || ep?.companies?.[0] || "IA";
+
+  const curType = IG_POST_TYPES.find(t=>t.id===postType) || IG_POST_TYPES[0];
+
+  const copyText = (text,key) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key); setTimeout(()=>setCopied(""),1800);
+  };
+
+  const downloadPng = async () => {
+    if(!postRef.current){return;}
+    if(typeof html2canvas==="undefined"){setMsg({type:"err",text:"html2canvas não carregou. Recarregue a página."});return;}
+    setMsg({type:"info",text:"⏳ Gerando PNG em alta resolução..."});
+    try {
+      const node = postRef.current;
+      const canvas = await html2canvas(node,{scale:3,backgroundColor:null,useCORS:true,logging:false});
+      const link = document.createElement("a");
+      link.download = `syncmi-${ep?.date||"post"}-${postType}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      setMsg({type:"ok",text:"✓ PNG baixado! Poste no Instagram."});
+    } catch(err){setMsg({type:"err",text:"Erro ao gerar PNG: "+err.message});}
+  };
+
+  const genCaption = async () => {
+    if(!keyValidated){setMsg({type:"err",text:"Configure a chave Anthropic em Configurações."});return;}
+    if(!ep){setMsg({type:"err",text:"Selecione um episódio."});return;}
+    setGenState("ig"); setMsg({type:"",text:""});
+    try {
+      const ctx = `Título: ${ep.title}\nSubtítulo: ${ep.subtitle||""}\nResumo: ${(ep.aiSummary||"").slice(0,1200)}\nTemas: ${(ep.topics||[]).join(", ")}\nEmpresas: ${(ep.companies||[]).join(", ")}`;
+      const t = await callClaude(apiKey,
+        `Crie uma LEGENDA para post de Instagram sobre este episódio de newsletter de IA.\nTom: direto, entusiasta, sem hype exagerado. Português brasileiro.\nEstrutura: gancho forte na 1ª linha; 2-3 frases de valor; convite pra ler/assistir; 1 linha com 4-6 hashtags relevantes de IA.\nUse no máximo 3 emojis bem colocados. Não use markdown.\n\nEPISÓDIO:\n${ctx}`,
+        false, 700);
+      setIgCaption(t.trim());
+      setMsg({type:"ok",text:"✓ Legenda do Instagram gerada!"});
+    } catch(err){setMsg({type:"err",text:"Erro: "+err.message});}
+    setGenState("");
+  };
+
+  const genLinkedin = async () => {
+    if(!keyValidated){setMsg({type:"err",text:"Configure a chave Anthropic em Configurações."});return;}
+    if(!ep){setMsg({type:"err",text:"Selecione um episódio."});return;}
+    setGenState("li"); setMsg({type:"",text:""});
+    try {
+      const ctx = `Título: ${ep.title}\nSubtítulo: ${ep.subtitle||""}\nResumo: ${(ep.aiSummary||"").slice(0,1500)}\nTemas: ${(ep.topics||[]).join(", ")}\nEmpresas: ${(ep.companies||[]).join(", ")}`;
+      const t = await callClaude(apiKey,
+        `Crie um POST PARA LINKEDIN sobre este episódio de uma newsletter/podcast de IA chamada Sync·MI.\nTom: profissional, entusiasta, instigante — adequado a um feed executivo de tecnologia. Português brasileiro.\nEstrutura: gancho de 1 linha que para o scroll; 3-4 frases sucintas com os destaques mais relevantes (pode usar bullets com "→"); fechamento convidando a ler a edição completa; 3-5 hashtags profissionais no fim.\nNÃO inclua a URL no corpo (ela será anexada automaticamente como preview). Não use markdown de negrito. Máximo ~140 palavras.\n\nEPISÓDIO:\n${ctx}`,
+        false, 700);
+      setLiPost(t.trim());
+      setMsg({type:"ok",text:"✓ Post do LinkedIn gerado!"});
+    } catch(err){setMsg({type:"err",text:"Erro: "+err.message});}
+    setGenState("");
+  };
+
+  // ─── Render the selected Instagram post template ───
+  const renderPost = () => {
+    if(!ep) return null;
+    const dateStr = fmtDateMag(ep.date);
+    const mark = <span className="ig-mark"><span className="ig-mark-dot"></span> Sync<em>·MI</em></span>;
+    const waveBars = Array.from({length:32},(_,i)=>15+Math.abs(Math.sin(i*.55))*82);
+
+    if(postType==="cover-ink"){
+      return <div className="ig-post ig-1-1 ig-bg-ink"><div className="ig-frame">
+        <div className="ig-corner">{mark}<span>EP.{padNum(epNum)} · {dateStr}</span></div>
+        <div style={{flex:1,display:"flex",alignItems:"center"}}><div>
+          <div className="ig-tag ig-tag-fill" style={{marginBottom:18}}>▲ Novo Episódio</div>
+          <h2 className="ig-headline" style={{fontSize:"clamp(1.6rem,5.5vw,2.7rem)"}}>{ep.title}</h2>
+          {ep.subtitle && <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1rem",opacity:.85,marginTop:14,maxWidth:"32ch"}}>{ep.subtitle}</p>}
+        </div></div>
+        <div className="ig-corner">
+          <div className="ig-wave" style={{width:"55%",height:22}}>{waveBars.map((h,i)=><span key={i} style={{height:`${h}%`}}/>)}</div>
+          <span>5 MIN · IA</span>
+        </div>
+      </div></div>;
+    }
+    if(postType==="cover-paper"){
+      return <div className="ig-post ig-1-1 ig-bg-paper"><div className="ig-frame">
+        <div className="ig-corner">{mark}<span style={{color:"var(--mute)"}}>EP.{padNum(epNum)} · {dateStr}</span></div>
+        <div style={{flex:1,display:"flex",alignItems:"center"}}><div>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".62rem",letterSpacing:".18em",textTransform:"uppercase",color:"var(--accent)",marginBottom:16}}>▲ EP.{padNum(epNum)} no ar</div>
+          <h2 className="ig-headline" style={{fontSize:"clamp(1.5rem,5vw,2.5rem)"}}>{ep.title}</h2>
+          {ep.subtitle && <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1rem",color:"var(--ink-soft)",marginTop:16,maxWidth:"32ch"}}>{ep.subtitle}</p>}
+        </div></div>
+        <div className="ig-corner"><span style={{color:"var(--mute)"}}>SYNCMI.COM</span><span className="ig-tag">LINK NA BIO →</span></div>
+      </div></div>;
+    }
+    if(postType==="cover-accent"){
+      return <div className="ig-post ig-1-1 ig-bg-accent"><div className="ig-frame">
+        <div className="ig-corner" style={{color:"var(--paper)"}}><span className="ig-mark" style={{color:"var(--paper)"}}><span className="ig-mark-dot" style={{background:"var(--paper)"}}></span> Sync<em style={{color:"var(--ink)"}}>·MI</em></span><span>▲ NOVO</span></div>
+        <div style={{flex:1,display:"flex",alignItems:"center"}}>
+          <h2 className="ig-headline" style={{fontSize:"clamp(1.7rem,6vw,3rem)",color:"var(--paper)"}}>{ep.title}</h2>
+        </div>
+        <div className="ig-corner" style={{color:"var(--paper)"}}><span>EP.{padNum(epNum)} · LINK NA BIO</span><span>↗</span></div>
+      </div></div>;
+    }
+    if(postType==="quote"){
+      const quote = ep.subtitle || topHeadline?.title || ep.title;
+      return <div className="ig-post ig-1-1 ig-bg-paper"><div className="ig-frame">
+        <div className="ig-corner"><span>CITAÇÃO</span><span>№ {padNum(epNum)}</span></div>
+        <div style={{flex:1,display:"flex",alignItems:"center"}}>
+          <h3 style={{fontFamily:"'Fraunces',serif",fontSize:"clamp(1.4rem,4.5vw,2rem)",letterSpacing:"-.02em",lineHeight:1.1,margin:0}}>“{quote}”</h3>
+        </div>
+        <div className="ig-corner">{mark}<span style={{color:"var(--mute)"}}>EP.{padNum(epNum)}</span></div>
+      </div></div>;
+    }
+    if(postType==="stat"){
+      return <div className="ig-post ig-1-1 ig-bg-ink"><div className="ig-frame">
+        <div className="ig-corner">{mark}<span>EP.{padNum(epNum)}</span></div>
+        <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".6rem",letterSpacing:".2em",textTransform:"uppercase",color:"var(--signal)",marginBottom:14}}>O TEMA DA SEMANA</div>
+          <h2 className="ig-headline" style={{fontSize:"clamp(1.8rem,6vw,2.8rem)"}}>{firstTopic}</h2>
+          {topHeadline && <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:".98rem",opacity:.82,marginTop:16,maxWidth:"34ch"}}>{topHeadline.summary?.slice(0,120)}</p>}
+        </div>
+        <div className="ig-corner"><span>SYNC·MI · 5MIN</span><span>↗ LINK NA BIO</span></div>
+      </div></div>;
+    }
+    if(postType==="reels"){
+      return <div className="ig-post ig-9-16 ig-bg-ink"><div className="ig-frame">
+        <div className="ig-corner">{mark}<span>EP.{padNum(epNum)}</span></div>
+        <div style={{flex:1,display:"flex",alignItems:"center"}}><div>
+          <div className="ig-tag ig-tag-fill" style={{marginBottom:18}}>▲ Esta semana em IA</div>
+          <h2 className="ig-headline" style={{fontSize:"clamp(1.8rem,7vw,2.6rem)"}}>{ep.title}</h2>
+          {ep.subtitle && <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"1.05rem",opacity:.85,marginTop:18}}>{ep.subtitle}</p>}
+        </div></div>
+        <div style={{textAlign:"center"}}>
+          <div className="ig-wave" style={{height:30,marginBottom:14}}>{waveBars.map((h,i)=><span key={i} style={{height:`${h}%`}}/>)}</div>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".62rem",letterSpacing:".18em",textTransform:"uppercase",opacity:.7}}>deslize ↑ · link na bio</div>
+        </div>
+      </div></div>;
+    }
+    if(postType==="infographic"){
+      if(!ep.infographicUrl) return <div style={{padding:60,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:8,color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif"}}>Este episódio não tem infográfico. Suba um no Passo 5 da Newsletter.</div>;
+      return <div className="ig-post ig-bg-paper" style={{aspectRatio:"auto"}}><div style={{padding:"4%"}}>
+        <div className="ig-corner" style={{marginBottom:12}}>{mark}<span style={{color:"var(--mute)"}}>EP.{padNum(epNum)} · {dateStr}</span></div>
+        <img src={ep.infographicUrl} alt="infográfico" crossOrigin="anonymous" style={{width:"100%",display:"block",borderRadius:4}}/>
+      </div></div>;
+    }
+    return null;
+  };
+
+  if(eps.length===0){
+    return <div className="fade"><SectionLabel num="📣">Divulgação</SectionLabel>
+      <div style={{padding:60,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:8,color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif",fontSize:"1.15rem"}}>Publique uma edição primeiro para gerar posts.</div>
+    </div>;
+  }
+
+  return <div className="fade">
+    <SectionLabel num="📣">Divulgação</SectionLabel>
+    <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",color:BRAND.inkSoft,fontSize:"1.05rem",marginTop:-24,marginBottom:24}}>
+      Gere posts do Instagram (baixe o PNG pronto) e o texto para LinkedIn com preview profissional do link.
+    </p>
+
+    {/* Episode picker */}
+    <div className="card card-pad" style={{padding:20,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(212,165,46,.06))`}}>
+      <Field label="Episódio">
+        <select value={selDate} onChange={e=>setSelDate(e.target.value)} style={{width:"100%",maxWidth:480}}>
+          {eps.map(e=><option key={e.date} value={e.date}>EP.{String((newsletters||[]).slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).findIndex(n=>n.date===e.date)+1).padStart(2,"0")} · {fmtDate(e.date)} · {e.title}</option>)}
+        </select>
+      </Field>
+    </div>
+
+    {msg.text && <div className={msg.type==="ok"?"alert-ok":msg.type==="err"?"alert-error":"alert-info"} style={{marginBottom:18}}>{msg.text}</div>}
+
+    <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:24,alignItems:"start"}}>
+      {/* LEFT: Instagram studio */}
+      <div className="card card-pad" style={{padding:24}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>📸 POST DO INSTAGRAM</div>
+        <Field label="Tipo de post" style={{marginBottom:16}}>
+          <select value={postType} onChange={e=>setPostType(e.target.value)} style={{width:"100%"}}>
+            {IG_POST_TYPES.map(t=><option key={t.id} value={t.id}>{t.group} · {t.label}</option>)}
+          </select>
+        </Field>
+
+        {/* The rendered post — captured by html2canvas */}
+        <div style={{maxWidth:curType.aspect==="9/16"?300:380,margin:"0 auto 16px"}}>
+          <div ref={postRef}>{renderPost()}</div>
+        </div>
+
+        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+          <Btn size="sm" onClick={downloadPng}>⬇ Baixar PNG</Btn>
+          <Btn size="sm" variant="ghost" onClick={genCaption} disabled={genState==="ig"||!keyValidated}>{genState==="ig"?<><Spin/> Gerando...</>:"✨ Gerar legenda"}</Btn>
+        </div>
+
+        {igCaption && <div style={{marginTop:16}}>
+          <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".6rem"}}>LEGENDA</div>
+          <TArea value={igCaption} onChange={e=>setIgCaption(e.target.value)} rows={7} style={{fontSize:".88rem",lineHeight:1.5}}/>
+          <Btn size="sm" variant="ghost" onClick={()=>copyText(igCaption,"igcap")} style={{marginTop:8}}>{copied==="igcap"?"✓ Copiado":"📋 Copiar legenda"}</Btn>
+        </div>}
+      </div>
+
+      {/* RIGHT: LinkedIn */}
+      <div className="card card-pad" style={{padding:24}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>💼 POST DO LINKEDIN</div>
+
+        {/* Link preview mock — how it appears on LinkedIn */}
+        <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".6rem"}}>PREVIEW DO LINK (como aparece no LinkedIn)</div>
+        <div style={{border:`1px solid ${BRAND.rule}`,borderRadius:8,overflow:"hidden",marginBottom:16,background:BRAND.paper}}>
+          {ep?.infographicUrl
+            ? <img src={ep.infographicUrl} alt="preview" style={{width:"100%",display:"block",maxHeight:200,objectFit:"cover"}}/>
+            : <div style={{height:120,display:"flex",alignItems:"center",justifyContent:"center",background:BRAND.ink,color:BRAND.paper,fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:".9rem",textAlign:"center",padding:20}}>Sem infográfico — usará a imagem padrão da marca</div>}
+          <div style={{padding:"10px 14px"}}>
+            <div style={{fontWeight:600,fontSize:".88rem",color:BRAND.ink,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ep?.title}</div>
+            <div style={{fontSize:".74rem",color:BRAND.mute,fontFamily:"'JetBrains Mono',monospace"}}>{(window.location.host||"podcast-studio-lac.vercel.app")}</div>
+          </div>
+        </div>
+
+        <Btn size="sm" variant="ghost" onClick={genLinkedin} disabled={genState==="li"||!keyValidated}>{genState==="li"?<><Spin/> Gerando...</>:"✨ Gerar post do LinkedIn"}</Btn>
+
+        {liPost && <div style={{marginTop:16}}>
+          <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".6rem"}}>TEXTO DO POST</div>
+          <TArea value={liPost} onChange={e=>setLiPost(e.target.value)} rows={9} style={{fontSize:".88rem",lineHeight:1.5}}/>
+          <Btn size="sm" variant="ghost" onClick={()=>copyText(liPost+"\n\n"+shareUrl,"lipost")} style={{marginTop:8}}>{copied==="lipost"?"✓ Copiado com link":"📋 Copiar post + link"}</Btn>
+        </div>}
+
+        <div style={{marginTop:18,paddingTop:16,borderTop:`1px solid ${BRAND.rule}`}}>
+          <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".6rem"}}>LINK COMPARTILHÁVEL (preview rico)</div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <Input value={shareUrl} readOnly style={{fontSize:".78rem",fontFamily:"'JetBrains Mono',monospace"}}/>
+            <Btn size="sm" variant="ghost" onClick={()=>copyText(shareUrl,"share")}>{copied==="share"?"✓":"📋"}</Btn>
+          </div>
+          <p style={{fontSize:".74rem",color:BRAND.mute,marginTop:8,lineHeight:1.5}}>
+            Este link (<code>/api/share</code>) gera o card com imagem ao colar no LinkedIn. Requer a função serverless <code>api/share.js</code> publicada (veja SETUP.md). O link direto do episódio também funciona: <a href={epUrl} target="_blank" rel="noreferrer" style={{color:BRAND.accent}}>abrir página</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ADMIN APP (editorial style)
 // ═══════════════════════════════════════════════════════════════════════════
 function AdminApp({ session, onLogout }){
@@ -1818,6 +2153,9 @@ function AdminApp({ session, onLogout }){
   const [editorPodcastHighlights,setEditorPodcastHighlights] = useState("");
   const [editorAudioPodcastUrl,setEditorAudioPodcastUrl] = useState("");
   const [editorAudioPodcastBlobRef,setEditorAudioPodcastBlobRef] = useState("");
+  const [editorInfographicUrl,setEditorInfographicUrl] = useState("");
+  const [editorInfographicCaption,setEditorInfographicCaption] = useState("");
+  const [infographicUploadMsg,setInfographicUploadMsg] = useState("");
   const [editorCompanies,setEditorCompanies] = useState([]);
   const [editorTopics,setEditorTopics] = useState([]);
   const [isLoadingNl,setIsLoadingNl] = useState(false);
@@ -1901,6 +2239,7 @@ function AdminApp({ session, onLogout }){
         setEditorPodcastAspect(ex.podcastAspectRatio||"9/16");
         setEditorPodcastHighlights(ex.podcastHighlights||"");
         setEditorAudioPodcastUrl(ex.audioPodcastUrl||""); setEditorAudioPodcastBlobRef(ex.audioPodcastBlobRef||"");
+        setEditorInfographicUrl(ex.infographicUrl||""); setEditorInfographicCaption(ex.infographicCaption||"");
         setEditorCompanies(ex.companies||[]); setEditorTopics(ex.topics||[]);
         if(ex.podcastExpiresAt){const days=Math.max(1,Math.round((ex.podcastExpiresAt-Date.now())/86400000));setEditorPodcastTtlDays(days);}
       } else {
@@ -1910,6 +2249,7 @@ function AdminApp({ session, onLogout }){
         setEditorPodcastTitle(""); setEditorPodcastDuration(15);
         setEditorPodcastAspect("9/16"); setEditorPodcastHighlights("");
         setEditorAudioPodcastUrl(""); setEditorAudioPodcastBlobRef("");
+        setEditorInfographicUrl(""); setEditorInfographicCaption("");
         setEditorCompanies([]); setEditorTopics([]);
       }
     })();
@@ -2069,6 +2409,7 @@ function AdminApp({ session, onLogout }){
       podcastExpiresAt:expiresAt, podcastAspectRatio:editorPodcastAspect,
       podcastHighlights:editorPodcastHighlights,
       audioPodcastUrl:editorAudioPodcastUrl, audioPodcastBlobRef:editorAudioPodcastBlobRef,
+      infographicUrl:editorInfographicUrl, infographicCaption:editorInfographicCaption,
       companies:editorCompanies, topics:editorTopics,
       updatedAt:Date.now(),
     };
@@ -2084,6 +2425,7 @@ function AdminApp({ session, onLogout }){
     if(ex?.audioPodcastBlobRef) await db.delete(ex.audioPodcastBlobRef);
     if(isStorageUrl(ex?.audioPodcastUrl)) await storageApi.deleteByUrl(ex.audioPodcastUrl);
     if(isStorageUrl(ex?.podcastUrl)) await storageApi.deleteByUrl(ex.podcastUrl);
+    if(isStorageUrl(ex?.infographicUrl)) await storageApi.deleteByUrl(ex.infographicUrl);
     await db.delete(`newsletter:${d}`);
     setNewsletters(await db.listNewsletters());
     setNlSuccess("Apagada");
@@ -2118,6 +2460,23 @@ function AdminApp({ session, onLogout }){
       setEditorAudioPodcastBlobRef("");        // ← clear legacy blobRef
       setAudioUploadMsg(`✓ Áudio enviado (${sizeStr}). Aparece no rascunho e na newsletter pública.`);
     } catch(err){setAudioUploadMsg(`❌ Falha no upload: ${err.message}`);}
+  };
+
+  const handleInfographicUpload = async (e) => {
+    const f = e.target.files?.[0]; if(!f) return;
+    const MB = 1024*1024;
+    const MAX_MB = 10;
+    if(!/^image\//.test(f.type)){setInfographicUploadMsg("❌ Selecione um arquivo de imagem (PNG, JPG, WEBP).");return;}
+    if(f.size > MAX_MB*MB){setInfographicUploadMsg(`❌ Imagem de ${(f.size/MB).toFixed(1)}MB excede ${MAX_MB}MB. Exporte em resolução menor.`);return;}
+    if(!storageApi.available()){setInfographicUploadMsg("❌ Supabase Storage não configurado. Use o campo URL.");return;}
+    const sizeStr = (f.size/MB).toFixed(1) + "MB";
+    setInfographicUploadMsg(`⏳ Enviando infográfico (${sizeStr})...`);
+    try {
+      if(isStorageUrl(editorInfographicUrl)) await storageApi.deleteByUrl(editorInfographicUrl);
+      const { url } = await storageApi.upload(f, "image");
+      setEditorInfographicUrl(url);
+      setInfographicUploadMsg(`✓ Infográfico enviado (${sizeStr}). Aparece na página do episódio.`);
+    } catch(err){setInfographicUploadMsg(`❌ Falha no upload: ${err.message}`);}
   };
 
   // News sources handlers
@@ -2295,6 +2654,7 @@ Retorne APENAS o resumo, em português brasileiro.`,
       podcastExpiresAt:expiresAt, podcastAspectRatio:editorPodcastAspect,
       podcastHighlights:editorPodcastHighlights,
       audioPodcastUrl:editorAudioPodcastUrl, audioPodcastBlobRef:editorAudioPodcastBlobRef,
+      infographicUrl:editorInfographicUrl, infographicCaption:editorInfographicCaption,
       companies:editorCompanies, topics:editorTopics,
       updatedAt:Date.now(),
     };
@@ -2732,6 +3092,33 @@ ${t.slice(0,3000)}`,
                 </div>}
               </div>
 
+              <div className="card card-pad" style={{padding:20,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(212,165,46,.07))`}}>
+                <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>📊 INFOGRÁFICO DO EPISÓDIO</div>
+                <p style={{fontSize:".8rem",color:BRAND.inkSoft,marginBottom:12,lineHeight:1.5}}>
+                  Imagem visual (ex: gerada no NotebookLM) que resume o episódio. Aparece em destaque na página pública e vira o preview do link no LinkedIn.
+                </p>
+                <Field label="Arquivo de imagem (PNG/JPG/WEBP · até 10MB)" style={{marginBottom:12}}>
+                  <input type="file" accept="image/*" onChange={handleInfographicUpload} style={{fontSize:".82rem"}}/>
+                </Field>
+                <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8,fontSize:".6rem",textAlign:"center"}}>— OU —</div>
+                <Field label="URL pública da imagem" style={{marginBottom:12}}>
+                  <Input value={isStorageUrl(editorInfographicUrl)?"":editorInfographicUrl} onChange={e=>setEditorInfographicUrl(e.target.value)} placeholder="https://.../infografico.png"/>
+                </Field>
+                <Field label="Legenda (opcional)">
+                  <Input value={editorInfographicCaption} onChange={e=>setEditorInfographicCaption(e.target.value)} placeholder="O Estado da IA em 2026 · principais movimentos da semana"/>
+                </Field>
+                {isStorageUrl(editorInfographicUrl) && <div style={{marginTop:8,padding:"6px 10px",background:`rgba(212,165,46,.12)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
+                  <span>📦</span>
+                  <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>STORAGE · {(storageUrlToPath(editorInfographicUrl)||"").split("/").pop()}</span>
+                  <button onClick={async()=>{if(confirm("Apagar imagem do Storage e desvincular do episódio?")){await storageApi.deleteByUrl(editorInfographicUrl);setEditorInfographicUrl("");setInfographicUploadMsg("Imagem removida do Storage.");}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
+                </div>}
+                {infographicUploadMsg && <div className={infographicUploadMsg.startsWith("✓")?"alert-ok":infographicUploadMsg.startsWith("❌")?"alert-error":"alert-info"}>{infographicUploadMsg}</div>}
+                {editorInfographicUrl && <div style={{marginTop:14}}>
+                  <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:6,fontSize:".58rem"}}>PREVIEW</div>
+                  <img src={editorInfographicUrl} alt="Infográfico" style={{width:"100%",borderRadius:8,border:`1px solid ${BRAND.rule}`,display:"block"}}/>
+                </div>}
+              </div>
+
               <div className="card card-pad" style={{padding:16}}>
                 <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:8}}>📖 INSTRUÇÕES</div>
                 <ol style={{margin:0,paddingLeft:18,fontSize:".82rem",lineHeight:1.5,color:BRAND.inkSoft}}>
@@ -2989,9 +3376,11 @@ ${t.slice(0,3000)}`,
         </div>
       </div>}
 
+      {/* TAB 2: DIVULGAÇÃO (Social Studio) */}
+      {tab===2 && <SocialStudio apiKey={apiKey} keyValidated={keyValidated} newsletters={newsletters}/>}
 
-      {/* TAB 2: FONTES */}
-      {tab===2 && <div className="fade">
+      {/* TAB 3: FONTES */}
+      {tab===3 && <div className="fade">
         <SectionLabel num="📡">Fontes de Notícias</SectionLabel>
         <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",color:BRAND.inkSoft,fontSize:"1.05rem",marginTop:-24,marginBottom:24}}>
           Fontes que a IA prioriza ao buscar manchetes no Passo 1 da Newsletter. O catálogo padrão tem <strong>{DEFAULT_SOURCES.length}</strong> fontes (Brasil, internacional, labs de IA, podcasts e dev).
@@ -3057,11 +3446,11 @@ ${t.slice(0,3000)}`,
           })()}
       </div>}
 
-      {/* TAB 3: AUDIÊNCIA */}
-      {tab===3 && <AudiencePanel/>}
+      {/* TAB 4: AUDIÊNCIA */}
+      {tab===4 && <AudiencePanel/>}
 
-      {/* TAB 4: CONFIGURAÇÕES */}
-      {tab===4 && <div className="fade">
+      {/* TAB 5: CONFIGURAÇÕES */}
+      {tab===5 && <div className="fade">
         <SectionLabel num="⚙️">Configurações</SectionLabel>
 
         {!SB_OK && <div className="alert-error" style={{marginBottom:24}}>
@@ -3095,8 +3484,8 @@ ${t.slice(0,3000)}`,
         </div>
       </div>}
 
-      {/* TAB 5: ARQUIVO */}
-      {tab===5 && <div className="fade">
+      {/* TAB 6: ARQUIVO */}
+      {tab===6 && <div className="fade">
         <SectionLabel num="📚">Arquivo de Edições</SectionLabel>
         {newsletters.length===0 ? <div style={{padding:80,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4,color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif",fontSize:"1.2rem"}}>Nenhuma edição publicada ainda</div>
         : <div style={{borderTop:`1px solid ${BRAND.ink}`}}>
