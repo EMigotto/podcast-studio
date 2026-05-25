@@ -8,23 +8,20 @@
 // to the real SPA page; crawlers read the tags and render a professional card.
 //
 // USAGE: link people to  https://SEU-DOMINIO/api/share?date=2026-05-19
-//        (the admin "Divulgação" tab generates this link for you)
 //
-// SETUP: set these two Environment Variables in Vercel (Project → Settings → Env):
-//   SUPABASE_URL       = https://xxxx.supabase.co
-//   SUPABASE_ANON_KEY  = eyJ...   (the public anon key — same as in index.html)
-// Or hardcode them in the two consts just below.
+// SETUP: set env vars in Vercel (Production): SUPABASE_URL, SUPABASE_ANON_KEY.
+// After adding/changing env vars you MUST redeploy.
 //
-// NOTE: uses the Web-standard handler (Request -> Response), which does NOT
-// depend on Vercel's res.status()/res.send() helpers (those are off by default
-// and were the cause of the earlier FUNCTION_INVOCATION_FAILED crash).
+// NOTE: classic Node.js (req, res) handler with NATIVE response methods
+// (res.statusCode / res.setHeader / res.end). Everything is wrapped so the
+// function can never crash — it always sends valid HTML.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";        // e.g. "https://xxxx.supabase.co"
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
 
 const SITE_NAME = "Sync\u00b7MI";
-const DEFAULT_IMAGE_PATH = "/og-default.png"; // optional 1200x630 fallback image at project root
+const DEFAULT_IMAGE_PATH = "/og-default.png";
 const DEFAULT_DESC = "Newsletter e podcast semanais de IA \u2014 curados, sucintos, sem hype.";
 
 function esc(s){
@@ -77,18 +74,16 @@ function buildHtml({ title, description, image, humanUrl, date }){
 </html>`;
 }
 
-export default async function handler(request){
+export default async function handler(req, res){
   // Defaults — guarantee we always return valid HTML, never crash
   let origin = "https://podcast-studio-lac.vercel.app";
   let date = "";
 
   try {
-    const u = new URL(request.url);
-    origin = u.origin;
-    // Honor the public host if Vercel forwarded it (internal origin can differ)
-    const fwdHost = request.headers && request.headers.get && request.headers.get("x-forwarded-host");
-    const fwdProto = (request.headers && request.headers.get && request.headers.get("x-forwarded-proto")) || "https";
-    if(fwdHost) origin = `${fwdProto.split(",")[0]}://${fwdHost.split(",")[0]}`;
+    const host = String(req.headers["x-forwarded-host"] || req.headers.host || "podcast-studio-lac.vercel.app").split(",")[0].trim();
+    const proto = String(req.headers["x-forwarded-proto"] || "https").split(",")[0].trim();
+    if(host) origin = `${proto}://${host}`;
+    const u = new URL(req.url, origin);
     date = (u.searchParams.get("date") || "").trim();
   } catch(e){ /* keep defaults */ }
 
@@ -124,11 +119,12 @@ export default async function handler(request){
   try { html = buildHtml({ title, description, image, humanUrl, date }); }
   catch(e){ html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${humanUrl}"></head><body>Redirecionando\u2026</body></html>`; }
 
-  return new Response(html, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=86400",
-    },
-  });
+  try {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
+    res.end(html);
+  } catch(e){
+    try { res.statusCode = 200; res.end(html); } catch(e2){}
+  }
 }
