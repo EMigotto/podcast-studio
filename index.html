@@ -197,15 +197,24 @@ const { useState, useRef, useEffect, useCallback, useMemo, memo } = React;
 // ═══════════════════════════════════════════════════════════════════════════
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 
-// SUPABASE — cole aqui o URL e a anon key do seu projeto (Settings → API)
-const SUPABASE_URL =  "https://lmqwegtbwgvfumoaagag.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXdlZ3Rid2d2ZnVtb2FhZ2FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNzMzODgsImV4cCI6MjA5Mzg0OTM4OH0.rERsOrp1nrInxXhAqjTmk8w-qGacXcrcjlkGj7DjMPc";
+// SUPABASE — em produção (Vercel) os valores vêm de /api/config (lê as env vars
+// SUPABASE_URL e SUPABASE_ANON_KEY no servidor). Para rodar localmente / abrir o
+// arquivo direto, você PODE preencher os fallbacks abaixo (a anon key é pública).
+let SUPABASE_URL = "";
+let SUPABASE_ANON_KEY = "";
 
+let sb = null;
+let SB_OK = false;
 
-const sb = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true } })
-  : null;
-const SB_OK = !!sb;
+function initSupabase(url, key){
+  if(url) SUPABASE_URL = url;
+  if(key) SUPABASE_ANON_KEY = key;
+  sb = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true } })
+    : null;
+  SB_OK = !!sb;
+  return SB_OK;
+}
 
 const BRAND = {
   paper:"#F1E9D6", paperLight:"#F8F2E2", paperDark:"#E8DFC8",
@@ -3455,7 +3464,7 @@ ${t.slice(0,3000)}`,
         <SectionLabel num="⚙️">Configurações</SectionLabel>
 
         {!SB_OK && <div className="alert-error" style={{marginBottom:24}}>
-          ⚠ Supabase não configurado. Preencha SUPABASE_URL e SUPABASE_ANON_KEY no topo do <code>index.html</code>. Veja <code>SETUP.md</code>.
+          ⚠ Supabase não configurado. Defina as env vars <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code> no Vercel (ou preencha os fallbacks no topo do <code>index.html</code>). Veja <code>SETUP.md</code>.
         </div>}
 
         <div className="card card-pad" style={{padding:28,marginBottom:18}}>
@@ -3547,7 +3556,25 @@ function App(){
   return <LandingPage/>;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+// ── Bootstrap: carrega config do servidor (/api/config → env vars do Vercel),
+// inicializa o Supabase e só então renderiza o app. Fallback gracioso se /api
+// não existir (ex: abrir o arquivo local) ou demorar demais.
+(async function bootstrap(){
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), 4000);
+    const r = await fetch("/api/config", { cache:"no-store", signal: ctrl.signal });
+    clearTimeout(t);
+    if(r.ok){
+      const cfg = await r.json();
+      if(cfg && cfg.supabaseUrl && cfg.supabaseAnonKey){
+        initSupabase(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      }
+    }
+  } catch(e){ /* sem /api (local) ou timeout — usa o fallback hardcoded, se houver */ }
+  if(!SB_OK) initSupabase(SUPABASE_URL, SUPABASE_ANON_KEY);
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+})();
 </script>
 </body>
 </html>
