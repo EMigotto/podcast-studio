@@ -37,8 +37,9 @@
     --paper: #F5F1E6; --paper-light: #FBF8EE; --paper-dark: #E8E1CD;
     --ink: #241F21; --ink-soft: #3A3236;
     --mute: #807679; --rule: #DDD4BD;
-    --accent: #E9E778; --accent-deep: #C9C758;
-    --signal: #E9E778;
+    --accent: #E5431B; --accent-deep: #A82C0F;
+    --coral: #E97852; --green: #B3D29B; --blue: #99B0CD; --tan: #D4B896;
+    --signal: #E5431B;
     --bg-deep:#241F21; --ease:cubic-bezier(.22,.61,.36,1);
     --shadow: 0 1px 0 rgba(36,31,33,.06), 0 8px 24px -12px rgba(36,31,33,.14);
     --shadow-lg: 0 4px 12px rgba(36,31,33,.08), 0 16px 40px -16px rgba(36,31,33,.24);
@@ -50,7 +51,7 @@
     margin:0;
     background: var(--paper);
     background-image:
-      radial-gradient(circle at 8% 0%, rgba(233,231,120,.10) 0%, transparent 42%),
+      radial-gradient(circle at 8% 0%, rgba(229,67,27,.10) 0%, transparent 42%),
       radial-gradient(circle at 92% 96%, rgba(36,31,33,.04) 0%, transparent 44%),
       url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .14 0 0 0 0 .12 0 0 0 0 .13 0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
     color: var(--ink);
@@ -85,7 +86,7 @@
   @keyframes slideRight { from { transform:translateX(100%); } to { transform:translateX(0); } }
   @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
   @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
-  @keyframes live { 0%,100% { box-shadow:0 0 0 0 rgba(233,231,120,.6); } 50% { box-shadow:0 0 0 8px rgba(233,231,120,0); } }
+  @keyframes live { 0%,100% { box-shadow:0 0 0 0 rgba(229,67,27,.6); } 50% { box-shadow:0 0 0 8px rgba(229,67,27,0); } }
   @keyframes wave { 0%,100% { height:20%; } 50% { height:80%; } }
   .fade { animation: fadeUp .35s ease forwards; }
   .fadein { animation: fadeIn .5s ease forwards; }
@@ -136,13 +137,13 @@
   /* CHIPS */
   .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; font-weight:500; border:1px solid var(--rule); background:var(--paper-light); color:var(--ink-soft); }
   .chip.acc { color:var(--accent); border-color:var(--accent); }
-  .chip.sig { color:var(--signal); border-color:var(--signal); background:rgba(233,231,120,.08); }
+  .chip.sig { color:var(--signal); border-color:var(--signal); background:rgba(229,67,27,.08); }
   .chip.solid { background:var(--ink); color:var(--paper); border-color:var(--ink); }
 
   /* FORMS */
   .field-label { font-family:'JetBrains Mono',monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.14em; color:var(--mute); font-weight:500; display:block; margin-bottom:6px; }
-  .alert-error { background:rgba(233,231,120,.08); border:1px solid rgba(233,231,120,.3); border-radius:8px; padding:10px 14px; font-size:.85rem; color:var(--accent); margin-top:10px; }
-  .alert-info { background:rgba(233,231,120,.1); border:1px solid rgba(233,231,120,.3); border-radius:8px; padding:10px 14px; font-size:.85rem; color:var(--accent-deep); margin-top:10px; }
+  .alert-error { background:rgba(229,67,27,.08); border:1px solid rgba(229,67,27,.3); border-radius:8px; padding:10px 14px; font-size:.85rem; color:var(--accent); margin-top:10px; }
+  .alert-info { background:rgba(229,67,27,.1); border:1px solid rgba(229,67,27,.3); border-radius:8px; padding:10px 14px; font-size:.85rem; color:var(--accent-deep); margin-top:10px; }
   .alert-ok { background:rgba(74,124,89,.1); border:1px solid rgba(74,124,89,.3); border-radius:8px; padding:10px 14px; font-size:.85rem; color:#3a6049; margin-top:10px; }
 
   /* GRAIN OVERLAY */
@@ -160,7 +161,7 @@
   .ig-bg-paper{ background:var(--paper); color:var(--ink);
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .08 0 0 0 0 .07 0 0 0 0 .05 0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
   .ig-bg-ink{ background:var(--ink); color:var(--paper);
-    background-image:radial-gradient(circle at 30% 20%, rgba(233,231,120,.25) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(233,231,120,.15) 0%, transparent 50%); }
+    background-image:radial-gradient(circle at 30% 20%, rgba(229,67,27,.25) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(229,67,27,.15) 0%, transparent 50%); }
   .ig-bg-accent{ background:var(--accent); color:var(--paper); }
   .ig-frame{ padding:7%; height:100%; display:flex; flex-direction:column; position:relative; }
   .ig-corner{ display:flex; justify-content:space-between; align-items:center; font-family:'JetBrains Mono',monospace; font-size:.62rem; text-transform:uppercase; letter-spacing:.14em; opacity:.8; }
@@ -191,7 +192,7 @@
   /* hero pinned */
   .lp-stage{height:200vh; position:relative}
   .lp-pin{position:sticky; top:0; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; overflow:hidden}
-  .lp-glow{position:absolute; inset:0; z-index:0; background:radial-gradient(46% 38% at 38% 30%, rgba(233,231,120,.14), transparent 70%), radial-gradient(40% 36% at 70% 26%, rgba(36,31,33,.13), transparent 70%), radial-gradient(60% 50% at 50% 88%, rgba(233,231,120,.08), transparent 70%)}
+  .lp-glow{position:absolute; inset:0; z-index:0; background:radial-gradient(46% 38% at 38% 30%, rgba(229,67,27,.14), transparent 70%), radial-gradient(40% 36% at 70% 26%, rgba(36,31,33,.13), transparent 70%), radial-gradient(60% 50% at 50% 88%, rgba(229,67,27,.08), transparent 70%)}
   .lp-cue{position:absolute; bottom:34px; left:50%; transform:translateX(-50%); z-index:2; color:var(--mute)}
   .lp-cue .m{width:22px; height:36px; border:1.5px solid var(--mute); border-radius:12px; margin:10px auto 0; position:relative}
   .lp-cue .m::after{content:""; position:absolute; top:7px; left:50%; transform:translateX(-50%); width:3px; height:7px; border-radius:2px; background:var(--mute); animation:wheel 1.8s infinite}
@@ -226,7 +227,7 @@
   .lp-dark{background:var(--bg-deep); color:var(--paper); position:relative; overflow:hidden}
   .lp-dark .lp-navbtn{border-color:rgba(255,255,255,.16); color:var(--paper)}
   .lp-dark .lp-navbtn:hover{background:rgba(255,255,255,.12)}
-  .lp-pl{position:absolute; inset:0; z-index:0; background:radial-gradient(42% 44% at 78% 18%, rgba(233,231,120,.13), transparent 70%), radial-gradient(40% 42% at 18% 80%, rgba(36,31,33,.16), transparent 70%); will-change:transform}
+  .lp-pl{position:absolute; inset:0; z-index:0; background:radial-gradient(42% 44% at 78% 18%, rgba(229,67,27,.13), transparent 70%), radial-gradient(40% 42% at 18% 80%, rgba(36,31,33,.16), transparent 70%); will-change:transform}
   /* moments */
   .lp-moments{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:24px; overflow:hidden}
   @media(max-width:760px){.lp-moments{grid-template-columns:1fr}}
@@ -262,6 +263,30 @@
   .fl-bg-yellow{background:var(--accent); color:var(--ink)}
   .fl-bg-paper{background:var(--paper-light); color:var(--ink)}
   .fl-bg-dark{background:var(--bg-deep); color:var(--paper)}
+  /* Floema collections palette — per-chapter backgrounds with bg-image support */
+  .fl-c-coral{background:#E97852; color:#241F21; min-height:100vh; padding:120px 0; display:flex; align-items:center; position:relative; overflow:hidden}
+  .fl-c-blue{background:#2A3645; color:#F5F1E6; min-height:100vh; padding:120px 0; display:flex; align-items:center; position:relative; overflow:hidden}
+  .fl-c-green{background:#B3D29B; color:#241F21; min-height:100vh; padding:120px 0; display:flex; align-items:center; position:relative; overflow:hidden}
+  .fl-c-tan{background:#D4B896; color:#241F21; min-height:100vh; padding:120px 0; display:flex; align-items:center; position:relative; overflow:hidden}
+  .fl-c-coral .fl-num,.fl-c-green .fl-num,.fl-c-tan .fl-num{color:#241F21}
+  .fl-c-blue .fl-num{color:#E97852}
+  .fl-c-coral .fl-cat,.fl-c-green .fl-cat,.fl-c-tan .fl-cat{color:rgba(36,31,33,.65)}
+  .fl-c-blue .fl-cat{color:rgba(245,241,230,.6)}
+  .fl-c-blue .fl-chapter-title{color:#F5F1E6}
+  .fl-c-blue .fl-chapter-desc{color:rgba(245,241,230,.78)}
+  .fl-c-blue .fl-cta{background:#E97852; color:#F5F1E6}
+  .fl-c-blue .fl-cta:hover{background:#F5F1E6; color:#241F21}
+  .fl-c-green .fl-cta:hover,.fl-c-tan .fl-cta:hover{background:#E97852; color:#F5F1E6}
+  .fl-c-coral .fl-cta{background:#241F21; color:#F5F1E6}
+  .fl-c-coral .fl-cta:hover{background:#F5F1E6; color:#241F21}
+  /* bg image layer */
+  .fl-chapter-bg{position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; will-change:transform; opacity:.42}
+  .fl-c-coral .fl-chapter-bg{mix-blend-mode:multiply; opacity:.32}
+  .fl-c-blue .fl-chapter-bg{mix-blend-mode:luminosity; opacity:.38}
+  .fl-c-green .fl-chapter-bg{mix-blend-mode:multiply; opacity:.28}
+  .fl-c-tan .fl-chapter-bg{mix-blend-mode:multiply; opacity:.32}
+  .fl-chapter-overlay{position:absolute; inset:0; z-index:1; pointer-events:none}
+  .fl-chapter-in{position:relative; z-index:2; width:100%}
   .fl-chapter-in{position:relative}
   .fl-num{font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(5rem,14vw,12rem); line-height:.85; color:var(--ink); opacity:.92; letter-spacing:-.02em}
   .fl-bg-dark .fl-num{color:var(--accent)}
@@ -409,7 +434,8 @@ function initSupabase(url, key){
 const BRAND = {
   paper:"#F5F1E6", paperLight:"#FBF8EE", paperDark:"#E8E1CD",
   ink:"#241F21", inkSoft:"#3A3236", mute:"#807679", rule:"#DDD4BD",
-  accent:"#E9E778", accentDeep:"#C9C758", signal:"#E9E778",
+  accent:"#E5431B", accentDeep:"#A82C0F", signal:"#E5431B",
+  coral:"#E97852", green:"#B3D29B", blue:"#99B0CD", tan:"#D4B896",
 };
 
 const ADMIN_TABS = [
@@ -1116,11 +1142,11 @@ function LandingCarousel({ eyebrow, title, dark, children, id }){
   const scroll=(dir)=>{ const t=trackRef.current; if(!t) return; const card=t.querySelector(".lp-vcard,.lp-ncard"); const step=(card?card.getBoundingClientRect().width:320)+22; t.scrollBy({left:step*dir,behavior:"smooth"}); };
   useEffect(()=>{
     const t=trackRef.current; if(!t) return;
-    let down=false,sx,sl,moved;
-    const dn=e=>{down=true;moved=false;sx=e.pageX;sl=t.scrollLeft;try{t.setPointerCapture(e.pointerId)}catch(_){}}
-    const mv=e=>{if(!down)return;const dx=e.pageX-sx;if(Math.abs(dx)>4){moved=true; t.classList.add("drag");} t.scrollLeft=sl-dx}
-    const up=()=>{down=false;t.classList.remove("drag")}
-    const ck=e=>{if(moved){e.preventDefault();e.stopPropagation()}}
+    let down=false,sx,sl,moved=false;
+    const dn=e=>{down=true;moved=false;sx=e.pageX;sl=t.scrollLeft;}
+    const mv=e=>{if(!down)return;const dx=e.pageX-sx;if(Math.abs(dx)>5){moved=true; t.classList.add("drag");} t.scrollLeft=sl-dx}
+    const up=()=>{down=false;setTimeout(()=>t.classList.remove("drag"),0)}
+    const ck=e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;}}
     t.addEventListener("pointerdown",dn);t.addEventListener("pointermove",mv);t.addEventListener("pointerup",up);t.addEventListener("pointercancel",up);t.addEventListener("pointerleave",up);t.addEventListener("click",ck,true);t.addEventListener("scroll",upd,{passive:true});
     return ()=>{t.removeEventListener("pointerdown",dn);t.removeEventListener("pointermove",mv);t.removeEventListener("pointerup",up);t.removeEventListener("pointercancel",up);t.removeEventListener("pointerleave",up);t.removeEventListener("click",ck,true);t.removeEventListener("scroll",upd)}
   },[upd]);
@@ -1142,6 +1168,8 @@ function LandingCarousel({ eyebrow, title, dark, children, id }){
 }
 
 const LP_VCARD_GRADS = ["linear-gradient(135deg,#1a2e3a,#0d1620)","linear-gradient(135deg,#3a241a,#1d120c)","linear-gradient(135deg,#2a2030,#16101c)","linear-gradient(135deg,#1f3328,#0e1813)"];
+const isDirectVideo = (u) => u && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
+const seekToFrame = (e) => { try { e.currentTarget.currentTime = 1; } catch(_){} };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LANDING — Floema model (numbered chapters, chartreuse + near-black 2-color)
@@ -1169,17 +1197,33 @@ function LandingPage(){
     const h=window.location.hash; if(h&&h.length>1){ setTimeout(()=>{ const el=document.querySelector(h); if(el) el.scrollIntoView({behavior:"smooth"}); }, 300); }
   })()},[]);
 
-  // Reveal observer
+  // Reveal observer + chapter bg parallax (Floema-style scroll panels)
   useEffect(()=>{
     const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.12});
     document.querySelectorAll(".fl-reveal:not(.in)").forEach(el=>io.observe(el));
-    return ()=>io.disconnect();
+    let ticking=false;
+    const bgs = Array.from(document.querySelectorAll(".fl-chapter-bg"));
+    const onScroll=()=>{
+      if(ticking) return; ticking=true;
+      requestAnimationFrame(()=>{
+        bgs.forEach(bg=>{
+          const r=bg.parentElement.getBoundingClientRect();
+          // parallax: shift bg vertically based on section position
+          const vh=window.innerHeight;
+          const center=r.top+r.height/2-vh/2;
+          const off=center*-0.18;
+          bg.style.transform=`translate3d(0, ${off}px, 0) scale(1.08)`;
+        });
+        ticking=false;
+      });
+    };
+    window.addEventListener("scroll",onScroll,{passive:true}); onScroll();
+    return ()=>{io.disconnect(); window.removeEventListener("scroll",onScroll);};
   },[newsletters,podcasts]);
 
   const total = newsletters.length;
   const featuredNl = newsletters[0];
   const featuredPod = podcasts[0];
-  const isDirectVideo = (u) => u && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
 
   return <>
     <Nav/>
@@ -1199,8 +1243,9 @@ function LandingPage(){
       </div>
     </section>
 
-    {/* ── CHAPTER 01 — Newsletter (chartreuse panel) ── */}
-    <section id="chapter-01" className="fl-chapter fl-bg-yellow">
+    {/* ── CHAPTER 01 — Newsletter (coral + reading bg) ── */}
+    <section id="chapter-01" className="fl-chapter fl-c-coral">
+      <div className="fl-chapter-bg" style={{backgroundImage:"url('https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1920&auto=format&fit=crop&q=80')"}}></div>
       <div className="container fl-chapter-in">
         <div className="fl-num">01</div>
         <div className="fl-cat">Newsletter</div>
@@ -1229,8 +1274,9 @@ function LandingPage(){
       </div>
     </section>
 
-    {/* ── CHAPTER 02 — Podcast (dark with video frame) ── */}
-    <section id="chapter-02" className="fl-chapter fl-bg-dark">
+    {/* ── CHAPTER 02 — Podcast (deep blue + studio bg) ── */}
+    <section id="chapter-02" className="fl-chapter fl-c-blue">
+      <div className="fl-chapter-bg" style={{backgroundImage:"url('https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1920&auto=format&fit=crop&q=80')"}}></div>
       <div className="container fl-chapter-in">
         <div className="fl-num">02</div>
         <div className="fl-cat">Podcast Semanal</div>
@@ -1259,8 +1305,9 @@ function LandingPage(){
       </div>
     </section>
 
-    {/* ── CHAPTER 03 — Learning (off-white with deep-dive card) ── */}
-    <section id="chapter-03" className="fl-chapter fl-bg-paper">
+    {/* ── CHAPTER 03 — Learning (sage green + books bg) ── */}
+    <section id="chapter-03" className="fl-chapter fl-c-green">
+      <div className="fl-chapter-bg" style={{backgroundImage:"url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&auto=format&fit=crop&q=80')"}}></div>
       <div className="container fl-chapter-in">
         <div className="fl-num">03</div>
         <div className="fl-cat">Learning de Inovação</div>
@@ -1286,8 +1333,9 @@ function LandingPage(){
       </div>
     </section>
 
-    {/* ── CHAPTER 04 — Para sua rotina (chartreuse) ── */}
-    <section id="chapter-04" className="fl-chapter fl-bg-yellow">
+    {/* ── CHAPTER 04 — Para sua rotina (warm tan + wellness bg) ── */}
+    <section id="chapter-04" className="fl-chapter fl-c-tan">
+      <div className="fl-chapter-bg" style={{backgroundImage:"url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&auto=format&fit=crop&q=80')"}}></div>
       <div className="container fl-chapter-in">
         <div className="fl-num">04</div>
         <div className="fl-cat">Para sua rotina</div>
@@ -1392,7 +1440,7 @@ function LandingPage(){
     </section>
 
     {/* ── SUBSCRIBE ── */}
-    <section id="assine" className="fl-subscribe fl-bg-yellow">
+    <section id="assine" className="fl-subscribe" style={{background:"#E97852",color:"#241F21"}}>
       <div className="container fl-sub-in">
         <div className="fl-sub-head fl-reveal">Sign up for news, updates and more.</div>
         <h3 className="fl-sub-title fl-reveal">Junte-se à comunidade.</h3>
@@ -1648,7 +1696,7 @@ function PublicNewsletter(){
 
         {/* FOOTER + cross-sell to Podcast — Ive dark band */}
         <div className="lp-dark" style={{marginTop:90,padding:"64px 40px",borderRadius:24,textAlign:"center",position:"relative",overflow:"hidden"}}>
-          <div className="lp-pl" style={{background:"radial-gradient(45% 60% at 50% 30%, rgba(233,231,120,.16), transparent 70%)"}}></div>
+          <div className="lp-pl" style={{background:"radial-gradient(45% 60% at 50% 30%, rgba(229,67,27,.16), transparent 70%)"}}></div>
           <div style={{position:"relative",zIndex:2}}>
             <div className="mono small-caps" style={{color:BRAND.signal,marginBottom:18,fontSize:".6rem"}}>Procurando o vídeo?</div>
             <h3 className="lp-ultra" style={{fontSize:"clamp(1.7rem, 4vw, 3rem)",margin:"0 auto 18px",maxWidth:"20ch",color:BRAND.paper}}>
@@ -1718,18 +1766,21 @@ function PodcastsPage(){
           <SectionLabel num="01">Vídeo da Semana</SectionLabel>
           <article style={{display:"grid",gridTemplateColumns:"7fr 5fr",gap:32,alignItems:"start"}}>
             <a href={`?view=podcast&id=${encodeURIComponent(featured.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}>
-              <div style={{position:"relative",borderRadius:4,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
-                {featured.thumbnailUrl ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(233,231,120,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(233,231,120,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <div style={{fontFamily:"'Fraunces',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.02em",lineHeight:1.1}}>{featured.title}</div>
-                </div>}
-                <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 60%,rgba(36,31,33,.7) 100%)"}}></div>
-                <div style={{position:"absolute",left:24,bottom:24,right:24,display:"flex",alignItems:"center",justifyContent:"space-between",color:BRAND.paper}}>
-                  <div style={{width:64,height:64,background:BRAND.paper,borderRadius:"50%",display:"grid",placeItems:"center",boxShadow:"0 6px 24px rgba(0,0,0,.4)"}}>
-                    <svg width="22" height="22" viewBox="0 0 14 14" fill={BRAND.ink}><path d="M3 1.5l9 5.5-9 5.5V1.5z"/></svg>
+              <div style={{position:"relative",borderRadius:14,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
+                {featured.thumbnailUrl
+                  ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : isDirectVideo(featured.videoUrl)
+                    ? <video src={featured.videoUrl} muted playsInline preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                    : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
+                    </div>}
+                <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.75) 100%)",pointerEvents:"none"}}></div>
+                <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
+                  <div style={{width:78,height:78,background:BRAND.accent,color:BRAND.paper,borderRadius:"50%",display:"grid",placeItems:"center",boxShadow:"0 12px 40px rgba(0,0,0,.4)"}}>
+                    <svg width="26" height="26" viewBox="0 0 14 14" fill="currentColor"><path d="M3 1.5l9 5.5-9 5.5V1.5z"/></svg>
                   </div>
-                  {featured.duration && <div style={{padding:"4px 10px",background:"rgba(36,31,33,.85)",color:BRAND.paper,borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".82rem"}}>{featured.duration} MIN</div>}
                 </div>
+                {featured.duration && <div style={{position:"absolute",right:14,bottom:14,padding:"5px 12px",background:"rgba(36,31,33,.85)",color:BRAND.paper,borderRadius:100,fontFamily:"'JetBrains Mono',monospace",fontSize:".75rem"}}>{featured.duration} MIN</div>}
               </div>
             </a>
             <div>
@@ -1766,10 +1817,19 @@ function PodcastsPage(){
               <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}
                 onMouseEnter={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1.02)"}
                 onMouseLeave={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1)"}>
-                <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:4,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:12}}>
-                  {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(233,231,120,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Fraunces',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
-                  {p.duration && <div style={{position:"absolute",right:8,bottom:8,padding:"3px 8px",background:"rgba(36,31,33,.85)",color:BRAND.paper,borderRadius:3,fontFamily:"'JetBrains Mono',monospace",fontSize:".72rem"}}>{p.duration}:00</div>}
+                <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:14,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:14}}>
+                  {p.thumbnailUrl
+                    ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : isDirectVideo(p.videoUrl)
+                      ? <video src={p.videoUrl} muted playsInline preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                      : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.6) 100%)",pointerEvents:"none"}}></div>
+                  <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
+                    <div style={{width:48,height:48,background:"rgba(245,241,230,.92)",color:BRAND.ink,borderRadius:"50%",display:"grid",placeItems:"center",backdropFilter:"blur(4px)"}}>
+                      <svg width="16" height="16" viewBox="0 0 14 14" fill="currentColor"><path d="M3 1.5l9 5.5-9 5.5V1.5z"/></svg>
+                    </div>
+                  </div>
+                  {p.duration && <div style={{position:"absolute",right:8,bottom:8,padding:"3px 9px",background:"rgba(36,31,33,.85)",color:BRAND.paper,borderRadius:100,fontFamily:"'JetBrains Mono',monospace",fontSize:".7rem"}}>{p.duration}:00</div>}
                 </div>
                 <h4 style={{fontFamily:"'Fraunces',serif",fontSize:"1.1rem",lineHeight:1.25,margin:"0 0 6px",letterSpacing:"-.01em"}}>{p.title}</h4>
                 <div className="mono" style={{fontSize:".7rem",color:BRAND.mute,textTransform:"uppercase",letterSpacing:".08em"}}>
@@ -1914,7 +1974,7 @@ function PodcastDetail(){
               <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} style={{display:"grid",gridTemplateColumns:"160px 1fr",gap:12,textDecoration:"none",color:"inherit"}}>
                 <div style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:4,overflow:"hidden",border:`1px solid ${BRAND.rule}`}}>
                   {p.thumbnailUrl ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(233,231,120,.3) 0%, transparent 50%)",display:"grid",placeItems:"center",color:BRAND.paper,fontFamily:"'Fraunces',serif",fontSize:".82rem",padding:8,textAlign:"center",lineHeight:1.1}}>{(p.title||"").slice(0,40)}</div>}
+                  : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"grid",placeItems:"center",color:BRAND.paper,fontFamily:"'Fraunces',serif",fontSize:".82rem",padding:8,textAlign:"center",lineHeight:1.1}}>{(p.title||"").slice(0,40)}</div>}
                   {p.duration && <div style={{position:"absolute",right:4,bottom:4,padding:"1px 6px",background:"rgba(36,31,33,.85)",color:BRAND.paper,borderRadius:2,fontFamily:"'JetBrains Mono',monospace",fontSize:".62rem"}}>{p.duration}m</div>}
                 </div>
                 <div>
@@ -2055,7 +2115,7 @@ function AudiencePanel(){
               <div className="mono" style={{fontSize:".72rem",color:BRAND.mute}}>{s.createdAt?fmtDate(new Date(s.createdAt).toISOString().slice(0,10)):"—"}</div>
               <div style={{textAlign:"center",fontFamily:"'JetBrains Mono',monospace",color:BRAND.inkSoft}}>{s.emailsSent||0}</div>
               <div style={{textAlign:"center"}}>
-                <span className="mono" style={{display:"inline-block",padding:"3px 10px",borderRadius:100,fontSize:".72rem",background:active?`rgba(233,231,120,.18)`:BRAND.paperDark,color:active?BRAND.accentDeep:BRAND.mute,fontWeight:600}}>{opened}</span>
+                <span className="mono" style={{display:"inline-block",padding:"3px 10px",borderRadius:100,fontSize:".72rem",background:active?`rgba(229,67,27,.18)`:BRAND.paperDark,color:active?BRAND.accentDeep:BRAND.mute,fontWeight:600}}>{opened}</span>
               </div>
             </div>;
           })}
@@ -2345,7 +2405,7 @@ function SocialStudio({ apiKey, keyValidated, newsletters }){
     </p>
 
     {/* Episode picker */}
-    <div className="card card-pad" style={{padding:20,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(233,231,120,.06))`}}>
+    <div className="card card-pad" style={{padding:20,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(229,67,27,.06))`}}>
       <Field label="Episódio">
         <select value={selDate} onChange={e=>setSelDate(e.target.value)} style={{width:"100%",maxWidth:480}}>
           {eps.map(e=><option key={e.date} value={e.date}>EP.{String((newsletters||[]).slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).findIndex(n=>n.date===e.date)+1).padStart(2,"0")} · {fmtDate(e.date)} · {e.title}</option>)}
@@ -3210,7 +3270,7 @@ ${t.slice(0,3000)}`,
 
         {/* ═══ STEP 1: Buscar Notícias ═══ */}
         {wizardStep===1 && <div className="fade">
-          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(233,231,120,.04) 100%)`}}>
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.04) 100%)`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
               <div>
                 <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 1 · BUSCAR NOTÍCIAS</div>
@@ -3269,7 +3329,7 @@ ${t.slice(0,3000)}`,
 
         {/* ═══ STEP 2: Curadoria ═══ */}
         {wizardStep===2 && <div className="fade">
-          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(233,231,120,.04) 100%)`}}>
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.04) 100%)`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
               <div>
                 <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 2 · CURADORIA</div>
@@ -3318,7 +3378,7 @@ ${t.slice(0,3000)}`,
 
         {/* ═══ STEP 3: Insights ═══ */}
         {wizardStep===3 && <div className="fade">
-          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(233,231,120,.06) 100%)`}}>
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.06) 100%)`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
               <div>
                 <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 3 · TEMAS EM DESTAQUE</div>
@@ -3352,7 +3412,7 @@ ${t.slice(0,3000)}`,
 
         {/* ═══ STEP 4: Título & Subtítulo ═══ */}
         {wizardStep===4 && <div className="fade">
-          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(233,231,120,.04) 100%)`}}>
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.04) 100%)`}}>
             <div>
               <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 4 · TÍTULO PRINCIPAL & FRASE DE IMPACTO</div>
               <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>A capa da edição. Gere com IA, edite à mão.</div>
@@ -3395,7 +3455,7 @@ ${t.slice(0,3000)}`,
 
         {/* ═══ STEP 5: Briefing IA (NotebookLM) ═══ */}
         {wizardStep===5 && <div className="fade">
-          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(233,231,120,.04) 100%)`}}>
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.04) 100%)`}}>
             <div>
               <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 5 · BRIEFING PARA NOTEBOOKLM</div>
               <div style={{fontFamily:"'Fraunces',serif",fontSize:"1.2rem",fontStyle:"italic"}}>Copie, cole no NotebookLM, gere o áudio, suba aqui.</div>
@@ -3415,7 +3475,7 @@ ${t.slice(0,3000)}`,
             </div>
 
             <div>
-              <div className="card card-pad" style={{padding:20,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(233,231,120,.04))`}}>
+              <div className="card card-pad" style={{padding:20,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(229,67,27,.04))`}}>
                 <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:12}}>📥 UPLOAD DO ÁUDIO</div>
                 <Field label="Arquivo MP3 (até 50MB) — vai pro Supabase Storage" style={{marginBottom:12}}>
                   <input type="file" accept="audio/*" onChange={handleAudioUpload} style={{fontSize:".82rem"}}/>
@@ -3424,7 +3484,7 @@ ${t.slice(0,3000)}`,
                 <Field label="URL pública do áudio">
                   <Input value={isStorageUrl(editorAudioPodcastUrl)?"":editorAudioPodcastUrl} onChange={e=>{setEditorAudioPodcastUrl(e.target.value);setEditorAudioPodcastBlobRef("");}} placeholder="https://.../podcast.mp3"/>
                 </Field>
-                {isStorageUrl(editorAudioPodcastUrl) && <div style={{marginTop:8,padding:"6px 10px",background:`rgba(233,231,120,.1)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
+                {isStorageUrl(editorAudioPodcastUrl) && <div style={{marginTop:8,padding:"6px 10px",background:`rgba(229,67,27,.1)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
                   <span>📦</span>
                   <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>STORAGE · {(storageUrlToPath(editorAudioPodcastUrl)||"").split("/").pop()}</span>
                   <button onClick={async()=>{if(confirm("Apagar arquivo do Storage e desvincular do podcast?")){await storageApi.deleteByUrl(editorAudioPodcastUrl);setEditorAudioPodcastUrl("");setAudioUploadMsg("Arquivo removido do Storage.");}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
@@ -3437,7 +3497,7 @@ ${t.slice(0,3000)}`,
                 </div>}
               </div>
 
-              <div className="card card-pad" style={{padding:20,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(233,231,120,.07))`}}>
+              <div className="card card-pad" style={{padding:20,marginBottom:14,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(229,67,27,.07))`}}>
                 <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>📊 INFOGRÁFICO DO EPISÓDIO</div>
                 <p style={{fontSize:".8rem",color:BRAND.inkSoft,marginBottom:12,lineHeight:1.5}}>
                   Imagem visual (ex: gerada no NotebookLM) que resume o episódio. Aparece em destaque na página pública e vira o preview do link no LinkedIn.
@@ -3452,7 +3512,7 @@ ${t.slice(0,3000)}`,
                 <Field label="Legenda (opcional)">
                   <Input value={editorInfographicCaption} onChange={e=>setEditorInfographicCaption(e.target.value)} placeholder="O Estado da IA em 2026 · principais movimentos da semana"/>
                 </Field>
-                {isStorageUrl(editorInfographicUrl) && <div style={{marginTop:8,padding:"6px 10px",background:`rgba(233,231,120,.12)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
+                {isStorageUrl(editorInfographicUrl) && <div style={{marginTop:8,padding:"6px 10px",background:`rgba(229,67,27,.12)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
                   <span>📦</span>
                   <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>STORAGE · {(storageUrlToPath(editorInfographicUrl)||"").split("/").pop()}</span>
                   <button onClick={async()=>{if(confirm("Apagar imagem do Storage e desvincular do episódio?")){await storageApi.deleteByUrl(editorInfographicUrl);setEditorInfographicUrl("");setInfographicUploadMsg("Imagem removida do Storage.");}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
@@ -3487,7 +3547,7 @@ ${t.slice(0,3000)}`,
 
         {/* ═══ STEP 6: Rascunho + Publicar ═══ */}
         {wizardStep===6 && <div className="fade">
-          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(233,231,120,.08) 100%)`}}>
+          <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.08) 100%)`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
               <div>
                 <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>PASSO 6 · RASCUNHO & PUBLICAÇÃO</div>
@@ -3555,7 +3615,7 @@ ${t.slice(0,3000)}`,
           </div>
 
           {/* EMAIL TO SUBSCRIBERS */}
-          <div className="card card-pad" style={{padding:22,marginTop:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(233,231,120,.05))`}}>
+          <div className="card card-pad" style={{padding:22,marginTop:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(229,67,27,.05))`}}>
             <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>📨 ENVIAR PARA INSCRITOS</div>
             <p style={{fontSize:".84rem",color:BRAND.inkSoft,marginBottom:14,lineHeight:1.5}}>
               Dispara um email (com card no estilo do Instagram + link rastreável por inscrito) para todos os cadastrados. Cada link carrega o código do episódio e o ID do inscrito, então a Audiência contabiliza quem realmente abriu.
@@ -3608,7 +3668,7 @@ ${t.slice(0,3000)}`,
         {podMsg.text && <div className={podMsg.type==="ok"?"alert-ok":podMsg.type==="err"?"alert-error":"alert-info"}>{podMsg.text}</div>}
 
         {/* STEP A: Select newsletters */}
-        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(233,231,120,.03) 100%)`}}>
+        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.03) 100%)`}}>
           <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>A · NEWSLETTERS-BASE ({podSelectedNls.size} selecionadas)</div>
           {newsletters.length===0 ? <div style={{padding:24,textAlign:"center",color:BRAND.mute,fontStyle:"italic"}}>Nenhuma newsletter publicada ainda. Publique algumas em "Newsletter".</div>
           : <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:260,overflowY:"auto"}}>
@@ -3673,7 +3733,7 @@ ${t.slice(0,3000)}`,
               </div>
               <div className="mono" style={{fontSize:".66rem",color:BRAND.mute,marginTop:5,textAlign:"center"}}>{podUploadPct}% enviado{podUploadPct>=100?" · finalizando..." :""}</div>
             </div>}
-            {isStorageUrl(podVideoUrl) && <div style={{padding:"6px 10px",background:`rgba(233,231,120,.1)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,marginBottom:10,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
+            {isStorageUrl(podVideoUrl) && <div style={{padding:"6px 10px",background:`rgba(229,67,27,.1)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,marginBottom:10,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
               <span>📦</span>
               <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>STORAGE · {(storageUrlToPath(podVideoUrl)||"").split("/").pop()}</span>
               <button onClick={async()=>{if(confirm("Apagar este arquivo do Storage e desvincular do podcast?")){await storageApi.deleteByUrl(podVideoUrl);setPodVideoUrl("");}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
@@ -3703,7 +3763,7 @@ ${t.slice(0,3000)}`,
         </div>
 
         {/* HIGHLIGHTS — full width with editor + live preview */}
-        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(233,231,120,.04))`}}>
+        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(229,67,27,.04))`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
             <div className="mono small-caps" style={{color:BRAND.accent}}>E · HIGHLIGHTS DO EPISÓDIO</div>
             <div className="mono" style={{fontSize:".68rem",color:BRAND.mute}}>
@@ -3753,7 +3813,7 @@ ${t.slice(0,3000)}`,
           Fontes que a IA prioriza ao buscar manchetes no Passo 1 da Newsletter. O catálogo padrão tem <strong>{DEFAULT_SOURCES.length}</strong> fontes (Brasil, internacional, labs de IA, podcasts e dev).
         </p>
 
-        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(233,231,120,.06))`}}>
+        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(135deg,${BRAND.paperLight},rgba(229,67,27,.06))`}}>
           <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>➕ ADICIONAR NOVA FONTE</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 130px auto",gap:10,alignItems:"end"}}>
             <Field label="Nome"><Input value={srcName} onChange={e=>setSrcName(e.target.value)} placeholder="TechCrunch"/></Field>
