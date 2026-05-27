@@ -4,8 +4,7 @@
     { "source": "/share/:date", "destination": "/api/share?date=:date" }
   ],
   "functions": {
-    "api/share.js": {
-      "maxDuration": 10
-    }
+    "api/share.js": { "maxDuration": 10 },
+    "api/send-episode.js": { "maxDuration": 60 }
   }
 }

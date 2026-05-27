@@ -40,13 +40,14 @@ A partir desta versão o projeto **não é mais um único arquivo**. A raiz do r
 /
 ├── index.html        ← o app (SPA) — busca a config de /api/config no boot
 ├── api/
-│   ├── config.js     ← devolve SUPABASE_URL + anon key (lidos das env vars do Vercel)
-│   └── share.js      ← função serverless do preview de link (LinkedIn/Facebook/X/WhatsApp)
+│   ├── config.js       ← devolve SUPABASE_URL + anon key (lidos das env vars do Vercel)
+│   ├── share.js        ← preview de link rico (LinkedIn/Facebook/X/WhatsApp)
+│   └── send-episode.js ← envia o episódio por email aos inscritos (Resend)
 ├── vercel.json       ← rota /share/:date + config das funções
 └── og-default.png    ← (opcional) imagem 1200×630 de fallback do preview
 ```
 
-O Vercel detecta a pasta `api/` automaticamente e publica as duas funções — não precisa configurar nada além das env vars abaixo.
+O Vercel detecta a pasta `api/` automaticamente e publica as três funções — não precisa configurar nada além das env vars abaixo.
 
 ### Por que o index.html precisa de /api/config
 
@@ -56,18 +57,53 @@ Arquivos estáticos servidos ao navegador **não enxergam** as env vars do Verce
 >
 > **Fallback local**: se quiser abrir o `index.html` direto (sem o `/api`), preencha os `let SUPABASE_URL`/`SUPABASE_ANON_KEY` no topo do arquivo — eles são usados quando o `/api/config` não responde.
 
-### Variáveis de ambiente no Vercel (obrigatório pro preview de link)
+### Variáveis de ambiente no Vercel
 
-A função `api/share.js` lê o episódio do Supabase pra montar o card. Configure em **Vercel → Project → Settings → Environment Variables**:
+Configure em **Vercel → Project → Settings → Environment Variables** (escopo **Production**, e Preview se quiser):
 
-| Nome | Valor |
-|---|---|
-| `SUPABASE_URL` | `https://xxxx.supabase.co` (o mesmo do index.html) |
-| `SUPABASE_ANON_KEY` | `eyJ...` (a anon key pública — a mesma do index.html) |
+| Nome | Usada por | Valor | Secreto? |
+|---|---|---|---|
+| `SUPABASE_URL` | config, share, send-episode | `https://xxxx.supabase.co` | não |
+| `SUPABASE_ANON_KEY` | config, share | `eyJ...` (anon key pública) | não |
+| `SUPABASE_SERVICE_ROLE_KEY` | send-episode | `eyJ...` (Settings → API → **service_role**) | **SIM — nunca exponha** |
+| `RESEND_API_KEY` | send-episode | `re_...` (resend.com → API Keys) | sim |
+| `EMAIL_FROM` | send-episode | `Sync·MI <ola@seu-dominio.com>` (domínio verificado no Resend) | não |
 
-> A anon key é pública por natureza (já está no index.html), então não há risco em colocá-la aqui. Como alternativa, dá pra hardcodar nos dois `const` no topo de `api/share.js`.
+> A anon key é pública por natureza (já vai no cliente). Já a **service_role key bypassa o RLS** — ela só vive no servidor (na função `send-episode`), nunca é devolvida pelo `/api/config` nem aparece no browser.
 
-Depois de salvar as env vars, faça um **Redeploy** pra elas entrarem em vigor.
+Depois de salvar/alterar qualquer env var, faça um **Redeploy** pra elas entrarem em vigor.
+
+---
+
+## Inscritos, Email e Audiência (v15)
+
+### Como funciona o ciclo completo
+
+1. **Inscrição**: o formulário da landing page grava o email na tabela `subscribers` (id = hash SHA-256 do email, então é idempotente e não expõe o email em URLs).
+2. **Publicação**: ao publicar um episódio, ele ganha um `episodeCode` (gerado automático) e um `emailSubject` opcional (Passo 6). 
+3. **Envio**: no Passo 6, o botão **"📨 Enviar episódio aos inscritos"** chama `/api/send-episode?date=...`, que monta um email (card no estilo dos posts do Instagram) com um **link único por inscrito**: `?view=public&date=DATE&ec=CODE&ref=REF`.
+4. **Tracking**: quando o inscrito abre o link, a página pública detecta `ref` + `ec` e registra a abertura na tabela `opens` (idempotente por inscrito+episódio).
+5. **Audiência**: a aba **📊 Audiência** mostra todos os inscritos, quantos emails cada um recebeu, e quais/quantos episódios cada um abriu — separando "telespectadores ativos" (que abriram ao menos 1) dos passivos.
+
+### Setup do email (Resend)
+
+1. Crie conta em [resend.com](https://resend.com) (free tier: 3.000 emails/mês, 100/dia)
+2. **Verifique um domínio** (Domains → Add Domain → configure os registros DNS). Sem domínio verificado, só dá pra enviar do `onboarding@resend.dev` pra você mesmo.
+3. Crie uma **API Key** → cole em `RESEND_API_KEY` no Vercel
+4. Defina `EMAIL_FROM` com um remetente do domínio verificado (ex: `Sync·MI <ola@syncmi.com.br>`)
+5. Pegue a **service_role key** (Supabase → Settings → API) → cole em `SUPABASE_SERVICE_ROLE_KEY` no Vercel
+6. Redeploy
+
+> Sem `RESEND_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY`, o botão de envio retorna um erro explicando o que falta — o resto do app (inscrição, tracking, audiência) funciona normalmente.
+
+### Tabelas novas no Supabase
+
+Rode o `setup-supabase.sql` atualizado — ele cria `subscribers`, `opens` e `email_logs` com RLS:
+- **subscribers**: anon pode inserir/atualizar (inscrição), só o admin lê (emails não ficam públicos)
+- **opens**: anon insere (registro de abertura), admin lê
+- **email_logs**: gravado pela service_role na função, admin lê
+
+---
 
 ### Imagem de fallback (`og-default.png`)
 
@@ -117,7 +153,7 @@ No **Passo 5 (Briefing)** do wizard de Newsletter agora tem um card "📊 Infogr
 | Tipo | Limite | Armazenamento |
 |---|---|---|
 | Áudio NotebookLM (MP3 do Passo 5) | **50MB** | Supabase Storage (`audio/`) |
-| Vídeo do Podcast Semanal | **250MB** | Supabase Storage (`video/`) |
+| Vídeo do Podcast Semanal | **300MB** (upload resumável/TUS) | Supabase Storage (`video/`) |
 | Infográfico do Episódio (PNG/JPG/WEBP) | **10MB** | Supabase Storage (`image/`) |
 | Thumbnail | URL externa apenas | — |
 
