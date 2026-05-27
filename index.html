@@ -848,9 +848,9 @@ const Nav = memo(function Nav({ activeSection, isAdmin, onLogout, session }){
         <a href="?view=podcasts">↗ Podcasts</a>
         <a href="#" onClick={e=>{e.preventDefault();onLogout?.();}} className="nav-cta">Sair →</a>
       </> : <>
-        <a href="?view=landing#feature">Newsletter</a>
-        <a href="?view=podcasts">Podcast Semanal</a>
-        <a href="?view=landing#manifesto">Manifesto</a>
+        <a href="?view=landing#news">Newsletter</a>
+        <a href="?view=podcasts">Podcast</a>
+        <a href="?view=landing#learning">Learning</a>
         <a href="?view=admin" className="nav-cta">Admin →</a>
       </>}
     </div>
@@ -875,15 +875,14 @@ function LoginPage({ onSuccess }){
     } catch(err){ setError(err.message); setLoading(false); }
   };
   return <>
-    <Ticker vol="01" episodes={0}/>
     <Nav/>
-    <main className="container" style={{padding:"80px 32px", display:"grid", placeItems:"center", minHeight:"60vh"}}>
-      <form onSubmit={submit} className="card card-pad fade" style={{maxWidth:480, width:"100%", padding:48}}>
-        <div className="mono small-caps" style={{color:BRAND.accent, marginBottom:14}}>№ ACESSO RESTRITO</div>
-        <h1 className="display" style={{fontSize:"clamp(2rem, 5vw, 3.2rem)", margin:"0 0 12px"}}>
-          Entre na <em className="acc">redação</em>.
+    <main className="container" style={{padding:"120px 32px 80px", display:"grid", placeItems:"center", minHeight:"72vh"}}>
+      <form onSubmit={submit} className="fade" style={{maxWidth:460, width:"100%"}}>
+        <div className="mono small-caps" style={{color:BRAND.accent, marginBottom:16, fontSize:".6rem"}}>Acesso restrito</div>
+        <h1 className="lp-ultra" style={{fontSize:"clamp(2.2rem, 5vw, 3.4rem)", margin:"0 0 14px"}}>
+          Entre na <em style={{fontStyle:"normal",color:BRAND.accent}}>redação</em>.
         </h1>
-        <p style={{fontFamily:"'Fraunces',serif", fontStyle:"italic", color:BRAND.inkSoft, fontSize:"1.05rem", marginBottom:36, lineHeight:1.45}}>
+        <p className="lp-serif" style={{fontStyle:"italic", color:BRAND.inkSoft, fontSize:"1.1rem", marginBottom:40, lineHeight:1.45}}>
           Acesso administrativo do Sync·MI. Apenas editores autenticados.
         </p>
         <Field label="Usuário" style={{marginBottom:16}}>
@@ -897,7 +896,7 @@ function LoginPage({ onSuccess }){
           {loading ? <><Spin/> Sincronizando...</> : <>Entrar <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="arrow"><path d="M3 11L11 3M11 3H5M11 3V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg></>}
         </button>
         <div style={{marginTop:24, paddingTop:20, borderTop:`1px solid ${BRAND.rule}`, textAlign:"center"}}>
-          <a href="?view=landing" style={{fontFamily:"'JetBrains Mono',monospace", fontSize:".72rem", textTransform:"uppercase", letterSpacing:".14em", color:BRAND.mute, textDecoration:"none"}}>← VOLTAR PARA O ARQUIVO</a>
+          <a href="?view=landing" className="mono small-caps" style={{fontSize:".62rem", color:BRAND.mute, textDecoration:"none"}}>← Voltar para o início</a>
         </div>
       </form>
     </main>
@@ -980,7 +979,7 @@ function CommentsSidebar({ open, onClose, newsletterDate }){
 // ═══════════════════════════════════════════════════════════════════════════
 // LANDING — Cupertino / Ive system (scroll motion + real-data carousels)
 // ═══════════════════════════════════════════════════════════════════════════
-function LandingCarousel({ eyebrow, title, dark, children }){
+function LandingCarousel({ eyebrow, title, dark, children, id }){
   const trackRef = useRef(null);
   const [atStart,setAtStart] = useState(true);
   const [atEnd,setAtEnd] = useState(false);
@@ -1001,7 +1000,7 @@ function LandingCarousel({ eyebrow, title, dark, children }){
     t.addEventListener("pointerdown",dn);t.addEventListener("pointermove",mv);t.addEventListener("pointerup",up);t.addEventListener("pointercancel",up);t.addEventListener("pointerleave",up);t.addEventListener("click",ck,true);t.addEventListener("scroll",upd,{passive:true});
     return ()=>{t.removeEventListener("pointerdown",dn);t.removeEventListener("pointermove",mv);t.removeEventListener("pointerup",up);t.removeEventListener("pointercancel",up);t.removeEventListener("pointerleave",up);t.removeEventListener("click",ck,true);t.removeEventListener("scroll",upd)}
   },[upd]);
-  return <section className={dark?"lp-dark":""} style={{padding:"100px 0"}}>
+  return <section id={id} className={dark?"lp-dark":""} style={{padding:"100px 0"}}>
     <div className="container">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:20,marginBottom:34,flexWrap:"wrap"}}>
         <div className="lp-reveal">
@@ -1040,9 +1039,12 @@ function LandingPage(){
     setSubscribing(false);
   };
 
-  useEffect(()=>{(async()=>{ setNewsletters(await db.listNewsletters()); setPodcasts(await podcastsApi.list()); })()},[]);
+  useEffect(()=>{(async()=>{ setNewsletters(await db.listNewsletters()); setPodcasts(await podcastsApi.list());
+    const h=window.location.hash; if(h&&h.length>1){ setTimeout(()=>{ const el=document.querySelector(h); if(el) el.scrollIntoView({behavior:"smooth"}); }, 300); }
+  })()},[]);
 
   const total = newsletters.length;
+  const featuredNl = newsletters[0];
   const stmtWords = "Toda quinta, a semana inteira de IA — pesquisas, lançamentos, regulação — destilada em algo que você lê no café.".split(" ");
 
   // Scroll motion: progress bar, hero scale/fade, parallax, word reveal
@@ -1094,6 +1096,12 @@ function LandingPage(){
         <p ref={subRef} style={{position:"relative",zIndex:2,maxWidth:"42ch",margin:"34px auto 0",fontSize:"clamp(1.05rem,1.7vw,1.35rem)",fontWeight:300,color:BRAND.inkSoft,lineHeight:1.55,willChange:"transform,opacity"}}>
           Leia em cinco minutos. Assista em cinco minutos. Tudo o que importa em IA, sem o ruído da semana inteira.
         </p>
+        <div style={{position:"relative",zIndex:2,display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center",marginTop:38}}>
+          {featuredNl
+            ? <a href={`?view=public&date=${featuredNl.date}`} className="btn btn-primary">Ler última edição →</a>
+            : <a href="#news" className="btn btn-primary">Ver edições →</a>}
+          <a href="?view=podcasts" className="btn btn-ghost">▶ Assistir podcast</a>
+        </div>
         <div className="lp-cue mono small-caps">Role<div className="m"></div></div>
       </div>
     </div>
@@ -1137,7 +1145,7 @@ function LandingPage(){
     </div></section>
 
     {/* PODCAST CAROUSEL (dark) */}
-    <LandingCarousel dark eyebrow="Podcast Semanal" title={<>Perdeu a semana?<br/>Assista em cinco minutos.</>}>
+    <LandingCarousel id="podcast" dark eyebrow="Podcast Semanal" title={<>Perdeu a semana?<br/>Assista em cinco minutos.</>}>
       {podcasts.length===0 && <div style={{flex:"0 0 100%",padding:"60px 0",color:BRAND.mute,fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:"1.2rem"}}>Os episódios em vídeo aparecem aqui assim que publicados.</div>}
       {podcasts.map((p,i)=>(
         <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} className="lp-vcard">
@@ -1162,7 +1170,7 @@ function LandingPage(){
     </section>
 
     {/* NEWSLETTER CAROUSEL */}
-    <LandingCarousel eyebrow="Newsletter Diária" title={<>As edições. Cinco minutos<br/>de leitura, no seu inbox.</>}>
+    <LandingCarousel id="news" eyebrow="Newsletter Diária" title={<>As edições. Cinco minutos<br/>de leitura, no seu inbox.</>}>
       {newsletters.length===0 && <div style={{flex:"0 0 100%",padding:"60px 0",color:BRAND.mute,fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:"1.2rem"}}>As edições aparecem aqui assim que publicadas.</div>}
       {newsletters.map((n,i)=>(
         <a key={n.id} href={`?view=public&date=${n.date}`} className="lp-ncard">
@@ -1178,7 +1186,7 @@ function LandingPage(){
     </LandingCarousel>
 
     {/* LEARNING DE INOVAÇÃO (dark) */}
-    <section className="lp-dark" style={{padding:"16vh 0"}}>
+    <section id="learning" className="lp-dark" style={{padding:"16vh 0"}}>
       <div className="container" style={{position:"relative",zIndex:2}}>
         <div className="lp-reveal">
           <div className="mono small-caps" style={{color:BRAND.signal,marginBottom:14}}>Learning de Inovação</div>
