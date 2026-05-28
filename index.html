@@ -31,6 +31,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tus-js-client/4.1.0/tus.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
 <style>
   :root{
@@ -250,7 +252,8 @@
   .fl-eyebrow{font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.24em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:48px}
   .fl-mark{background:var(--accent); padding:0 .15em; color:var(--ink)}
   /* HERO */
-  .fl-hero{min-height:100vh; display:flex; align-items:center; padding:120px 0 80px; background:var(--paper)}
+  .fl-hero{min-height:100vh; display:flex; align-items:center; padding:120px 0 80px; background:var(--paper); position:relative; overflow:hidden}
+  .fl-hero-in svg:first-child{margin:0 auto 0; display:block; color:var(--accent)}
   .fl-hero-in{text-align:center; max-width:1100px}
   .fl-hero-title{font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(2.6rem,9vw,8rem); line-height:1.02; letter-spacing:-.02em; color:var(--ink); margin:0 auto; max-width:18ch}
   .fl-hero-sub{font-family:'Instrument Serif',serif; font-style:italic; font-size:clamp(1.2rem,2vw,1.6rem); color:var(--ink-soft); margin-top:36px}
@@ -263,7 +266,35 @@
   .fl-bg-yellow{background:var(--accent); color:var(--ink)}
   .fl-bg-paper{background:var(--paper-light); color:var(--ink)}
   .fl-bg-dark{background:var(--bg-deep); color:var(--paper)}
-  /* Floema collections palette — per-chapter backgrounds with bg-image support */
+  /* ═══ FLOWING INFORMATION BG (Aramco-inspired) ═══ */
+  .flow-bg{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0}
+  .flow-bg svg{position:absolute; inset:0; width:100%; height:100%}
+  .flow-line{stroke:var(--accent); fill:none; opacity:.18; stroke-width:1; animation:flow-drift 14s linear infinite}
+  .flow-line:nth-child(2){animation-duration:18s; opacity:.12; animation-delay:-3s}
+  .flow-line:nth-child(3){animation-duration:22s; opacity:.10; animation-delay:-6s}
+  .flow-line:nth-child(4){animation-duration:16s; opacity:.14; animation-delay:-9s}
+  .flow-line:nth-child(5){animation-duration:20s; opacity:.08; animation-delay:-1s}
+  @keyframes flow-drift{
+    0%   {transform:translate3d(0,0,0)}
+    100% {transform:translate3d(-100px,0,0)}
+  }
+  .flow-particle{fill:var(--accent); opacity:.28; animation:flow-pulse 3s ease-in-out infinite}
+  .flow-particle:nth-child(odd){animation-duration:4s; opacity:.18}
+  @keyframes flow-pulse{
+    0%,100%{transform:scale(1); opacity:.28}
+    50%{transform:scale(1.6); opacity:.05}
+  }
+  /* Sync logo wrapper for animated brand spots */
+  .brand{display:inline-flex; align-items:center; gap:10px}
+
+  /* ═══ VIDEO CAROUSEL — Betteroff-style hover-to-play ═══ */
+  .lp-vcard video.th{transition:opacity .4s var(--ease)}
+  .lp-vcard:hover video.th{transform:none}
+  .lp-vcard .vbadge{position:absolute; top:14px; left:14px; z-index:3; background:rgba(36,31,33,.7); backdrop-filter:blur(6px); color:#fff; font-family:'JetBrains Mono',monospace; font-size:.55rem; letter-spacing:.18em; padding:4px 9px; border-radius:100px; text-transform:uppercase}
+  .lp-vcard:hover .pl{transform:translate(-50%,-50%) scale(.85); opacity:.65}
+
+  /* Larger, more cinematic video cards on landing */
+  .lp-vcard{flex:0 0 clamp(320px,48vw,520px)}
   .fl-c-coral{background:#E97852; color:#241F21; min-height:100vh; padding:120px 0; display:flex; align-items:center; position:relative; overflow:hidden}
   .fl-c-blue{background:#2A3645; color:#F5F1E6; min-height:100vh; padding:120px 0; display:flex; align-items:center; position:relative; overflow:hidden}
   .fl-c-green{background:#B3D29B; color:#241F21; min-height:100vh; padding:120px 0; display:flex; align-items:center; position:relative; overflow:hidden}
@@ -393,7 +424,26 @@
   .fl-footer-head{font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.22em; text-transform:uppercase; color:rgba(245,241,230,.5); margin-bottom:4px}
   .fl-footer-col a{color:var(--paper); text-decoration:none; font-size:1rem; transition:color .25s}
   .fl-footer-col a:hover{color:var(--accent)}
-  .fl-footer-bottom{display:flex; justify-content:space-between; gap:16px; padding-top:24px; flex-wrap:wrap; color:rgba(245,241,230,.45)}
+  /* ═══ PARTICLE NETWORK CANVAS ═══ */
+  .particle-canvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0}
+
+  /* ═══ MARQUEE (infinite scrolling text strip) ═══ */
+  .marquee{overflow:hidden; padding:32px 0; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); background:var(--paper-light); position:relative}
+  .marquee-dark{background:var(--ink); border-color:rgba(245,241,230,.14); color:var(--paper)}
+  .marquee-track{display:flex; gap:48px; animation:marquee-slide 32s linear infinite; white-space:nowrap; will-change:transform; width:max-content}
+  @keyframes marquee-slide{
+    0%{transform:translate3d(0,0,0)}
+    100%{transform:translate3d(-50%,0,0)}
+  }
+  .marquee-item{font-family:'Instrument Serif',serif; font-style:italic; font-size:clamp(1.4rem,3vw,2.4rem); display:inline-flex; align-items:center; gap:48px; padding-right:48px}
+  .marquee-item::after{content:""; width:8px; height:8px; border-radius:50%; background:var(--accent); display:inline-block}
+
+  /* ═══ MAGNETIC CTA polish ═══ */
+  .magnetic{transition:transform .35s var(--ease)}
+  .magnetic:active{transform:scale(.96) !important}
+
+  /* hide elements before gsap kicks in to avoid flash */
+  .gsap-hidden{visibility:hidden}
 </style>
 </head>
 <body>
@@ -984,11 +1034,134 @@ const Ticker = memo(function Ticker({ vol="01", episodes=0, nextDate }){
 });
 
 // NAV
+// ═══════════════════════════════════════════════════════════════════════════
+// LOGO + FLOW BG + PARTICLE NETWORK + MARQUEE — premium visual layer
+// ═══════════════════════════════════════════════════════════════════════════
+const ParticleNetwork = memo(function ParticleNetwork({ density = 65, hex }){
+  const ref = useRef(null);
+  useEffect(()=>{
+    const c = ref.current; if(!c) return;
+    const ctx = c.getContext("2d"); if(!ctx) return;
+    let raf, particles = [], mouseX = -9999, mouseY = -9999;
+    const dpr = Math.min(2, window.devicePixelRatio||1);
+    let w=0, h=0;
+    const color = hex || (getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#E5431B");
+    const hexToRgb = (x) => { const v=x.replace("#",""); return `${parseInt(v.slice(0,2),16)},${parseInt(v.slice(2,4),16)},${parseInt(v.slice(4,6),16)}`; };
+    const rgb = hexToRgb(color);
+
+    const resize = () => {
+      w = c.offsetWidth; h = c.offsetHeight;
+      c.width = w*dpr; c.height = h*dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    };
+    const init = () => {
+      particles = [];
+      const count = Math.min(density, Math.floor((w*h)/14000));
+      for(let i=0;i<count;i++){
+        particles.push({ x:Math.random()*w, y:Math.random()*h, vx:(Math.random()-.5)*.28, vy:(Math.random()-.5)*.28, r:Math.random()*1.4+.6 });
+      }
+    };
+    const draw = () => {
+      ctx.clearRect(0,0,w,h);
+      particles.forEach(p=>{
+        // mouse attraction (subtle)
+        const dxm=mouseX-p.x, dym=mouseY-p.y, dm=Math.sqrt(dxm*dxm+dym*dym);
+        if(dm<160 && dm>0){ p.vx += (dxm/dm)*.012; p.vy += (dym/dm)*.012; }
+        // gentle damping
+        p.vx*=.985; p.vy*=.985;
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0||p.x>w) p.vx*=-1;
+        if(p.y<0||p.y>h) p.vy*=-1;
+        p.x=Math.max(0,Math.min(w,p.x)); p.y=Math.max(0,Math.min(h,p.y));
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(${rgb},.55)`; ctx.fill();
+      });
+      for(let i=0;i<particles.length;i++){
+        for(let j=i+1;j<particles.length;j++){
+          const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+          const d=Math.sqrt(dx*dx+dy*dy);
+          if(d<135){
+            const op=(1-d/135)*.22;
+            ctx.beginPath(); ctx.moveTo(particles[i].x,particles[i].y); ctx.lineTo(particles[j].x,particles[j].y);
+            ctx.strokeStyle=`rgba(${rgb},${op})`; ctx.lineWidth=.7; ctx.stroke();
+          }
+        }
+      }
+      raf=requestAnimationFrame(draw);
+    };
+    const onMove = (e) => { const r=c.getBoundingClientRect(); mouseX=e.clientX-r.left; mouseY=e.clientY-r.top; };
+    const onLeave = () => { mouseX=-9999; mouseY=-9999; };
+    const onResize = () => { resize(); init(); };
+    resize(); init(); draw();
+    window.addEventListener("resize", onResize);
+    c.parentElement?.addEventListener("mousemove", onMove);
+    c.parentElement?.addEventListener("mouseleave", onLeave);
+    return ()=>{ cancelAnimationFrame(raf); window.removeEventListener("resize",onResize); c.parentElement?.removeEventListener("mousemove",onMove); c.parentElement?.removeEventListener("mouseleave",onLeave); };
+  },[density,hex]);
+  return <canvas ref={ref} className="particle-canvas" aria-hidden="true"/>;
+});
+
+const Marquee = memo(function Marquee({ items = [], dark = false }){
+  // Duplicate items to make a seamless loop (transform -50%)
+  const items2 = [...items, ...items];
+  return <div className={dark ? "marquee marquee-dark" : "marquee"} aria-hidden="true">
+    <div className="marquee-track">
+      {items2.map((it,i)=><span key={i} className="marquee-item">{it}</span>)}
+    </div>
+  </div>;
+});
+
+const FlowBg = memo(function FlowBg(){
+  return <div className="flow-bg" aria-hidden="true">
+    <svg viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid slice">
+      <path className="flow-line" d="M-100,100 Q300,60 600,100 T1100,80 T1700,100"/>
+      <path className="flow-line" d="M-100,250 Q400,210 700,250 T1300,230 T1700,260"/>
+      <path className="flow-line" d="M-100,400 Q300,360 600,420 T1100,400 T1700,410"/>
+      <path className="flow-line" d="M-100,550 Q500,510 800,560 T1400,540 T1700,560"/>
+      <path className="flow-line" d="M-100,700 Q300,660 600,710 T1100,690 T1700,720"/>
+      <circle className="flow-particle" cx="220" cy="170" r="2"/>
+      <circle className="flow-particle" cx="450" cy="340" r="2.5"/>
+      <circle className="flow-particle" cx="720" cy="200" r="2"/>
+      <circle className="flow-particle" cx="940" cy="430" r="3"/>
+      <circle className="flow-particle" cx="1180" cy="280" r="2"/>
+      <circle className="flow-particle" cx="1400" cy="510" r="2.5"/>
+      <circle className="flow-particle" cx="600" cy="600" r="2"/>
+      <circle className="flow-particle" cx="1090" cy="620" r="2.5"/>
+    </svg>
+  </div>;
+});
+
+const Logo = memo(function Logo({ size = 36, color, animate = true }){
+  const c = color || "currentColor";
+  return <svg width={size} height={size} viewBox="0 0 40 40" fill="none" style={{display:"block"}}>
+    {/* Outer ring — slow pulse */}
+    <circle cx="20" cy="20" r="18" fill="none" stroke={c} strokeWidth=".5" opacity=".22">
+      {animate && <animate attributeName="r" values="18;18.6;18" dur="3.5s" repeatCount="indefinite"/>}
+      {animate && <animate attributeName="opacity" values=".22;.08;.22" dur="3.5s" repeatCount="indefinite"/>}
+    </circle>
+    {/* Middle ring */}
+    <circle cx="20" cy="20" r="12" fill="none" stroke={c} strokeWidth=".7" opacity=".48">
+      {animate && <animate attributeName="r" values="12;12.4;12" dur="2.3s" repeatCount="indefinite"/>}
+    </circle>
+    {/* Inner ring */}
+    <circle cx="20" cy="20" r="6.5" fill="none" stroke={c} strokeWidth="1.1"/>
+    {/* Center signal */}
+    <circle cx="20" cy="20" r="2.6" fill={c}>
+      {animate && <animate attributeName="r" values="2.6;3.2;2.6" dur="1.8s" repeatCount="indefinite"/>}
+    </circle>
+    {/* Channeling lines — converging from edges */}
+    <line x1="20" y1="0" x2="20" y2="13.5" stroke={c} strokeWidth=".6" opacity=".5" strokeLinecap="round"/>
+    <line x1="40" y1="20" x2="26.5" y2="20" stroke={c} strokeWidth=".6" opacity=".5" strokeLinecap="round"/>
+    <line x1="20" y1="40" x2="20" y2="26.5" stroke={c} strokeWidth=".6" opacity=".5" strokeLinecap="round"/>
+    <line x1="0" y1="20" x2="13.5" y2="20" stroke={c} strokeWidth=".6" opacity=".5" strokeLinecap="round"/>
+  </svg>;
+});
+
 const Nav = memo(function Nav({ activeSection, isAdmin, onLogout, session }){
   return <nav className="nav"><div className="container nav-inner">
     <a href="?view=landing" className="brand">
-      <div className="brand-mark"></div>
-      <div className="brand-name">Sync<em>·MI</em></div>
+      <Logo size={32}/>
+      <div className="brand-name" style={{fontFamily:"'Instrument Serif',serif",fontWeight:400,fontSize:"1.55rem",letterSpacing:"-.005em"}}>Sync<em style={{fontStyle:"normal",color:BRAND.accent}}>·MI</em></div>
     </a>
     <div className="nav-links">
       {isAdmin ? <>
@@ -1208,7 +1381,6 @@ function LandingPage(){
       requestAnimationFrame(()=>{
         bgs.forEach(bg=>{
           const r=bg.parentElement.getBoundingClientRect();
-          // parallax: shift bg vertically based on section position
           const vh=window.innerHeight;
           const center=r.top+r.height/2-vh/2;
           const off=center*-0.18;
@@ -1218,7 +1390,62 @@ function LandingPage(){
       });
     };
     window.addEventListener("scroll",onScroll,{passive:true}); onScroll();
-    return ()=>{io.disconnect(); window.removeEventListener("scroll",onScroll);};
+
+    // GSAP ScrollTrigger — chapter numbers + content animations
+    let triggers = [];
+    if(window.gsap && window.ScrollTrigger){
+      const gsap = window.gsap, ST = window.ScrollTrigger;
+      gsap.registerPlugin(ST);
+      // Animate each chapter number zooming in + text rising
+      document.querySelectorAll(".fl-chapter").forEach(ch=>{
+        const num = ch.querySelector(".fl-num");
+        const cat = ch.querySelector(".fl-cat");
+        const title = ch.querySelector(".fl-chapter-title");
+        if(num){
+          const t1 = gsap.fromTo(num, {scale:.4, opacity:0, y:60}, {
+            scale:1, opacity:.92, y:0, ease:"power3.out",
+            scrollTrigger:{trigger:ch, start:"top 80%", end:"top 30%", scrub:1}
+          });
+          triggers.push(t1);
+        }
+        if(cat){
+          const t2 = gsap.fromTo(cat, {opacity:0, y:30}, {
+            opacity:1, y:0, ease:"power2.out",
+            scrollTrigger:{trigger:ch, start:"top 70%", end:"top 40%", scrub:1}
+          });
+          triggers.push(t2);
+        }
+        if(title){
+          const t3 = gsap.fromTo(title, {opacity:0, y:50}, {
+            opacity:1, y:0, ease:"power2.out",
+            scrollTrigger:{trigger:ch, start:"top 65%", end:"top 35%", scrub:1}
+          });
+          triggers.push(t3);
+        }
+      });
+      // List items stagger reveal
+      document.querySelectorAll(".fl-list-item").forEach((li,i)=>{
+        const t = gsap.fromTo(li, {opacity:0, x:-30}, {
+          opacity:1, x:0, ease:"power2.out", duration:.6,
+          scrollTrigger:{trigger:li, start:"top 85%", once:true}
+        });
+        triggers.push(t);
+      });
+      // 3-step process scale-in
+      document.querySelectorAll(".fl-process-step").forEach((s,i)=>{
+        const t = gsap.fromTo(s, {opacity:0, scale:.9, y:30}, {
+          opacity:1, scale:1, y:0, ease:"power3.out", duration:.7, delay:i*.12,
+          scrollTrigger:{trigger:".fl-process-grid", start:"top 75%", once:true}
+        });
+        triggers.push(t);
+      });
+    }
+
+    return ()=>{
+      io.disconnect();
+      window.removeEventListener("scroll",onScroll);
+      triggers.forEach(t=>{ try{ t.scrollTrigger?.kill(); t.kill(); }catch(_){} });
+    };
   },[newsletters,podcasts]);
 
   const total = newsletters.length;
@@ -1228,20 +1455,42 @@ function LandingPage(){
   return <>
     <Nav/>
 
-    {/* ── HERO ── floema-style centered serif, big, with scroll cue */}
+    {/* ── HERO ── floema-style centered serif, big, with scroll cue + particle network */}
     <section className="fl-hero">
-      <div className="container fl-hero-in">
-        <div className="fl-eyebrow">Sync·MI — IA destilada</div>
+      <ParticleNetwork density={75}/>
+      <div className="container fl-hero-in" style={{position:"relative",zIndex:2}}>
+        <Logo size={56}/>
+        <div className="fl-eyebrow" style={{marginTop:24}}>Sync·MI — IA destilada</div>
         <h1 className="fl-hero-title">
           Sincronize-se com a IA, <span className="fl-mark">sem o ruído</span>.
         </h1>
         <div className="fl-hero-sub">Cinco minutos para entender a semana inteira.</div>
-        <a href="#chapter-01" className="fl-scroll">
+        <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap",marginTop:54}}>
+          {featuredNl && <a href={`?view=public&date=${featuredNl.date}`} className="fl-cta magnetic"
+            onMouseMove={e=>{const r=e.currentTarget.getBoundingClientRect();const x=e.clientX-r.left-r.width/2;const y=e.clientY-r.top-r.height/2;e.currentTarget.style.transform=`translate3d(${x*.25}px,${y*.4}px,0)`;}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="";}}
+          >Ler última edição <span>→</span></a>}
+          <a href="?view=podcasts" className="fl-cta magnetic" style={{background:"transparent",color:"var(--ink)",border:"1px solid var(--ink)"}}
+            onMouseMove={e=>{const r=e.currentTarget.getBoundingClientRect();const x=e.clientX-r.left-r.width/2;const y=e.clientY-r.top-r.height/2;e.currentTarget.style.transform=`translate3d(${x*.25}px,${y*.4}px,0)`;}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="";}}
+          >▶ Assistir podcast</a>
+        </div>
+        <a href="#chapter-01" className="fl-scroll" style={{marginTop:48}}>
           <span>Scroll to Explore</span>
           <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M3 9l4 4 4-4" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round"/></svg>
         </a>
       </div>
     </section>
+
+    {/* ── MARQUEE — signature endless strip ── */}
+    <Marquee items={[
+      "Curadoria de IA",
+      "Sem ruído",
+      "Cinco minutos",
+      "Toda semana",
+      "Newsletter · Podcast · Learning",
+      "Feito para sua rotina"
+    ]}/>
 
     {/* ── CHAPTER 01 — Newsletter (coral + reading bg) ── */}
     <section id="chapter-01" className="fl-chapter fl-c-coral">
@@ -1386,9 +1635,13 @@ function LandingPage(){
     {/* ── EPISÓDIOS RECENTES — horizontal carousel with VIDEO FRAMES ── */}
     {podcasts.length > 0 && <LandingCarousel id="podcast" eyebrow="Episódios Recentes ↓" title={<>Os vídeos mais recentes.</>}>
       {podcasts.map((p,i)=>(
-        <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} className="lp-vcard">
+        <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} className="lp-vcard"
+           onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.play().catch(()=>{})}catch(_){}}}}
+           onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}
+        >
+          <span className="vbadge">№ {padNum(podcasts.length-i)}</span>
           {isDirectVideo(p.videoUrl)
-            ? <video className="th" src={p.videoUrl} muted playsInline preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover"}} onLoadedMetadata={e=>{try{e.currentTarget.currentTime=1}catch(_){}}}/>
+            ? <video className="th" src={p.videoUrl} muted playsInline loop preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover"}} onLoadedMetadata={seekToFrame}/>
             : p.thumbnailUrl
               ? <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl})`}}></div>
               : <div className="th" style={{background:"linear-gradient(135deg,#3A3236,#241F21)"}}></div>}
@@ -1396,7 +1649,7 @@ function LandingPage(){
           <div className="pl"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff"/></svg></div>
           <div className="mt">
             <div className="mono small-caps" style={{opacity:.85,marginBottom:8,fontSize:".58rem"}}>{p.week?fmtDateMag(p.week):"Episódio"}</div>
-            <h4 style={{fontFamily:"'Instrument Serif',serif",fontWeight:400,fontSize:"1.3rem",lineHeight:1.15}}>{p.title||"Episódio Semanal"}</h4>
+            <h4 style={{fontFamily:"'Instrument Serif',serif",fontWeight:400,fontSize:"1.4rem",lineHeight:1.15}}>{p.title||"Episódio Semanal"}</h4>
           </div>
         </a>
       ))}
@@ -1574,25 +1827,29 @@ function PublicNewsletter(){
       <div className="fade">
 
         {/* HEADER */}
-        <div className="lp-reveal in" style={{paddingTop:40, paddingBottom:40, borderBottom:`1px solid ${BRAND.rule}`, marginBottom:56}}>
-          <div className="mono small-caps" style={{display:"flex",gap:18,flexWrap:"wrap",color:BRAND.mute,marginBottom:30,fontSize:".62rem"}}>
-            <span style={{color:BRAND.accent}}>Edição № {padNum(editionNum)}</span>
-            <span>{fmtDateMag(current.date)}</span>
-            <span>{readTime} min de leitura</span>
-            <span>{commentCount} comentários</span>
-          </div>
+        <div className="lp-reveal in" style={{position:"relative",overflow:"hidden",paddingTop:40, paddingBottom:40, borderBottom:`1px solid ${BRAND.rule}`, marginBottom:56}}>
+          <FlowBg/>
+          <div style={{position:"relative",zIndex:2}}>
+            <Logo size={42}/>
+            <div className="mono small-caps" style={{display:"flex",gap:18,flexWrap:"wrap",color:BRAND.mute,marginTop:20,marginBottom:30,fontSize:".62rem"}}>
+              <span style={{color:BRAND.accent}}>Edição № {padNum(editionNum)}</span>
+              <span>{fmtDateMag(current.date)}</span>
+              <span>{readTime} min de leitura</span>
+              <span>{commentCount} comentários</span>
+            </div>
 
-          <h1 className="lp-ultra" style={{fontSize:"clamp(2.4rem, 6.5vw, 5.5rem)", margin:"0 0 24px", color:BRAND.ink}}>
-            {current.title || "Highlights de IA"}
-          </h1>
-          {current.subtitle && <p className="lp-serif" style={{fontSize:"clamp(1.2rem, 2.2vw, 1.7rem)",lineHeight:1.4,color:BRAND.inkSoft,maxWidth:"56ch",margin:0,fontStyle:"italic"}}>
-            {current.subtitle}
-          </p>}
+            <h1 className="lp-ultra" style={{fontSize:"clamp(2.4rem, 6.5vw, 5.5rem)", margin:"0 0 24px", color:BRAND.ink}}>
+              {current.title || "Highlights de IA"}
+            </h1>
+            {current.subtitle && <p className="lp-serif" style={{fontSize:"clamp(1.2rem, 2.2vw, 1.7rem)",lineHeight:1.4,color:BRAND.inkSoft,maxWidth:"56ch",margin:0,fontStyle:"italic"}}>
+              {current.subtitle}
+            </p>}
 
-          <div style={{marginTop:34,display:"flex",gap:10,flexWrap:"wrap"}}>
-            <button onClick={handleShare} className="btn btn-primary btn-sm">{shareCopied?"✓ Link copiado":"↗ Compartilhar"}</button>
-            <button onClick={()=>setCommentsOpen(true)} className="btn btn-ghost btn-sm">💬 Comentários ({commentCount})</button>
-            <a href="?view=landing" className="btn btn-ghost btn-sm">← Início</a>
+            <div style={{marginTop:34,display:"flex",gap:10,flexWrap:"wrap"}}>
+              <button onClick={handleShare} className="btn btn-primary btn-sm">{shareCopied?"✓ Link copiado":"↗ Compartilhar"}</button>
+              <button onClick={()=>setCommentsOpen(true)} className="btn btn-ghost btn-sm">💬 Comentários ({commentCount})</button>
+              <a href="?view=landing" className="btn btn-ghost btn-sm">← Início</a>
+            </div>
           </div>
         </div>
 
@@ -1744,14 +2001,18 @@ function PodcastsPage(){
     <Nav/>
 
     <main className="container" style={{padding:"60px 32px 80px"}}>
-      <div className="lp-reveal in" style={{marginBottom:56,paddingTop:30,paddingBottom:32,borderBottom:`1px solid ${BRAND.rule}`}}>
-        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:16,fontSize:".6rem"}}>Podcast Semanal · Sync·MI</div>
-        <h1 className="lp-ultra" style={{fontSize:"clamp(2.4rem, 6.5vw, 5rem)",margin:"0 0 20px",color:BRAND.ink}}>
-          Perdeu a semana?<br/>Assista em <em style={{fontStyle:"normal",color:BRAND.accent}}>cinco minutos</em>.
-        </h1>
-        <p className="lp-serif" style={{fontStyle:"italic",fontSize:"clamp(1.15rem,2vw,1.5rem)",lineHeight:1.45,color:BRAND.inkSoft,maxWidth:"56ch",margin:0}}>
-          Toda semana, um vídeo curto explicando os principais temas de IA — com exemplos práticos e direto ao ponto.
-        </p>
+      <div className="lp-reveal in" style={{position:"relative",overflow:"hidden",marginBottom:56,paddingTop:30,paddingBottom:32,borderBottom:`1px solid ${BRAND.rule}`}}>
+        <FlowBg/>
+        <div style={{position:"relative",zIndex:2}}>
+          <Logo size={42}/>
+          <div className="mono small-caps" style={{color:BRAND.accent,marginTop:18,marginBottom:16,fontSize:".6rem"}}>Podcast Semanal · Sync·MI</div>
+          <h1 className="lp-ultra" style={{fontSize:"clamp(2.4rem, 6.5vw, 5rem)",margin:"0 0 20px",color:BRAND.ink}}>
+            Perdeu a semana?<br/>Assista em <em style={{fontStyle:"normal",color:BRAND.accent}}>cinco minutos</em>.
+          </h1>
+          <p className="lp-serif" style={{fontStyle:"italic",fontSize:"clamp(1.15rem,2vw,1.5rem)",lineHeight:1.45,color:BRAND.inkSoft,maxWidth:"56ch",margin:0}}>
+            Toda semana, um vídeo curto explicando os principais temas de IA — com exemplos práticos e direto ao ponto.
+          </p>
+        </div>
       </div>
 
       {loading ? <div style={{padding:"60px 20px",textAlign:"center",color:BRAND.mute}}><Spin/></div>
@@ -1765,12 +2026,14 @@ function PodcastsPage(){
         <div style={{marginBottom:64}}>
           <SectionLabel num="01">Vídeo da Semana</SectionLabel>
           <article style={{display:"grid",gridTemplateColumns:"7fr 5fr",gap:32,alignItems:"start"}}>
-            <a href={`?view=podcast&id=${encodeURIComponent(featured.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}>
+            <a href={`?view=podcast&id=${encodeURIComponent(featured.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}
+               onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.play().catch(()=>{})}catch(_){}}}}
+               onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}>
               <div style={{position:"relative",borderRadius:14,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
                 {featured.thumbnailUrl
                   ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                   : isDirectVideo(featured.videoUrl)
-                    ? <video src={featured.videoUrl} muted playsInline preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                    ? <video src={featured.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
                     : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
                     </div>}
@@ -1815,13 +2078,21 @@ function PodcastsPage(){
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:24}}>
             {rest.map(p=>
               <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}
-                onMouseEnter={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1.02)"}
-                onMouseLeave={e=>e.currentTarget.querySelector('.podthumb').style.transform="scale(1)"}>
+                onMouseEnter={e=>{
+                  e.currentTarget.querySelector('.podthumb').style.transform="scale(1.02)";
+                  const v=e.currentTarget.querySelector("video");
+                  if(v){try{v.play().catch(()=>{})}catch(_){}}
+                }}
+                onMouseLeave={e=>{
+                  e.currentTarget.querySelector('.podthumb').style.transform="scale(1)";
+                  const v=e.currentTarget.querySelector("video");
+                  if(v){try{v.pause(); v.currentTime=1;}catch(_){}}
+                }}>
                 <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:14,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:14}}>
                   {p.thumbnailUrl
                     ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     : isDirectVideo(p.videoUrl)
-                      ? <video src={p.videoUrl} muted playsInline preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                      ? <video src={p.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
                       : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
                   <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.6) 100%)",pointerEvents:"none"}}></div>
                   <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
