@@ -1385,7 +1385,7 @@ function LandingPage(){
   // Open a learning as standalone styled HTML in a new tab
   const openLearning = (L) => {
     try {
-      const html = renderLearningHTML(L);
+      const html = (L.preserveRaw && L.rawHtml) ? L.rawHtml : renderLearningHTML(L);
       const blob = new Blob([html], {type:"text/html"});
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank");
@@ -2942,7 +2942,8 @@ function emptyLearning(){
     topic:"", title:"", subtitle:"", chips:[],
     sectionTitles:{conceito:"",porQueImporta:"",naPratica:""},
     sections:{conceito:"",porQueImporta:"",naPratica:"",proximasAcoes:""},
-    kpis:[], chartData:[], faqs:[], images:[], sources:[], takeaway:""
+    kpis:[], chartData:[], faqs:[], images:[], sources:[], takeaway:"",
+    rawHtml:"", preserveRaw:false
   };
 }
 
@@ -2956,67 +2957,172 @@ function tryParseJSON(text){
   try { return JSON.parse(cleaned.slice(a,b+1)); } catch(_){ return null; }
 }
 
-// Parse uploaded HTML (Sync·MI template OR similar harness-style template) into Learning fields
+// Parse uploaded HTML into Learning fields. Understands BOTH the Sync·MI template
+// (classes .kpi, .faq-it, .takeaway, .sources) AND custom harness-style templates
+// (classes .pillar > .pillar-label/.stats > .stat/.num/.lab, <details>, .em-frase, .mkt, .ig-card).
 function parseHTMLToLearning(html, topicHint){
   const doc = new DOMParser().parseFromString(html, "text/html");
   const L = emptyLearning();
   L.topic = topicHint || "";
-  // Title
-  const h1 = doc.querySelector(".hero h1") || doc.querySelector("h1");
-  if(h1) L.title = h1.textContent.trim();
-  // Subtitle / dek
-  const dek = doc.querySelector(".dek") || doc.querySelector(".hero p");
-  if(dek) L.subtitle = dek.textContent.trim();
-  // Chips
-  const chipEls = doc.querySelectorAll(".chip");
-  if(chipEls.length) L.chips = Array.from(chipEls).map(e=>e.textContent.trim()).filter(Boolean).slice(0,8);
-  // Sections (pillars): first 4 are conceito/porQueImporta/naPratica/proximasAcoes
-  const pillars = Array.from(doc.querySelectorAll(".pillar"));
-  const keys = ["conceito","porQueImporta","naPratica","proximasAcoes"];
-  pillars.forEach((p,i)=>{
-    if(i>=4) return;
-    const k = keys[i];
-    const pTitle = p.querySelector(".p-title");
-    const pBody = p.querySelector(".p-body");
-    if(pTitle && i<3) L.sectionTitles[k] = pTitle.textContent.trim();
-    if(pBody){
-      let txt = "";
-      Array.from(pBody.childNodes).forEach(node=>{
-        if(node.nodeName==="P") txt += node.textContent.trim() + "\n\n";
-        else if(node.nodeName==="UL"){
-          Array.from(node.querySelectorAll("li")).forEach(li=>{ txt += "- " + li.textContent.trim() + "\n"; });
-          txt += "\n";
+  L.rawHtml = html;          // preserve full source of truth
+  L.preserveRaw = true;      // default: keep uploaded HTML as is when publishing
+
+  const text = el => el ? el.textContent.replace(/\s+/g," ").trim() : "";
+
+  // HERO — title (h1), subtitle (.dek or first hero p), chips
+  const h1 = doc.querySelector(".hero h1, .hero-inner h1, header h1, h1");
+  if(h1) L.title = text(h1);
+  const dek = doc.querySelector(".hero .dek, .hero-inner .dek, .dek, .lede");
+  if(dek) L.subtitle = text(dek);
+  // If no .dek, try the first <p> inside hero
+  if(!L.subtitle){
+    const heroP = doc.querySelector(".hero p, .hero-inner p, header p");
+    if(heroP) L.subtitle = text(heroP);
+  }
+  const chips = Array.from(doc.querySelectorAll(".chip, .tag.mono, .meta-row .tag")).map(c=>text(c)).filter(Boolean);
+  if(chips.length) L.chips = Array.from(new Set(chips)).slice(0,8);
+
+  // Edition number from .bignum or .num inside .pillar-label
+  const bignum = doc.querySelector(".bignum");
+  if(bignum){
+    const m = text(bignum).match(/\d+/);
+    if(m) L.editionNumber = parseInt(m[0]);
+  }
+
+  // PILLARS — handles both <section class="pillar"> and Sync·MI <section class="pillar">
+  const allPillars = Array.from(doc.querySelectorAll("section.pillar, div.pillar, .pillar"));
+  // Filter top-level pillars (not nested inside .info-wrap)
+  const pillars = allPillars.filter(p => !p.closest(".info-wrap, .info-view, #info-view"));
+  const sectionKeys = ["conceito","porQueImporta","naPratica","proximasAcoes"];
+  let pIdx = 0;
+
+  pillars.forEach(p => {
+    const isFAQ = p.classList.contains("faq") || /faq|perguntas frequentes/i.test(text(p.querySelector(".pillar-label, .p-num, h2"))||"");
+    const h2 = p.querySelector("h2, .p-title");
+    const label = p.querySelector(".pillar-label, .p-num");
+
+    if(isFAQ){
+      // FAQ: gather <details> children (harness) OR .faq-it (Sync·MI)
+      const items = p.querySelectorAll(":scope > details, :scope > .faq-it, details, .faq-it");
+      const faqs = Array.from(items).map(d=>{
+        const summ = d.querySelector("summary");
+        const ans = d.querySelector(".a, .faq-a");
+        const q = summ ? text(summ) : "";
+        let a = "";
+        if(ans) a = text(ans);
+        else if(summ){
+          // fallback: textContent minus summary
+          const full = text(d);
+          a = full.startsWith(q) ? full.slice(q.length).trim() : full;
         }
-      });
-      L.sections[k] = txt.trim();
+        return { q, a, selected: false };
+      }).filter(x=>x.q);
+      // Mark first 5 as selected (typical: published HTML already has only 5)
+      faqs.forEach((f,i)=>{ f.selected = i < Math.min(5, faqs.length); });
+      L.faqs = faqs;
+      return; // FAQ doesn't advance section index
     }
+
+    // Regular content pillar
+    if(pIdx >= 4) return;
+    const k = sectionKeys[pIdx];
+
+    // Section title — prefer h2 text; if h2 is rich (has <em>), keep textContent
+    if(h2 && pIdx < 3) L.sectionTitles[k] = text(h2);
+
+    // Body: collect <p>, <ul>, <ol>, <blockquote> in DOM order (top-level children of the pillar)
+    let body = "";
+    Array.from(p.children).forEach(c => {
+      const tag = c.nodeName;
+      if(tag === "H2" || c.classList?.contains("pillar-label")) return; // skip title block
+      if(c.classList?.contains("stats") || c.classList?.contains("kpis")) return; // KPIs handled separately
+      if(tag === "FIGURE" || c.tagName === "FIGURE") return; // skip svg/figure
+      if(tag === "P"){
+        const t = text(c);
+        if(t) body += t + "\n\n";
+      } else if(tag === "UL" || tag === "OL"){
+        Array.from(c.querySelectorAll(":scope > li")).forEach(li=>{
+          body += "- " + text(li) + "\n";
+        });
+        body += "\n";
+      } else if(tag === "BLOCKQUOTE"){
+        body += "> " + text(c) + "\n\n";
+      }
+    });
+    L.sections[k] = body.trim();
+
+    // KPIs in this pillar — both .stats > .stat (harness) and .kpis > .kpi (Sync·MI)
+    const stats = p.querySelectorAll(".stats > .stat, .stat, .kpi");
+    stats.forEach(s => {
+      const num = s.querySelector(".num, .kpi-v");
+      const lab = s.querySelector(".lab, .kpi-l");
+      const note = s.querySelector(".kpi-n");
+      const labText = lab ? lab.innerHTML.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g,"") : "";
+      const labLines = labText.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+      L.kpis.push({
+        value: text(num),
+        label: labLines[0] || "",
+        note: note ? text(note) : labLines.slice(1).join(" — ")
+      });
+    });
+
+    pIdx++;
   });
-  // KPIs
-  L.kpis = Array.from(doc.querySelectorAll(".kpi")).map(k=>({
-    label: k.querySelector(".kpi-l")?.textContent.trim() || "",
-    value: k.querySelector(".kpi-v")?.textContent.trim() || "",
-    note: k.querySelector(".kpi-n")?.textContent.trim() || ""
-  }));
-  // Chart data (bar-row)
-  L.chartData = Array.from(doc.querySelectorAll(".bar-row")).map(b=>{
-    const txt = b.querySelector(".bar span")?.textContent || b.querySelector(".bar")?.textContent || "0";
-    const numMatch = txt.match(/[\d.]+/);
-    return { label: b.querySelector(".bar-lbl")?.textContent.trim() || "", value: numMatch ? parseFloat(numMatch[0]) : 0 };
-  });
-  // FAQs (mark all imported as selected so user can prune)
-  L.faqs = Array.from(doc.querySelectorAll(".faq-it, details")).map(f=>({
-    q: f.querySelector("summary")?.textContent.trim() || "",
-    a: (f.querySelector(".faq-a") || f).textContent.replace(f.querySelector("summary")?.textContent||"", "").trim(),
-    selected: true
-  })).filter(x=>x.q);
-  // Sources
-  L.sources = Array.from(doc.querySelectorAll(".sources li a, .sources ol li a")).map(a=>({
-    title: a.textContent.trim(),
-    url: a.href || a.getAttribute("href") || ""
-  })).filter(s=>s.title);
-  // Takeaway
-  const tk = doc.querySelector(".takeaway");
-  if(tk) L.takeaway = tk.textContent.trim().replace(/^["'"\u201C]+|["'"\u201D]+$/g, "");
+
+  // Fallback: KPIs from infographic .mkt (if main pillars had none)
+  if(L.kpis.length === 0){
+    const mkts = doc.querySelectorAll(".mkt");
+    mkts.forEach(m => {
+      const n = m.querySelector(".n");
+      const l = m.querySelector(".l");
+      if(n) L.kpis.push({ value: text(n), label: l ? text(l) : "", note: "" });
+    });
+  }
+
+  // Chart data — try to extract from SVG bars if main has none (best effort)
+  if(L.chartData.length === 0){
+    const ladders = doc.querySelectorAll(".ladder .bar, .bar-row");
+    ladders.forEach(b => {
+      const label = b.querySelector(".name, .bar-lbl");
+      const val = b.querySelector(".val, .bar span, .bar");
+      const txt = val ? text(val) : "";
+      const m = txt.match(/[\d.]+/);
+      if(label && m) L.chartData.push({ label: text(label), value: parseFloat(m[0]) });
+    });
+  }
+
+  // TAKEAWAY — .em-frase p (harness) or .takeaway (Sync·MI)
+  const tk = doc.querySelector(".em-frase p, .takeaway p, .takeaway");
+  if(tk) L.takeaway = text(tk).replace(/^["'""\u201C\u201D]+|["'""\u201C\u201D]+$/g, "");
+
+  // SOURCES — handles harness <ol><li>Title — <a>link</a></li> and Sync·MI structured list
+  const sourceItems = doc.querySelectorAll(".sources ol li, .sources li, ol.sources li");
+  L.sources = Array.from(sourceItems).map(li => {
+    const a = li.querySelector("a");
+    const url = a ? (a.getAttribute("href") || a.href || "") : "";
+    let title = text(li);
+    // If anchor exists, build a clean "Outlet — Article title" format
+    if(a){
+      const anchorText = text(a);
+      const beforeAnchor = (li.textContent.split(anchorText)[0]||"").replace(/[—–-]\s*$/,"").trim();
+      title = beforeAnchor ? `${beforeAnchor} — ${anchorText}` : anchorText;
+    }
+    return { title: title.replace(/\s+/g," ").trim(), url };
+  }).filter(s => s.title);
+
+  // IMAGES — collect <img> with alt/captions
+  const figures = doc.querySelectorAll("figure");
+  L.images = Array.from(figures).map(f => {
+    const img = f.querySelector("img");
+    const cap = f.querySelector("figcaption");
+    return {
+      caption: cap ? text(cap) : "",
+      query: "",
+      alt: img ? (img.getAttribute("alt") || "") : "",
+      url: img ? (img.getAttribute("src") || "") : ""
+    };
+  }).filter(x => x.url || x.caption);
+
   return L;
 }
 
@@ -3200,11 +3306,24 @@ Devolva o JSON COMPLETO do aprofundamento atualizado, com mesma estrutura, alter
   }
 
   function downloadHTML(){
-    const html = renderLearningHTML({...L, topic:L.topic||topic, editionNumber:L.editionNumber||(list.length+1)});
+    const html = (L.preserveRaw && L.rawHtml)
+      ? L.rawHtml
+      : renderLearningHTML({...L, topic:L.topic||topic, editionNumber:L.editionNumber||(list.length+1)});
     const blob = new Blob([html], {type:"text/html"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href=url; a.download=`learning-${slugify(L.topic||topic)}.html`; a.click();
     setTimeout(()=>URL.revokeObjectURL(url), 500);
+  }
+
+  function previewLearning(){
+    const html = (L.preserveRaw && L.rawHtml)
+      ? L.rawHtml
+      : renderLearningHTML({...L, topic:L.topic||topic, editionNumber:L.editionNumber||(list.length+1)});
+    const blob = new Blob([html], {type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    if(!w) setErr("Pop-up bloqueado. Permita pop-ups deste site para usar o preview.");
   }
 
   async function generateTeaserPost(){
@@ -3450,11 +3569,21 @@ Responda em JSON puro (sem markdown):
             <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".7rem",letterSpacing:".22em",opacity:.6}}>SYNCMI.COM</div>
           </div>
         </div>
-        <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap",alignItems:"center"}}>
+          <Btn onClick={previewLearning} style={{background:BRAND.ink,color:BRAND.paper}}>👁 Preview (nova aba)</Btn>
           <Btn onClick={downloadTeaserImage} disabled={busy}>📸 Baixar imagem Instagram (PNG)</Btn>
           <Btn onClick={downloadHTML}>📄 Baixar HTML standalone</Btn>
           <Btn onClick={()=>setShowJson(x=>!x)}>{showJson?"Esconder":"Ver"} JSON</Btn>
+          {L.rawHtml && <label style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 12px",background:L.preserveRaw?`${BRAND.accent}1A`:BRAND.paperLight,border:`1px solid ${L.preserveRaw?BRAND.accent:BRAND.rule}`,borderRadius:8,cursor:"pointer",fontSize:".84rem",fontWeight:600,color:L.preserveRaw?BRAND.accent:BRAND.inkSoft}}>
+            <input type="checkbox" checked={!!L.preserveRaw} onChange={e=>updateField("preserveRaw",e.target.checked)} style={{accentColor:BRAND.accent,width:16,height:16}}/>
+            🔒 Preservar HTML original (não regenerar)
+          </label>}
         </div>
+        {L.rawHtml && <div style={{marginTop:8,fontSize:".78rem",color:BRAND.mute,lineHeight:1.5}}>
+          {L.preserveRaw
+            ? <>✓ HTML original ({Math.round(L.rawHtml.length/1024)} KB) será usado tal qual no Preview, Download e Publicação. Desative o toggle para usar a versão regenerada pelo template Sync·MI.</>
+            : <>⚠ HTML original ({Math.round(L.rawHtml.length/1024)} KB) <strong>não</strong> será usado — a versão regenerada via template Sync·MI será publicada. Ative o toggle para preservar o original.</>}
+        </div>}
         {L.teaser?.linkedin && <div style={{marginTop:14,padding:14,background:BRAND.paperLight,borderRadius:10,border:`1px solid ${BRAND.rule}`}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div className="mono small-caps" style={{color:BRAND.inkSoft,fontSize:".58rem"}}>POST · LINKEDIN</div><button onClick={()=>{navigator.clipboard.writeText(L.teaser.linkedin); setOk("LinkedIn copiado")}} className="btn btn-ghost btn-sm" style={{padding:"4px 10px",fontSize:".72rem"}}>📋 Copiar</button></div>
           <div style={{whiteSpace:"pre-wrap",fontSize:".92rem",lineHeight:1.55}}>{L.teaser.linkedin}</div>
