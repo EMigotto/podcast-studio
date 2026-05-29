@@ -2825,71 +2825,82 @@ function renderLearningHTML(L){
   const kpis=(L.kpis||[]).map((k,i)=>`<div class="kpi"><div class="kpi-v">${esc(k.value)}</div><div class="kpi-l">${esc(k.label)}</div>${k.note?`<div class="kpi-n">${esc(k.note)}</div>`:""}</div>`).join("");
   const chartMax=Math.max(1,...((L.chartData||[]).map(c=>+c.value||0)));
   const chart=(L.chartData||[]).map(c=>{const pct=Math.round((+c.value||0)/chartMax*100);return `<div class="bar-row"><div class="bar-lbl">${esc(c.label)}</div><div class="bar-wrap"><div class="bar" style="width:${pct}%"><span>${esc(String(c.value))}</span></div></div></div>`;}).join("");
-  const faqs=(L.faqs||[]).map(f=>`<details class="faq-it"><summary>${esc(f.q)}</summary><div class="faq-a">${md(f.a)}</div></details>`).join("");
+  // ONLY render FAQs marked as selected (user picked from the 10 generated)
+  const selectedFaqs = (L.faqs||[]).filter(f=>f.selected);
+  const faqs = selectedFaqs.map(f=>`<details class="faq-it"><summary>${esc(f.q)}</summary><div class="faq-a">${md(f.a)}</div></details>`).join("");
   const sources=(L.sources||[]).map((s,i)=>`<li><span class="src-n">${String(i+1).padStart(2,"0")}</span> <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></li>`).join("");
   const chips=(L.chips||[]).map(c=>`<span class="chip">${esc(c)}</span>`).join("");
+  // Images with URLs render inline; without URLs they're suggestions only (not shown)
+  const imagesWithUrl = (L.images||[]).filter(im=>im.url);
+  const images = imagesWithUrl.map(im=>`<figure class="learn-fig"><img src="${esc(im.url)}" alt="${esc(im.alt||im.caption)}" loading="lazy"/>${im.caption?`<figcaption>${esc(im.caption)}</figcaption>`:""}</figure>`).join("");
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(L.topic)} — Sync·MI Learning</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Mulish:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#F5F1E6;--paper2:#FBF8EE;--ink:#241F21;--ink-soft:#3A3236;--mute:#807679;--accent:#E5431B;--coral:#E97852;--rule:#DDD4BD;--maxw:780px}
+:root{--paper:#F3EFE4;--paper2:#ECE7D7;--paper-card:#F6F2E8;--ink:#1B1914;--ink-soft:#4A463B;--mute:#7A7466;--rust:#AF452B;--rust-soft:#C2674E;--sage:#7E8E6A;--sage-deep:#5E6B4D;--rule:rgba(27,25,20,.13);--maxw:780px}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
-body{background:var(--paper);color:var(--ink);font-family:'Geist',sans-serif;font-size:17px;line-height:1.7}
-.mono{font-family:'JetBrains Mono',monospace;letter-spacing:.22em;text-transform:uppercase;font-size:.66rem}
-.progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:99;transition:width .1s}
-.hero{padding:88px 24px 56px;background:linear-gradient(160deg,var(--ink),#3A3236);color:#F5F1E6;position:relative;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.18)}
-.hero::after{content:"";position:absolute;inset:0;opacity:.18;mix-blend-mode:soft-light;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.5) 0 1px,transparent 1px 46px)}
+body{background:var(--paper);color:var(--ink);font-family:'Mulish',sans-serif;font-size:18px;line-height:1.72;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");mix-blend-mode:multiply}
+.mono{font-family:'Space Mono',monospace;letter-spacing:.22em;text-transform:uppercase;font-size:.7rem}
+.progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--rust);z-index:99;transition:width .1s linear}
+.hero{padding:clamp(48px,9vw,104px) 24px clamp(40px,6vw,64px);background:linear-gradient(160deg,rgba(126,142,106,.94),rgba(94,107,77,.97)),radial-gradient(120% 100% at 80% 0%,rgba(255,255,255,.10),transparent 60%);color:#F4F1E6;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.12);position:relative}
+.hero::after{content:"";position:absolute;inset:0;opacity:.16;mix-blend-mode:soft-light;pointer-events:none;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.5) 0 1px,transparent 1px 46px)}
 .hero-in{max-width:var(--maxw);margin:0 auto;position:relative;z-index:2}
-.kicker{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(245,241,230,.7);margin-bottom:24px;display:flex;align-items:center;gap:14px}
-.kicker::before{content:"";width:32px;height:1px;background:rgba(245,241,230,.55)}
-.bignum{font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(60px,13vw,128px);line-height:.85;color:rgba(245,241,230,.92);margin-bottom:8px}
-.hero h1{font-family:'Instrument Serif',serif;font-size:clamp(34px,5.4vw,58px);line-height:1.06;letter-spacing:-.015em;margin:18px 0 22px;max-width:18ch}
-.dek{font-size:clamp(17px,2vw,21px);line-height:1.55;color:rgba(245,241,230,.88);max-width:54ch}
-.chips{margin-top:34px;display:flex;flex-wrap:wrap;gap:8px}
-.chip{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;border:1px solid rgba(245,241,230,.4);border-radius:40px;padding:7px 14px;color:rgba(245,241,230,.9)}
+.kicker{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:rgba(244,241,230,.75);margin-bottom:clamp(22px,5vw,38px);display:flex;align-items:center;gap:14px}
+.kicker::before{content:"";width:34px;height:1px;background:rgba(244,241,230,.6)}
+.bignum{font-family:'Fraunces',serif;font-weight:300;font-style:italic;font-size:clamp(60px,15vw,140px);line-height:.85;letter-spacing:-.02em;color:rgba(244,241,230,.92);margin-bottom:6px}
+.hero h1{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(33px,5.8vw,58px);line-height:1.06;letter-spacing:-.015em;margin:18px 0 22px;max-width:18ch}
+.hero h1 em{font-style:italic;color:#EFE9D6}
+.dek{font-size:clamp(17px,2.4vw,21px);line-height:1.6;color:rgba(244,241,230,.9);max-width:54ch}
+.chips{margin-top:clamp(28px,5vw,42px);display:flex;flex-wrap:wrap;gap:10px}
+.chip{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;border:1px solid rgba(244,241,230,.4);border-radius:40px;padding:7px 15px;color:rgba(244,241,230,.92)}
 .toggle-wrap{position:sticky;top:14px;z-index:60;display:flex;justify-content:center;margin:-26px auto 0;pointer-events:none}
-.toggle{pointer-events:auto;display:inline-flex;background:var(--ink);border-radius:46px;padding:5px;box-shadow:0 10px 30px rgba(36,31,33,.22);border:1px solid rgba(255,255,255,.08)}
-.toggle button{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;border:none;background:transparent;color:rgba(245,241,230,.6);padding:11px 22px;border-radius:40px;cursor:pointer;transition:.25s;display:flex;align-items:center;gap:8px}
+.toggle{pointer-events:auto;display:inline-flex;background:var(--ink);border-radius:46px;padding:5px;box-shadow:0 10px 30px rgba(27,25,20,.22);border:1px solid rgba(255,255,255,.08)}
+.toggle button{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;border:none;background:transparent;color:rgba(244,241,230,.6);padding:11px 22px;border-radius:40px;cursor:pointer;transition:.25s}
 .toggle button.active{background:var(--paper);color:var(--ink)}
-.content{max-width:var(--maxw);margin:0 auto;padding:54px 24px 80px}
+.toggle button:not(.active):hover{color:rgba(244,241,230,.95)}
+.content{max-width:var(--maxw);margin:0 auto;padding:54px 24px 80px;position:relative;z-index:2}
 .pillar{padding:48px 0;border-top:1px solid var(--rule)}
 .pillar:first-of-type{border-top:none}
-.p-num{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
-.p-title{font-family:'Instrument Serif',serif;font-size:clamp(26px,4vw,38px);line-height:1.1;margin-bottom:22px;letter-spacing:-.01em}
-.p-body p{margin-bottom:16px}.p-body ul{margin:14px 0 16px 22px}.p-body li{margin-bottom:8px}
+.p-num{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--rust);margin-bottom:14px}
+.p-title{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(26px,4vw,40px);line-height:1.1;margin-bottom:24px;letter-spacing:-.01em}
+.p-body p{margin-bottom:18px}.p-body ul{margin:14px 0 16px 22px}.p-body li{margin-bottom:10px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:30px 0}
-.kpi{padding:22px 18px;background:var(--paper2);border:1px solid var(--rule);border-radius:14px}
-.kpi-v{font-family:'Instrument Serif',serif;font-size:2.3rem;color:var(--accent);line-height:1;margin-bottom:8px}
-.kpi-l{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
-.kpi-n{font-size:.85rem;color:var(--mute);line-height:1.45}
-.chart{margin:30px 0;padding:24px;background:var(--paper2);border:1px solid var(--rule);border-radius:14px}
-.bar-row{margin-bottom:14px}.bar-row:last-child{margin-bottom:0}
-.bar-lbl{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
-.bar-wrap{background:var(--paper);border-radius:6px;height:24px;overflow:hidden;border:1px solid var(--rule)}
-.bar{height:100%;background:linear-gradient(90deg,var(--coral),var(--accent));display:flex;align-items:center;justify-content:flex-end;padding:0 10px;color:#F5F1E6;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:500;transition:width .8s}
-.faq-it{margin-bottom:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper2);overflow:hidden}
+.kpi{padding:24px 20px;background:var(--paper-card);border:1px solid var(--rule);border-radius:14px}
+.kpi-v{font-family:'Fraunces',serif;font-weight:400;font-size:2.4rem;color:var(--rust);line-height:1;margin-bottom:10px}
+.kpi-l{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.kpi-n{font-size:.88rem;color:var(--mute);line-height:1.5}
+.chart{margin:30px 0;padding:26px;background:var(--paper-card);border:1px solid var(--rule);border-radius:14px}
+.bar-row{margin-bottom:16px}.bar-row:last-child{margin-bottom:0}
+.bar-lbl{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.bar-wrap{background:var(--paper);border-radius:6px;height:26px;overflow:hidden;border:1px solid var(--rule)}
+.bar{height:100%;background:linear-gradient(90deg,var(--rust-soft),var(--rust));display:flex;align-items:center;justify-content:flex-end;padding:0 12px;color:#F4F1E6;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;transition:width .8s ease-out}
+.learn-fig{margin:26px 0;border-radius:14px;overflow:hidden;border:1px solid var(--rule)}
+.learn-fig img{width:100%;height:auto;display:block}
+.learn-fig figcaption{padding:10px 16px;font-size:.85rem;color:var(--mute);background:var(--paper-card);font-family:'Mulish',sans-serif}
+.faq-it{margin-bottom:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper-card);overflow:hidden}
 .faq-it summary{padding:18px 22px;cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:1.05rem}
-.faq-it summary::after{content:"+";color:var(--accent);font-size:1.4rem;transition:transform .25s}
+.faq-it summary::after{content:"+";color:var(--rust);font-size:1.4rem;transition:transform .25s}
 .faq-it[open] summary::after{transform:rotate(45deg)}
 .faq-a{padding:0 22px 20px;color:var(--ink-soft)}
-.sources ol{list-style:none;padding:0}.sources li{padding:14px 0;border-top:1px solid var(--rule);display:flex;gap:14px;align-items:baseline}
+.sources ol{list-style:none;padding:0}.sources li{padding:16px 0;border-top:1px solid var(--rule);display:flex;gap:14px;align-items:baseline}
 .sources li:first-child{border-top:none}
-.src-n{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--mute);min-width:28px}
-.sources a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}.sources a:hover{color:var(--accent);border-color:var(--accent)}
-.takeaway{margin:48px 0 0;padding:32px;background:var(--ink);color:var(--paper);border-radius:18px;font-family:'Instrument Serif',serif;font-size:1.3rem;line-height:1.4;font-style:italic}
-.takeaway b{font-style:normal;color:var(--coral);font-weight:500}
-.foot{padding:40px 24px;text-align:center;border-top:1px solid var(--rule);background:var(--paper2)}
-.foot-mark{font-family:'Instrument Serif',serif;font-size:1.6rem}.foot-mark em{font-style:normal;color:var(--accent)}
+.src-n{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--mute);min-width:32px}
+.sources a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule);font-weight:500}.sources a:hover{color:var(--rust);border-color:var(--rust)}
+.takeaway{margin:48px 0 0;padding:36px;background:var(--ink);color:var(--paper);border-radius:18px;font-family:'Fraunces',serif;font-size:1.35rem;line-height:1.4;font-style:italic}
+.takeaway b{font-style:normal;color:var(--rust-soft);font-weight:500}
+.foot{padding:48px 24px;text-align:center;border-top:1px solid var(--rule);background:var(--paper-card)}
+.foot-mark{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:400}.foot-mark em{font-style:normal;color:var(--rust)}
 /* Infographic view */
-.info-view{display:none;max-width:920px;margin:0 auto;padding:54px 24px}
+.info-view{display:none;max-width:920px;margin:0 auto;padding:54px 24px;position:relative;z-index:2}
 body.info-mode .content{display:none}body.info-mode .info-view{display:block}
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
-.info-card{padding:24px;background:var(--paper2);border:1px solid var(--rule);border-radius:14px}
-.info-card h4{font-family:'Instrument Serif',serif;font-size:1.4rem;margin-bottom:10px;line-height:1.15}
+.info-card{padding:26px;background:var(--paper-card);border:1px solid var(--rule);border-radius:14px}
+.info-card h4{font-family:'Fraunces',serif;font-weight:400;font-size:1.4rem;margin-bottom:10px;line-height:1.15}
 .info-card p{font-size:.95rem;color:var(--ink-soft);line-height:1.55}
-.info-hero{padding:36px;background:var(--accent);color:var(--ink);border-radius:18px;margin-bottom:18px}
-.info-hero h2{font-family:'Instrument Serif',serif;font-size:clamp(28px,4.4vw,44px);line-height:1.05;margin-bottom:10px;max-width:18ch}
-.info-takeaway{padding:32px;background:var(--ink);color:var(--paper);border-radius:18px;font-family:'Instrument Serif',serif;font-size:1.4rem;line-height:1.35;font-style:italic;text-align:center;margin-top:18px}
+.info-hero{padding:40px;background:var(--rust);color:#F4F1E6;border-radius:18px;margin-bottom:20px}
+.info-hero h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(28px,4.4vw,46px);line-height:1.05;margin-bottom:12px;max-width:18ch}
+.info-takeaway{padding:36px;background:var(--ink);color:var(--paper);border-radius:18px;font-family:'Fraunces',serif;font-size:1.4rem;line-height:1.35;font-style:italic;text-align:center;margin-top:18px}
 </style></head><body>
 <div class="progress" id="prog"></div>
 <section class="hero"><div class="hero-in">
@@ -2899,19 +2910,19 @@ body.info-mode .content{display:none}body.info-mode .info-view{display:block}
 <p class="dek">${esc(L.subtitle||"")}</p>
 ${chips?`<div class="chips">${chips}</div>`:""}
 </div></section>
-<div class="toggle-wrap"><div class="toggle"><button id="bRead" class="active">Leitura</button><button id="bInfo">Infográfico</button></div></div>
+<div class="toggle-wrap"><div class="toggle"><button id="bRead" class="active">📖 Leitura</button><button id="bInfo">📊 Infográfico</button></div></div>
 <main class="content">
 <section class="pillar"><div class="p-num">01 — O conceito</div><h2 class="p-title">${esc(L.sectionTitles?.conceito||"De ferramenta a agente")}</h2><div class="p-body">${md(L.sections?.conceito)}</div></section>
 <section class="pillar"><div class="p-num">02 — Por que importa</div><h2 class="p-title">${esc(L.sectionTitles?.porQueImporta||"O sinal forte agora")}</h2><div class="p-body">${md(L.sections?.porQueImporta)}</div>${kpis?`<div class="kpis">${kpis}</div>`:""}${chart?`<div class="chart">${chart}</div>`:""}</section>
-<section class="pillar"><div class="p-num">03 — Na prática</div><h2 class="p-title">${esc(L.sectionTitles?.naPratica||"O que isso muda no seu dia")}</h2><div class="p-body">${md(L.sections?.naPratica)}</div></section>
+<section class="pillar"><div class="p-num">03 — Na prática</div><h2 class="p-title">${esc(L.sectionTitles?.naPratica||"O que isso muda no seu dia")}</h2><div class="p-body">${md(L.sections?.naPratica)}</div>${images?images:""}</section>
 <section class="pillar"><div class="p-num">04 — Minhas próximas ações</div><h2 class="p-title">Aplicar nesta semana</h2><div class="p-body">${md(L.sections?.proximasAcoes)}</div></section>
 ${faqs?`<section class="pillar"><div class="p-num">05 — FAQ</div><h2 class="p-title">Perguntas frequentes</h2>${faqs}</section>`:""}
 ${sources?`<section class="pillar sources"><div class="p-num">Fontes</div><h2 class="p-title">Pesquisado em</h2><ol>${sources}</ol></section>`:""}
 ${L.takeaway?`<div class="takeaway">${esc(L.takeaway)}</div>`:""}
 </main>
-<section class="info-view"><div class="info-hero"><div class="mono">№ ${num} · LEARNING DE INOVAÇÃO</div><h2 style="margin-top:14px">${esc(L.title||L.topic)}</h2><p style="opacity:.85;max-width:42ch">${esc(L.subtitle||"")}</p></div>
-${kpis?`<div class="info-grid">${(L.kpis||[]).map(k=>`<div class="info-card"><div class="kpi-l">${esc(k.label)}</div><div class="kpi-v" style="margin:8px 0">${esc(k.value)}</div><p>${esc(k.note||"")}</p></div>`).join("")}</div>`:""}
-<div class="info-grid">${["conceito","porQueImporta","naPratica","proximasAcoes"].map((sk,i)=>L.sections?.[sk]?`<div class="info-card"><div class="mono" style="color:var(--accent);margin-bottom:8px">0${i+1} · ${["O CONCEITO","POR QUE IMPORTA","NA PRÁTICA","PRÓXIMAS AÇÕES"][i]}</div><p>${esc((L.sections[sk]||"").replace(/^\s*[-•]\s*/gm,"").split(/\n+/).slice(0,2).join(" ").slice(0,240))}…</p></div>`:"").join("")}</div>
+<section class="info-view"><div class="info-hero"><div class="mono">№ ${num} · LEARNING DE INOVAÇÃO</div><h2 style="margin-top:14px">${esc(L.title||L.topic)}</h2><p style="opacity:.92;max-width:42ch;margin-top:10px">${esc(L.subtitle||"")}</p></div>
+${kpis?`<div class="info-grid">${(L.kpis||[]).map(k=>`<div class="info-card"><div class="kpi-l">${esc(k.label)}</div><div class="kpi-v" style="margin:10px 0">${esc(k.value)}</div><p>${esc(k.note||"")}</p></div>`).join("")}</div>`:""}
+<div class="info-grid">${["conceito","porQueImporta","naPratica","proximasAcoes"].map((sk,i)=>L.sections?.[sk]?`<div class="info-card"><div class="mono" style="color:var(--rust);margin-bottom:10px">0${i+1} · ${["O CONCEITO","POR QUE IMPORTA","NA PRÁTICA","PRÓXIMAS AÇÕES"][i]}</div><p>${esc((L.sections[sk]||"").replace(/^\s*[-•]\s*/gm,"").split(/\n+/).slice(0,2).join(" ").slice(0,240))}…</p></div>`:"").join("")}</div>
 ${L.takeaway?`<div class="info-takeaway">"${esc(L.takeaway)}"</div>`:""}
 </section>
 <footer class="foot"><div class="foot-mark">Sync<em>·MI</em></div><p style="margin-top:8px;color:var(--mute);font-size:.9rem">Curadoria de IA, sem o ruído · © 2026</p></footer>
@@ -2921,6 +2932,8 @@ addEventListener('scroll',()=>{const h=document.documentElement;const p=h.scroll
 const bR=document.getElementById('bRead'),bI=document.getElementById('bInfo');
 bR.onclick=()=>{document.body.classList.remove('info-mode');bR.classList.add('active');bI.classList.remove('active');window.scrollTo({top:0,behavior:'smooth'})};
 bI.onclick=()=>{document.body.classList.add('info-mode');bI.classList.add('active');bR.classList.remove('active');window.scrollTo({top:0,behavior:'smooth'})};
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});
+document.querySelectorAll('.pillar,.kpi,.faq-it,.learn-fig').forEach(el=>io.observe(el));
 </scr`+`ipt></body></html>`;
 }
 
@@ -2929,7 +2942,7 @@ function emptyLearning(){
     topic:"", title:"", subtitle:"", chips:[],
     sectionTitles:{conceito:"",porQueImporta:"",naPratica:""},
     sections:{conceito:"",porQueImporta:"",naPratica:"",proximasAcoes:""},
-    kpis:[], chartData:[], faqs:[], sources:[], takeaway:""
+    kpis:[], chartData:[], faqs:[], images:[], sources:[], takeaway:""
   };
 }
 
@@ -2965,34 +2978,49 @@ function LearningEditor({ apiKey, keyValidated }){
     if(!topic.trim()){ setErr("Digite o tema a pesquisar."); return; }
     setErr(""); setOk(""); setBusy(true); setStage("Pesquisando fontes…");
     try {
-      const prompt = `Pesquise em fontes confiáveis e atualizadas (últimos 12 meses) o tema "${topic}" para produzir um aprofundamento estruturado do Sync·MI Learning de Inovação.
+      const prompt = `Você está aplicando o skill "learning-deep-research" do Sync·MI: produzir um aprofundamento de publicação a partir do tema "${topic}".
 
-Use a ferramenta web_search para coletar dados, estatísticas, fatos e citações. Quando possível, traga números (percentuais, valores, prazos) que sirvam de KPIs.
+METODOLOGIA OBRIGATÓRIA:
+1. Use web_search para coletar dados ATUAIS (últimos 12 meses prioritários). Toda alegação numérica (%, US$, growth rate) deve aparecer em ≥2 veículos independentes — se não conseguir defender, NÃO publique a alegação.
+2. Foco em DADOS DE MERCADO no pilar 02: adoção, valor, taxa de crescimento, prazos.
+3. Sempre cite exemplos NOMEADOS no pilar 03 (empresa/produto/cenário específico).
+4. Rejeite hype ("revolucionário", "incrível"). Tom editorial brasileiro, sucinto.
+5. Especificidade vence generalidade: "120 mil downloads em 30 dias" > "muitos downloads".
 
-Responda EXCLUSIVAMENTE em JSON válido, sem markdown, sem cercas de código. Estrutura obrigatória:
+ESTRUTURA OBRIGATÓRIA — 4 PILARES + 1 FAQ (nunca desvie):
+01 · O Conceito (180-260 palavras, didático)
+02 · Por que importa (180-260 palavras, ≥1 estatística citada)
+03 · Na prática (180-260 palavras, ≥1 exemplo nomeado)
+04 · Minhas próximas ações (4-6 ações markdown imperativas)
+05 · FAQ — EXATAMENTE 10 PERGUNTAS, todas respondidas. Marque as 5 MAIS FORTES como selected:true (o usuário ajustará). Distribuição: 3 entry-level, 4 intermediárias, 3 avançadas. Cubra: definição, comparação, riscos, aplicação, futuro.
+
+Responda EXCLUSIVAMENTE em JSON válido, sem markdown, sem cercas. Estrutura obrigatória:
 {
-  "title": "Título principal forte e direto (1 frase, no estilo editorial)",
-  "subtitle": "Subtítulo em 1-2 frases explicando o aprofundamento",
-  "chips": ["3-5 tags de assunto curtas, em maiúsculas curtas"],
+  "title": "Título principal forte e direto (1 frase editorial)",
+  "subtitle": "Subtítulo em 1-2 frases",
+  "chips": ["3-5 tags curtas em maiúsculas"],
   "sectionTitles": {
-    "conceito": "Subtítulo da seção 01 — 4-7 palavras",
-    "porQueImporta": "Subtítulo da seção 02 — 4-7 palavras",
-    "naPratica": "Subtítulo da seção 03 — 4-7 palavras"
+    "conceito": "Subtítulo Seção 01 (4-7 palavras)",
+    "porQueImporta": "Subtítulo Seção 02 (4-7 palavras)",
+    "naPratica": "Subtítulo Seção 03 (4-7 palavras)"
   },
   "sections": {
-    "conceito": "180-260 palavras explicando claramente o que é o tema. Use parágrafos separados por \\n\\n.",
-    "porQueImporta": "180-260 palavras sobre por que isso importa AGORA. Cite ao menos 1 dado/estatística.",
-    "naPratica": "180-260 palavras com aplicação prática e 1 exemplo concreto.",
-    "proximasAcoes": "Lista markdown: 4-6 ações imediatas. Cada linha começa com \\"- \\" (sem aspas)."
+    "conceito": "180-260 palavras. Parágrafos separados por \\n\\n.",
+    "porQueImporta": "180-260 palavras. Cita ≥1 estatística com fonte inline (Veículo, ano).",
+    "naPratica": "180-260 palavras. ≥1 exemplo nomeado concreto.",
+    "proximasAcoes": "Lista markdown 4-6 ações imediatas. Cada linha começa com \\"- \\" (sem as aspas)."
   },
   "kpis": [
-    {"label": "Métrica curta", "value": "60%", "note": "Contexto em 1 frase"}
+    {"label": "Métrica curta", "value": "60%", "note": "Contexto 1 frase + fonte"}
   ],
   "chartData": [
     {"label": "Item curto", "value": 75}
   ],
   "faqs": [
-    {"q": "Pergunta", "a": "Resposta em 2-4 frases."}
+    {"q": "Pergunta", "a": "Resposta 2-4 frases.", "selected": true}
+  ],
+  "images": [
+    {"caption": "Legenda explicativa", "query": "termo de busca Unsplash em inglês", "alt": "alt text acessibilidade", "url": ""}
   ],
   "sources": [
     {"title": "Veículo — Título da matéria", "url": "https://url-real"}
@@ -3000,12 +3028,25 @@ Responda EXCLUSIVAMENTE em JSON válido, sem markdown, sem cercas de código. Es
   "takeaway": "Frase única de conclusão (a 'em uma frase')"
 }
 
-Regras: 4-6 KPIs com valor real; 4-5 itens de chartData (valores numéricos comparáveis); 4-6 FAQs; 5-7 fontes COM URL REAL (preferir veículos como MIT Tech Review, The Verge, Wired, Bloomberg, Reuters, FT, papers, blogs oficiais); português brasileiro; tom editorial sucinto, sem hype.`;
+REGRAS NUMÉRICAS:
+- KPIs: ≥3 com valor real (unidade incluída) + nota com fonte
+- chartData: 4-5 itens numéricos comparáveis (bom para gráfico de barras)
+- faqs: EXATAMENTE 10, com 5 marcadas selected:true
+- images: 3-5 sugestões com caption/query/alt (url pode ficar "")
+- sources: 5-7 URLs reais (MIT Tech Review, The Verge, Wired, Bloomberg, Reuters, FT, arXiv, blogs oficiais, Valor, Estadão, MIT Sloan Brasil)
+
+Português brasileiro, tom editorial, ZERO hype.`;
 
       const text = await callClaude(apiKey, prompt, true, 6500);
       setStage("Estruturando conteúdo…");
       const parsed = tryParseJSON(text);
       if(!parsed) throw new Error("Resposta não veio em JSON válido. Tente refinar o tema.");
+      // Fallbacks if AI forgot to mark selected on FAQs: select first 5 by default
+      if(Array.isArray(parsed.faqs) && parsed.faqs.length > 0 && !parsed.faqs.some(f=>f.selected)){
+        parsed.faqs = parsed.faqs.map((f,i)=>({...f, selected: i<5}));
+      }
+      // Ensure images array exists
+      if(!Array.isArray(parsed.images)) parsed.images = [];
       const next = {...emptyLearning(), ...parsed, topic};
       setL(next);
       setChatMsgs([]);
@@ -3207,17 +3248,57 @@ Responda em JSON puro (sem markdown):
         <button onClick={()=>addArr("chartData",{label:"",value:0})} className="btn btn-ghost btn-sm">+ Item</button>
       </div>
 
-      {/* FAQs */}
+      {/* FAQs — 10 geradas, 5 selecionadas para publicação */}
       <div style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
-        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>05 · FAQ</div>
-        {(L.faqs||[]).map((f,i)=>(
-          <div key={i} style={{marginBottom:14,padding:12,background:BRAND.paperLight,borderRadius:8,border:`1px solid ${BRAND.rule}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10,flexWrap:"wrap",gap:8}}>
+          <div className="mono small-caps" style={{color:BRAND.accent}}>05 · FAQ</div>
+          <div style={{fontSize:".78rem",color:(L.faqs||[]).filter(f=>f.selected).length===5?BRAND.ink:BRAND.accent,fontWeight:600}}>
+            {(L.faqs||[]).filter(f=>f.selected).length} de 5 selecionadas para publicação
+          </div>
+        </div>
+        <div style={{fontSize:".82rem",color:BRAND.mute,marginBottom:14,lineHeight:1.5}}>
+          A IA gera 10 perguntas. Marque exatamente 5 para publicar — só as selecionadas aparecem no HTML e no infográfico. As demais ficam de reserva para refinamentos futuros.
+        </div>
+        {(L.faqs||[]).map((f,i)=>{
+          const selectedCount = (L.faqs||[]).filter(x=>x.selected).length;
+          const canSelect = f.selected || selectedCount < 5;
+          return <div key={i} style={{marginBottom:14,padding:14,background:f.selected?`${BRAND.accent}0F`:BRAND.paperLight,borderRadius:10,border:`2px solid ${f.selected?BRAND.accent:BRAND.rule}`,transition:"all .2s"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+              <label style={{display:"inline-flex",alignItems:"center",gap:8,cursor:canSelect?"pointer":"not-allowed",opacity:canSelect?1:.4,fontSize:".82rem",fontWeight:600,color:f.selected?BRAND.accent:BRAND.inkSoft}}>
+                <input type="checkbox" checked={!!f.selected} disabled={!canSelect} onChange={e=>updateArr("faqs",i,"selected",e.target.checked)} style={{width:18,height:18,accentColor:BRAND.accent,cursor:canSelect?"pointer":"not-allowed"}}/>
+                {f.selected?"✓ Publicada":"Marcar para publicar"}
+              </label>
+              <span className="mono" style={{fontSize:".58rem",letterSpacing:".18em",color:BRAND.mute,marginLeft:"auto"}}>FAQ № {String(i+1).padStart(2,"0")}</span>
+            </div>
             <input value={f.q||""} placeholder="Pergunta" onChange={e=>updateArr("faqs",i,"q",e.target.value)} style={{...fieldStyle, marginBottom:6, fontWeight:600}}/>
             <textarea value={f.a||""} placeholder="Resposta" rows={3} onChange={e=>updateArr("faqs",i,"a",e.target.value)} style={fieldStyle}/>
             <button onClick={()=>removeArr("faqs",i)} className="btn btn-ghost btn-sm" style={{marginTop:6,padding:"4px 10px",fontSize:".72rem"}}>Remover</button>
+          </div>;
+        })}
+        <button onClick={()=>addArr("faqs",{q:"",a:"",selected:false})} className="btn btn-ghost btn-sm">+ FAQ</button>
+      </div>
+
+      {/* IMAGENS — sugestões da IA + URLs opcionais */}
+      <div style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>🖼 Imagens sugeridas</div>
+        <div style={{fontSize:".82rem",color:BRAND.mute,marginBottom:14,lineHeight:1.5}}>
+          A IA sugere 3-5 imagens (legenda + query de busca + alt text). Cole uma URL real (ex.: Unsplash) pra ela aparecer no HTML final.
+        </div>
+        {(L.images||[]).map((img,i)=>(
+          <div key={i} style={{marginBottom:12,padding:12,background:BRAND.paperLight,borderRadius:8,border:`1px solid ${BRAND.rule}`}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:6}}>
+              <input value={img.caption||""} placeholder="Legenda explicativa" onChange={e=>updateArr("images",i,"caption",e.target.value)} style={fieldStyle}/>
+              <input value={img.query||""} placeholder="Busca Unsplash (EN)" onChange={e=>updateArr("images",i,"query",e.target.value)} style={fieldStyle}/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 36px",gap:8}}>
+              <input value={img.url||""} placeholder="https://images.unsplash.com/…" onChange={e=>updateArr("images",i,"url",e.target.value)} style={fieldStyle}/>
+              <input value={img.alt||""} placeholder="Alt text" onChange={e=>updateArr("images",i,"alt",e.target.value)} style={fieldStyle}/>
+              <button onClick={()=>removeArr("images",i)} className="btn btn-ghost btn-sm" style={{padding:"6px 10px"}}>✕</button>
+            </div>
+            {img.url && <div style={{marginTop:8,padding:8,background:BRAND.paper,borderRadius:6,fontSize:".75rem",color:BRAND.mute}}>Preview: <a href={img.url} target="_blank" rel="noopener" style={{color:BRAND.accent}}>{img.url.slice(0,60)}…</a></div>}
           </div>
         ))}
-        <button onClick={()=>addArr("faqs",{q:"",a:""})} className="btn btn-ghost btn-sm">+ FAQ</button>
+        <button onClick={()=>addArr("images",{caption:"",query:"",alt:"",url:""})} className="btn btn-ghost btn-sm">+ Imagem</button>
       </div>
 
       {/* SOURCES */}
