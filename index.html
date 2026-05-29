@@ -354,6 +354,87 @@
   .fl-vframe-play svg{margin-left:3px}
   .fl-vframe-meta{position:absolute; left:24px; right:24px; bottom:22px; color:var(--paper); z-index:2}
   /* learning card */
+  /* ═══ UNIFIED LEARNING CARD — used in Chapter 03, Learnings page, IG teaser, LinkedIn ═══ */
+  .lcard{
+    display:grid; grid-template-columns:1fr 1fr;
+    border-radius:26px; overflow:hidden;
+    background:#F6F2E8;
+    box-shadow:0 30px 80px -30px rgba(27,25,20,.35);
+    font-family:'Mulish',sans-serif;
+    color:#1B1914;
+    width:100%;
+  }
+  @media(max-width:760px){.lcard:not(.lcard-fixed){grid-template-columns:1fr}}
+
+  /* Square variant — Instagram 1080×1080, stacked vertically */
+  .lcard.lcard-square{
+    grid-template-columns:1fr; grid-template-rows:1fr 1fr;
+    width:1080px; height:1080px; max-width:100%;
+    border-radius:0;
+  }
+  .lcard.lcard-square .lcard-panel{padding:56px; min-height:0}
+  .lcard.lcard-square .lcard-num{font-size:120px}
+  .lcard.lcard-square .lcard-h{font-size:42px; max-width:14ch; padding-top:24px}
+  .lcard.lcard-square .lcard-desc{display:none}
+  .lcard.lcard-square .lcard-cta{display:none}
+  .lcard.lcard-square .lcard-body{padding:56px}
+  .lcard.lcard-square .lcard-body h3{font-size:34px}
+  .lcard.lcard-square .lcard-row p{font-size:16px}
+  .lcard.lcard-square .lcard-frase{font-size:22px}
+
+  /* Horizontal LinkedIn variant — 1200×627 wide format */
+  .lcard.lcard-linkedin{
+    width:1200px; height:627px; max-width:100%;
+    border-radius:0;
+  }
+  .lcard.lcard-linkedin .lcard-panel{padding:48px; min-height:0}
+  .lcard.lcard-linkedin .lcard-num{font-size:120px}
+  .lcard.lcard-linkedin .lcard-body{padding:48px}
+  .lcard-panel{
+    position:relative; color:#F4F1E6;
+    padding:clamp(30px,5vw,58px);
+    overflow:hidden;
+    background:linear-gradient(165deg,rgba(126,142,106,.96),rgba(80,93,64,.98));
+    display:flex; flex-direction:column;
+    min-height:420px;
+  }
+  .lcard-panel::before{
+    content:""; position:absolute; inset:0; opacity:.14; mix-blend-mode:soft-light; pointer-events:none;
+    background-image:
+      repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 2px,transparent 2px 22px),
+      repeating-linear-gradient(0deg,rgba(0,0,0,.4) 0 1px,transparent 1px 120px);
+  }
+  .lcard-num{font-family:'Fraunces',serif; font-style:italic; font-weight:300; font-size:clamp(70px,10vw,128px); line-height:.8; color:rgba(244,241,230,.92); position:relative}
+  .lcard-kick{font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:rgba(244,241,230,.78); margin-top:14px; position:relative}
+  .lcard-h{font-family:'Fraunces',serif; font-weight:400; font-size:clamp(26px,3.4vw,42px); line-height:1.04; letter-spacing:-.015em; margin:auto 0 0; padding-top:32px; position:relative; max-width:13ch}
+  .lcard-desc{font-size:clamp(14px,1.5vw,16px); line-height:1.55; color:rgba(244,241,230,.9); margin:18px 0 26px; position:relative; max-width:42ch}
+  .lcard-cta{position:relative; align-self:flex-start; display:inline-flex; align-items:center; gap:12px; background:#1B1914; color:#F4F1E6; font-family:'Mulish'; font-weight:600; font-size:15px; border:none; cursor:pointer; text-decoration:none; padding:14px 24px; border-radius:40px; transition:.25s}
+  .lcard-cta:hover{background:#AF452B; transform:translateX(3px)}
+  .lcard-cta .arr{transition:.25s}.lcard-cta:hover .arr{transform:translateX(4px)}
+
+  .lcard-body{padding:clamp(28px,4vw,50px); display:flex; flex-direction:column; background:#F6F2E8}
+  .lcard-badge{align-self:flex-start; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#4A463B; border:1px solid rgba(27,25,20,.13); border-radius:30px; padding:8px 16px; margin-bottom:22px}
+  .lcard-body h3{font-family:'Fraunces',serif; font-weight:430; font-size:clamp(20px,2.4vw,30px); line-height:1.14; letter-spacing:-.012em; color:#1B1914; margin:0}
+  .lcard-rule{height:1px; background:rgba(27,25,20,.13); margin:22px 0}
+  .lcard-row{margin-bottom:18px}
+  .lcard-row:last-child{margin-bottom:0}
+  .lcard-lab{font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#AF452B; margin-bottom:6px}
+  .lcard-lab.hl{background:#C9D3B6; display:inline-block; padding:1px 6px; border-radius:3px; color:#1B1914}
+  .lcard-row p{font-size:15px; line-height:1.5; color:#4A463B}
+  .lcard-frase{font-family:'Fraunces',serif; font-style:italic; font-weight:380; font-size:clamp(16px,1.9vw,19px); line-height:1.4; color:#1B1914; margin-top:4px}
+  .lcard-frase b{font-style:normal; font-weight:600}
+
+  /* ═══ LEARNINGS CAROUSEL (page /learnings) ═══ */
+  .lcarousel{display:flex; gap:clamp(20px,3vw,40px); overflow-x:auto; scroll-snap-type:x mandatory; padding:24px 0 60px; scrollbar-width:thin}
+  .lcarousel::-webkit-scrollbar{height:6px}
+  .lcarousel::-webkit-scrollbar-thumb{background:rgba(36,31,33,.2); border-radius:4px}
+  .lcarousel-item{flex:0 0 clamp(580px,86vw,980px); scroll-snap-align:center; transition:transform .6s var(--ease), filter .6s var(--ease); cursor:pointer; transform:scale(.92); filter:saturate(.85) opacity(.78)}
+  .lcarousel-item:hover, .lcarousel-item.active{transform:scale(1); filter:none}
+  .lcarousel-nav{display:flex; gap:10px; justify-content:center; margin-top:24px}
+  .lcarousel-dot{width:36px; height:4px; background:rgba(36,31,33,.18); border:none; border-radius:2px; cursor:pointer; transition:.25s; padding:0}
+  .lcarousel-dot.active{background:var(--accent); width:60px}
+
+  /* Original fl-learning-card fallback (used in some places) */
   .fl-learning-card{background:var(--paper); border:1px solid var(--rule); border-radius:20px; padding:32px; transition:transform .5s var(--ease)}
   .fl-chapter-visual:hover .fl-learning-card{transform:translateY(-4px)}
   .fl-lc-badge{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; padding:6px 12px; border:1px solid var(--rule); border-radius:100px; color:var(--ink-soft); margin-bottom:20px}
@@ -444,6 +525,45 @@
 
   /* hide elements before gsap kicks in to avoid flash */
   .gsap-hidden{visibility:hidden}
+
+  /* ═══ LEARNING TEASER CARD — unified template (harness-card-teaser.html) ═══ */
+  .ltc{display:grid; grid-template-columns:1fr 1fr; border-radius:26px; overflow:hidden; background:#F6F2E8; box-shadow:0 30px 80px -30px rgba(27,25,20,.35); border:1px solid rgba(27,25,20,.08); width:100%; max-width:1180px; transition:transform .5s var(--ease), box-shadow .5s var(--ease)}
+  .ltc.in-view{transform:scale(1.015); box-shadow:0 50px 120px -40px rgba(27,25,20,.4)}
+  @media(max-width:860px){.ltc{grid-template-columns:1fr}}
+  .ltc-panel{position:relative; color:#F4F1E6; padding:clamp(34px,5vw,62px); overflow:hidden; background:linear-gradient(165deg,rgba(126,142,106,.96),rgba(80,93,64,.98)); display:flex; flex-direction:column; min-height:420px}
+  .ltc-panel::before{content:""; position:absolute; inset:0; opacity:.14; mix-blend-mode:soft-light; pointer-events:none; background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 2px,transparent 2px 22px),repeating-linear-gradient(0deg,rgba(0,0,0,.4) 0 1px,transparent 1px 120px)}
+  .ltc-panel-num{font-family:'Instrument Serif',serif; font-style:italic; font-weight:300; font-size:clamp(74px,11vw,128px); line-height:.8; color:rgba(244,241,230,.92); position:relative}
+  .ltc-panel-kick{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:rgba(244,241,230,.78); margin-top:14px; position:relative}
+  .ltc-panel h2{font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(28px,3.6vw,44px); line-height:1.04; letter-spacing:-.015em; margin:auto 0 0; padding-top:34px; position:relative; max-width:13ch}
+  .ltc-panel p{font-size:clamp(14.5px,1.6vw,16.5px); line-height:1.55; color:rgba(244,241,230,.9); margin:20px 0 28px; position:relative; max-width:42ch}
+  .ltc-cta{position:relative; align-self:flex-start; display:inline-flex; align-items:center; gap:12px; background:#1B1914; color:#F4F1E6; font-family:'Geist'; font-weight:600; font-size:15.5px; border:none; cursor:pointer; text-decoration:none; padding:16px 26px; border-radius:40px; transition:.25s}
+  .ltc-cta:hover{background:#AF452B; transform:translateX(3px)}
+  .ltc-card{padding:clamp(30px,4vw,52px); display:flex; flex-direction:column}
+  .ltc-badge{align-self:flex-start; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#4A463B; border:1px solid rgba(27,25,20,.13); border-radius:30px; padding:8px 16px; margin-bottom:26px}
+  .ltc-card h3{font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(23px,2.8vw,32px); line-height:1.14; letter-spacing:-.012em; color:#1B1914}
+  .ltc-rule{height:1px; background:rgba(27,25,20,.13); margin:26px 0}
+  .ltc-row{margin-bottom:22px}
+  .ltc-row .ltc-lab{font-family:'JetBrains Mono',monospace; font-size:12.5px; letter-spacing:.16em; text-transform:uppercase; color:#AF452B; margin-bottom:7px}
+  .ltc-row .ltc-lab.hl{background:#C9D3B6; display:inline-block; padding:1px 6px; border-radius:3px; color:#1B1914}
+  .ltc-row p{font-size:16px; line-height:1.5; color:#4A463B}
+  .ltc-frase{font-family:'Instrument Serif',serif; font-style:italic; font-weight:400; font-size:clamp(17px,2vw,20px); line-height:1.4; color:#1B1914; margin-top:4px}
+  .ltc-frase b{font-style:normal; font-weight:600}
+
+  /* Carousel — fluid scaling on entering viewport */
+  .lcarousel{position:relative; padding:60px 0}
+  .lcarousel-track{display:flex; gap:32px; overflow-x:auto; scroll-snap-type:x mandatory; padding:40px clamp(20px,5vw,60px); scrollbar-width:none}
+  .lcarousel-track::-webkit-scrollbar{display:none}
+  .lcarousel-track > *{scroll-snap-align:center; flex:0 0 clamp(320px,85vw,1180px); transform:scale(.92); opacity:.6; transition:transform .55s var(--ease), opacity .55s var(--ease); cursor:pointer}
+  .lcarousel-track > *.is-current{transform:scale(1); opacity:1}
+  .lcarousel-track > *:hover{transform:scale(1.005)}
+
+  /* Square card (Instagram 1080x1080) */
+  .ltc-sq{aspect-ratio:1/1; width:1080px; max-width:100%; display:grid; grid-template-rows:1fr 1fr; border-radius:32px; overflow:hidden; background:#F6F2E8; box-shadow:0 30px 80px -30px rgba(27,25,20,.35)}
+  .ltc-sq .ltc-panel{min-height:0; padding:clamp(32px,5%,60px)}
+  .ltc-sq .ltc-panel h2{font-size:clamp(28px,4.2vw,46px); max-width:18ch}
+  .ltc-sq .ltc-card{padding:clamp(32px,5%,60px); justify-content:space-between}
+  .ltc-sq .ltc-card h3{font-size:clamp(26px,3.8vw,42px)}
+
 </style>
 </head>
 <body>
@@ -1174,6 +1294,59 @@ const Logo = memo(function Logo({ size = 36, color, animate = true }){
   </svg>;
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// LEARNING CARD — unified card used in Chapter 03, /learnings page, IG teaser, LinkedIn
+// Mirrors the harness-card-teaser.html template exactly
+// ═══════════════════════════════════════════════════════════════════════════
+const LearningCard = memo(function LearningCard({ L, onOpen, variant = "full" }){
+  // Extract first sentence/snippet from each section (max ~180 chars)
+  const snip = (s, max=180) => {
+    if(!s) return "";
+    const t = String(s).replace(/\n+/g, " ").trim();
+    return t.length > max ? t.slice(0, max).replace(/[,;.\s]+\S*$/, "") + "…" : t;
+  };
+  const num = String(L?.editionNumber || 1).padStart(2, "0");
+  const minRead = L?.readMinutes || Math.max(5, Math.round((
+    (L?.sections?.conceito||"").length +
+    (L?.sections?.porQueImporta||"").length +
+    (L?.sections?.naPratica||"").length +
+    (L?.sections?.proximasAcoes||"").length
+  ) / 1200)) || 8;
+  const title = L?.title || L?.topic || "Aprofundamento";
+
+  // 3 section snippets for the right panel (always 01/02/03 - skip 04 actions)
+  const rows = [
+    { lab: "01 · O conceito",     text: snip(L?.sections?.conceito, 180) },
+    { lab: "02 · Por que importa", text: snip(L?.sections?.porQueImporta, 180) },
+    { lab: "03 · Na prática",      text: snip(L?.sections?.naPratica, 180), hl: true },
+  ].filter(r => r.text);
+
+  return <div className={"lcard" + (variant==="square"?" lcard-square lcard-fixed":"") + (variant==="linkedin"?" lcard-linkedin lcard-fixed":"")} onClick={onOpen} style={{cursor: onOpen ? "pointer" : "default"}}>
+    <div className="lcard-panel">
+      <div className="lcard-num">{num}</div>
+      <div className="lcard-kick">Learning de Inovação</div>
+      <h2 className="lcard-h">Quando um tema merece mais que cinco minutos.</h2>
+      <p className="lcard-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. O Learning destila um tema por vez: o que é, por que importa, e o que fazer.</p>
+      {onOpen && <button className="lcard-cta" onClick={e=>{e.stopPropagation(); onOpen();}}>Abrir o aprofundamento <span className="arr">→</span></button>}
+    </div>
+    <div className="lcard-body">
+      <span className="lcard-badge">Aprofundamento Nº {num} · {minRead} min</span>
+      <h3>{title}</h3>
+      <div className="lcard-rule"></div>
+      {rows.map((r,i)=>(
+        <div key={i} className="lcard-row">
+          <div className={"lcard-lab" + (r.hl ? " hl" : "")}>{r.lab}</div>
+          <p>{r.text}</p>
+        </div>
+      ))}
+      {L?.takeaway && <>
+        <div className="lcard-rule"></div>
+        <p className="lcard-frase"><b>Em uma frase:</b> {L.takeaway}</p>
+      </>}
+    </div>
+  </div>;
+});
+
 const Nav = memo(function Nav({ activeSection, isAdmin, onLogout, session }){
   return <nav className="nav"><div className="container nav-inner">
     <a href="?view=landing" className="brand">
@@ -1190,7 +1363,7 @@ const Nav = memo(function Nav({ activeSection, isAdmin, onLogout, session }){
       </> : <>
         <a href="?view=landing#news">Newsletter</a>
         <a href="?view=podcasts">Podcast</a>
-        <a href="?view=landing#learning">Learning</a>
+        <a href="?view=learnings">Learning</a>
         <a href="?view=admin" className="nav-cta">Admin →</a>
       </>}
     </div>
@@ -1362,10 +1535,151 @@ const isDirectVideo = (u) => u && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
 const seekToFrame = (e) => { try { e.currentTarget.currentTime = 1; } catch(_){} };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// LEARNING TEASER CARD — unified template used in landing, listing, IG, LinkedIn
+// ═══════════════════════════════════════════════════════════════════════════
+const countWords = s => String(s||"").trim().split(/\s+/).filter(Boolean).length;
+function estimateReadTime(L){
+  const total = countWords(L.sections?.conceito) + countWords(L.sections?.porQueImporta) + countWords(L.sections?.naPratica) + countWords(L.sections?.proximasAcoes);
+  const faqWords = (L.faqs||[]).filter(f=>f.selected).reduce((a,f)=>a+countWords(f.a),0);
+  return Math.max(2, Math.round((total + faqWords) / 215));
+}
+function firstSentence(s, max = 130){
+  const t = String(s||"").trim().replace(/\s+/g," ");
+  if(!t) return "";
+  // get first sentence-ish
+  const m = t.match(/^.+?[.!?](?:\s|$)/);
+  let out = m ? m[0] : t;
+  if(out.length > max) out = out.slice(0, max).replace(/\s\S*$/,"") + "…";
+  return out.trim();
+}
+
+const LearningTeaserCard = memo(function LearningTeaserCard({ learning, onClick, current = true }){
+  const L = learning;
+  if(!L) return null;
+  const num = String(L.editionNumber||1).padStart(2,"0");
+  const rt = estimateReadTime(L);
+  return <div className={"ltc " + (current ? "in-view" : "")} onClick={onClick} role={onClick?"button":undefined} tabIndex={onClick?0:undefined} onKeyDown={e=>{if(onClick && (e.key==="Enter"||e.key===" ")){e.preventDefault();onClick();}}}>
+    <div className="ltc-panel">
+      <div className="ltc-panel-num">03</div>
+      <div className="ltc-panel-kick">Learning de Inovação</div>
+      <h2>Quando um tema merece mais que cinco minutos.</h2>
+      <p>De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido.</p>
+      {onClick && <button type="button" className="ltc-cta" onClick={e=>{e.stopPropagation(); onClick();}}>Abrir o aprofundamento <span className="arr">→</span></button>}
+    </div>
+    <div className="ltc-card">
+      <span className="ltc-badge">Aprofundamento Nº {num} · {rt} min</span>
+      <h3>{L.title || L.topic || "Aprofundamento Sync·MI"}</h3>
+      <div className="ltc-rule"></div>
+      <div className="ltc-row">
+        <div className="ltc-lab">01 · O conceito</div>
+        <p>{firstSentence(L.sections?.conceito) || "—"}</p>
+      </div>
+      <div className="ltc-row">
+        <div className="ltc-lab">02 · Por que importa</div>
+        <p>{firstSentence(L.sections?.porQueImporta) || "—"}</p>
+      </div>
+      <div className="ltc-row">
+        <div className="ltc-lab hl">03 · Na prática</div>
+        <p>{firstSentence(L.sections?.naPratica) || "—"}</p>
+      </div>
+      <div className="ltc-rule"></div>
+      {L.takeaway && <p className="ltc-frase"><b>Em uma frase:</b> {L.takeaway}</p>}
+    </div>
+  </div>;
+});
+
+// Fluid carousel with center snap + scale-on-current
+const LearningCarousel = memo(function LearningCarousel({ items, onOpen }){
+  const trackRef = useRef(null);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  useEffect(()=>{
+    const track = trackRef.current; if(!track) return;
+    const onScroll = () => {
+      const center = track.scrollLeft + track.clientWidth/2;
+      let bestIdx = 0, bestDist = Infinity;
+      Array.from(track.children).forEach((el, i) => {
+        const elCenter = el.offsetLeft + el.offsetWidth/2;
+        const d = Math.abs(elCenter - center);
+        if(d < bestDist){ bestDist = d; bestIdx = i; }
+      });
+      setCurrentIdx(bestIdx);
+    };
+    track.addEventListener("scroll", onScroll, {passive:true});
+    onScroll();
+    return ()=>track.removeEventListener("scroll", onScroll);
+  },[items.length]);
+
+  return <div className="lcarousel">
+    <div className="lcarousel-track" ref={trackRef}>
+      {items.map((L,i)=>(
+        <div key={L.id} className={i===currentIdx?"is-current":""}>
+          <LearningTeaserCard learning={L} onClick={()=>onOpen(L)} current={i===currentIdx}/>
+        </div>
+      ))}
+    </div>
+  </div>;
+});
+
+// Standalone HTML version of the teaser card (for sharing / opening externally)
+function renderLearningTeaserHTML(L){
+  const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const num = String(L.editionNumber||1).padStart(2,"0");
+  const rt = estimateReadTime(L);
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sync·MI Learning — ${esc(L.title||L.topic)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Mulish:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F3EFE4;--paper-card:#F6F2E8;--ink:#1B1914;--ink-soft:#4A463B;--rust:#AF452B;--sage:#7E8E6A;--sage-deep:#5E6B4D;--line:rgba(27,25,20,.13)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);font-family:'Mulish',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;padding:clamp(20px,5vw,60px) 18px;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.mono{font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.2em}
+.learning{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;border-radius:26px;overflow:hidden;box-shadow:0 30px 80px -30px rgba(27,25,20,.35);background:var(--paper-card)}
+@media(max-width:860px){.learning{grid-template-columns:1fr}}
+.panel{position:relative;color:#F4F1E6;padding:clamp(34px,5vw,62px);overflow:hidden;background:linear-gradient(165deg,rgba(126,142,106,.96),rgba(80,93,64,.98));display:flex;flex-direction:column;min-height:420px}
+.panel::before{content:"";position:absolute;inset:0;opacity:.14;mix-blend-mode:soft-light;pointer-events:none;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 2px,transparent 2px 22px),repeating-linear-gradient(0deg,rgba(0,0,0,.4) 0 1px,transparent 1px 120px)}
+.panel-num{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:clamp(74px,11vw,128px);line-height:.8;color:rgba(244,241,230,.92);position:relative}
+.panel .kick{font-size:11px;color:rgba(244,241,230,.78);margin-top:14px;position:relative}
+.panel h2{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(28px,3.6vw,44px);line-height:1.04;letter-spacing:-.015em;margin:auto 0 0;padding-top:34px;position:relative;max-width:13ch}
+.panel p{font-size:clamp(14.5px,1.6vw,16.5px);line-height:1.55;color:rgba(244,241,230,.9);margin:20px 0 28px;position:relative;max-width:42ch}
+.cta{position:relative;align-self:flex-start;display:inline-flex;align-items:center;gap:12px;background:var(--ink);color:#F4F1E6;font-family:'Mulish';font-weight:600;font-size:15.5px;border:none;cursor:pointer;text-decoration:none;padding:16px 26px;border-radius:40px;transition:.25s}
+.cta:hover{background:var(--rust);transform:translateX(3px)}
+.card{padding:clamp(30px,4vw,52px);display:flex;flex-direction:column}
+.badge{align-self:flex-start;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);border:1px solid var(--line);border-radius:30px;padding:8px 16px;margin-bottom:26px}
+.card h3{font-family:'Fraunces',serif;font-weight:430;font-size:clamp(23px,2.8vw,32px);line-height:1.14;letter-spacing:-.012em;color:var(--ink)}
+.rule{height:1px;background:var(--line);margin:26px 0}
+.row{margin-bottom:22px}
+.row .lab{font-family:'Space Mono',monospace;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--rust);margin-bottom:7px}
+.row .lab.hl{background:#C9D3B6;display:inline-block;padding:1px 6px;border-radius:3px;color:var(--ink)}
+.row p{font-size:16px;line-height:1.5;color:var(--ink-soft)}
+.frase{font-family:'Fraunces',serif;font-style:italic;font-weight:380;font-size:clamp(17px,2vw,20px);line-height:1.4;color:var(--ink);margin-top:4px}
+.frase b{font-style:normal;font-weight:600}
+</style></head><body>
+<section class="learning">
+<div class="panel">
+<div class="panel-num">03</div>
+<div class="kick mono">Learning de Inovação</div>
+<h2>Quando um tema merece mais que cinco minutos.</h2>
+<p>De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. O Learning destila um tema por vez em um explicador prático: o que é, por que importa, e o que fazer com isso.</p>
+<span class="cta">Abrir o aprofundamento <span>→</span></span>
+</div>
+<div class="card">
+<span class="badge">Aprofundamento Nº ${num} · ${rt} min</span>
+<h3>${esc(L.title||L.topic)}</h3>
+<div class="rule"></div>
+<div class="row"><div class="lab">01 · O conceito</div><p>${esc(firstSentence(L.sections?.conceito))}</p></div>
+<div class="row"><div class="lab">02 · Por que importa</div><p>${esc(firstSentence(L.sections?.porQueImporta))}</p></div>
+<div class="row"><div class="lab hl">03 · Na prática</div><p>${esc(firstSentence(L.sections?.naPratica))}</p></div>
+<div class="rule"></div>
+${L.takeaway?`<p class="frase"><b>Em uma frase:</b> ${esc(L.takeaway)}</p>`:""}
+</div>
+</section>
+</body></html>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // LANDING — Floema model (numbered chapters, chartreuse + near-black 2-color)
 // ═══════════════════════════════════════════════════════════════════════════
 function LandingPage(){
-  const [newsletters,setNewsletters] = useState([]);
   const [podcasts,setPodcasts] = useState([]);
   const [learnings,setLearnings] = useState([]);
   const [emailInput,setEmailInput] = useState("");
@@ -1584,56 +1898,34 @@ function LandingPage(){
       </div>
     </section>
 
-    {/* ── CHAPTER 03 — Learning (sage green + books bg, dynamic) ── */}
-    <section id="chapter-03" className="fl-chapter fl-c-green">
+    {/* ── CHAPTER 03 — Learning (sage green, unified LearningCard) ── */}
+    <section id="chapter-03" className="fl-chapter fl-c-green" style={{padding:"100px 0 80px"}}>
       <div className="fl-chapter-bg" style={{backgroundImage:"url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&auto=format&fit=crop&q=80')"}}></div>
       <div className="container fl-chapter-in">
         <div className="fl-num">03</div>
         <div className="fl-cat">Learning de Inovação</div>
-        <div className="fl-chapter-grid">
-          <div className="fl-chapter-text fl-reveal">
-            <h2 className="fl-chapter-title">Quando um tema merece mais que cinco minutos.</h2>
-            <p className="fl-chapter-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. O Learning destila um tema por vez em um explicador prático: o que é, por que importa, e o que fazer com isso.</p>
-            {learnings[0]
-              ? <button onClick={()=>openLearning(learnings[0])} className="fl-cta" style={{border:"none",cursor:"pointer"}}>Abrir aprofundamento atual <span>→</span></button>
-              : <a href="#learning" className="fl-cta">Em breve <span>→</span></a>}
-            {learnings.length>1 && <div style={{marginTop:36}}>
-              <div className="mono" style={{fontSize:".62rem",letterSpacing:".22em",textTransform:"uppercase",color:"rgba(36,31,33,.6)",marginBottom:14}}>Aprofundamentos anteriores</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:"42ch"}}>
-                {learnings.slice(1,5).map(x=>(
-                  <button key={x.id} onClick={()=>openLearning(x)} style={{textAlign:"left",background:"transparent",border:"none",cursor:"pointer",padding:"10px 0",borderTop:"1px solid rgba(36,31,33,.18)",color:"#241F21",fontFamily:"'Instrument Serif',serif",fontSize:"1.1rem",lineHeight:1.2,display:"flex",justifyContent:"space-between",gap:14,alignItems:"baseline"}}>
-                    <span><span className="mono" style={{fontSize:".58rem",letterSpacing:".18em",opacity:.55,marginRight:10}}>№ {String(x.editionNumber||1).padStart(2,"0")}</span>{x.title||x.topic}</span>
-                    <span style={{opacity:.5,fontSize:".9rem"}}>→</span>
-                  </button>
-                ))}
-              </div>
-            </div>}
-          </div>
-          <div className="fl-chapter-visual fl-reveal" id="learning">
-            {learnings[0] ? <button onClick={()=>openLearning(learnings[0])} className="fl-learning-card" style={{textAlign:"left",border:"1px solid var(--rule)",cursor:"pointer",width:"100%",font:"inherit",color:"inherit"}}>
-              <div className="fl-lc-badge">Aprofundamento № {String(learnings[0].editionNumber||1).padStart(2,"0")}{learnings[0].kpis?.length?` · ${learnings[0].kpis.length} KPIs`:""}</div>
-              <h3 className="fl-lc-title">{learnings[0].title||learnings[0].topic}</h3>
-              <div className="fl-lc-steps">
-                {["conceito","porQueImporta","naPratica"].map((k,i)=>{
-                  const text = (learnings[0].sections?.[k]||"").split(/\n+/)[0].slice(0,150);
-                  if(!text) return null;
-                  return <div key={k} className="fl-lc-step"><div className="fl-lc-n">{`0${i+1}`} · {["O conceito","Por que importa","Na prática"][i]}</div><div className="fl-lc-st">{text}{text.length>=150?"…":""}</div></div>;
-                })}
-              </div>
-              {learnings[0].takeaway && <div className="fl-lc-takeaway">Em uma frase: <b>{learnings[0].takeaway}</b></div>}
-            </button>
-            : <div className="fl-learning-card">
-              <div className="fl-lc-badge">Aprofundamento № 01 · em breve</div>
-              <h3 className="fl-lc-title">O primeiro aprofundamento chega em breve.</h3>
-              <div className="fl-lc-steps">
-                <div className="fl-lc-step"><div className="fl-lc-n">01 · O conceito</div><div className="fl-lc-st">Cada Learning destila um tema denso em explicador prático.</div></div>
-                <div className="fl-lc-step"><div className="fl-lc-n">02 · Por que importa</div><div className="fl-lc-st">Pesquisa em fontes, KPIs e exemplos práticos por edição.</div></div>
-                <div className="fl-lc-step"><div className="fl-lc-n">03 · Na prática</div><div className="fl-lc-st">O que fazer hoje — ações de baixo risco que ensinam a tecnologia.</div></div>
-              </div>
-              <div className="fl-lc-takeaway">Em uma frase: <b>aprofundamento útil quando 5 minutos não bastam.</b></div>
-            </div>}
-          </div>
+        <div style={{maxWidth:"68ch",margin:"24px 0 32px"}}>
+          <h2 className="fl-chapter-title">Quando um tema merece mais que cinco minutos.</h2>
+          <p className="fl-chapter-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. Cada aprofundamento destila um tema em explicador prático: o que é, por que importa, e o que fazer com isso.</p>
         </div>
+      </div>
+      <div style={{maxWidth:1180,margin:"0 auto",padding:"0 clamp(20px,5vw,40px)",position:"relative",zIndex:2}}>
+        {learnings.length > 0
+          ? <LearningCard L={learnings[0]} onOpen={()=>openLearning(learnings[0])}/>
+          : <LearningCard L={{
+              editionNumber:1,
+              title:"O primeiro aprofundamento chega em breve.",
+              sections:{
+                conceito:"Cada Learning destila um tema denso em explicador prático: o que é, por que importa, e o que fazer com isso.",
+                porQueImporta:"Pesquisa em fontes, KPIs com fontes citadas, e exemplos práticos por edição.",
+                naPratica:"Comece pelas ações de baixo risco — elas ensinam a tecnologia sem o custo de adoção em produção."
+              },
+              takeaway:"aprofundamento útil quando 5 minutos não bastam."
+            }}/>
+        }
+        {learnings.length > 0 && <div style={{textAlign:"center",marginTop:32}}>
+          <a href="?view=learnings" className="fl-cta">Ver todos os {learnings.length} aprofundamento{learnings.length>1?"s":""} <span>→</span></a>
+        </div>}
       </div>
     </section>
 
@@ -2043,6 +2335,105 @@ function PublicNewsletter(){
 // ═══════════════════════════════════════════════════════════════════════════
 // PODCASTS PAGE — YouTube-style grid listing
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// LEARNINGS PAGE — public carousel of all aprofundamentos (Learning de Inovação)
+// ═══════════════════════════════════════════════════════════════════════════
+function LearningsPage(){
+  const [learnings, setLearnings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const carouselRef = useRef(null);
+
+  useEffect(()=>{(async()=>{
+    setLearnings(await learningsApi.list());
+    setLoading(false);
+  })()}, []);
+
+  const openLearning = (L) => {
+    try {
+      const html = (L.preserveRaw && L.rawHtml) ? L.rawHtml : renderLearningHTML(L);
+      const blob = new Blob([html], {type:"text/html"});
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    } catch(e){ console.error(e); }
+  };
+
+  // Track which card is centered in the carousel for active state + dots
+  useEffect(()=>{
+    const el = carouselRef.current; if(!el) return;
+    const onScroll = () => {
+      const center = el.scrollLeft + el.offsetWidth/2;
+      const items = el.querySelectorAll(".lcarousel-item");
+      let bestIdx = 0, bestDist = Infinity;
+      items.forEach((it, i)=>{
+        const itemCenter = it.offsetLeft + it.offsetWidth/2;
+        const d = Math.abs(itemCenter - center);
+        if(d < bestDist){ bestDist = d; bestIdx = i; }
+      });
+      setActiveIdx(bestIdx);
+    };
+    el.addEventListener("scroll", onScroll, {passive:true});
+    onScroll();
+    return ()=>el.removeEventListener("scroll", onScroll);
+  }, [learnings]);
+
+  const scrollTo = (i) => {
+    const el = carouselRef.current; if(!el) return;
+    const item = el.querySelectorAll(".lcarousel-item")[i]; if(!item) return;
+    el.scrollTo({ left: item.offsetLeft - (el.offsetWidth - item.offsetWidth)/2, behavior: "smooth" });
+  };
+
+  return <div style={{minHeight:"100vh",background:BRAND.paper}}>
+    <Nav activeSection="learning"/>
+
+    <main className="container" style={{paddingTop:120,paddingBottom:80,maxWidth:1400}}>
+      {/* HEADER */}
+      <div className="lp-reveal in" style={{position:"relative",overflow:"hidden",paddingTop:30,paddingBottom:32,borderBottom:`1px solid ${BRAND.rule}`,marginBottom:40,maxWidth:900}}>
+        <FlowBg/>
+        <div style={{position:"relative",zIndex:2}}>
+          <Logo size={42}/>
+          <div className="mono small-caps" style={{color:BRAND.accent,marginTop:18,marginBottom:16,fontSize:".6rem"}}>Learning de Inovação · Sync·MI</div>
+          <h1 className="lp-ultra" style={{fontSize:"clamp(2.4rem,6.5vw,5rem)",margin:"0 0 20px",color:BRAND.ink}}>
+            Aprofundamentos. <em style={{fontStyle:"normal",color:BRAND.accent}}>Um tema por vez.</em>
+          </h1>
+          <p className="lp-serif" style={{fontStyle:"italic",fontSize:"clamp(1.15rem,2vw,1.5rem)",lineHeight:1.45,color:BRAND.inkSoft,maxWidth:"56ch",margin:0}}>
+            Estudos que destilam temas densos em explicador prático — conceito, dados de mercado, aplicação e ações imediatas.
+          </p>
+        </div>
+      </div>
+
+      {loading
+        ? <div style={{padding:"80px 0",textAlign:"center",color:BRAND.mute}}><Spin/> Carregando aprofundamentos…</div>
+        : learnings.length === 0
+          ? <div style={{padding:"80px 0",textAlign:"center"}}>
+              <div className="mono small-caps" style={{color:BRAND.accent,fontSize:".7rem",marginBottom:14}}>Em breve</div>
+              <h2 style={{fontFamily:"'Instrument Serif',serif",fontWeight:400,fontSize:"2.4rem",color:BRAND.ink,marginBottom:10}}>O primeiro aprofundamento chega em breve.</h2>
+              <p style={{color:BRAND.inkSoft,maxWidth:"50ch",margin:"0 auto",fontSize:"1.05rem",lineHeight:1.55}}>Cada Learning destila um tema denso em explicador prático: pesquisa em fontes, KPIs, exemplos e ações por edição.</p>
+              <a href="?view=landing" className="btn btn-ghost btn-sm" style={{marginTop:24,display:"inline-block"}}>← Voltar pra landing</a>
+            </div>
+          : <>
+              <div className="mono small-caps" style={{color:BRAND.mute,marginBottom:14,fontSize:".62rem"}}>{learnings.length} aprofundamento{learnings.length>1?"s":""} · arrasta lateralmente</div>
+              {/* CAROUSEL */}
+              <div ref={carouselRef} className="lcarousel" style={{margin:"0 -24px",padding:"24px 24px 60px"}}>
+                {learnings.map((L,i)=>(
+                  <div key={L.id} className={"lcarousel-item" + (i===activeIdx ? " active" : "")} onClick={()=>i===activeIdx ? openLearning(L) : scrollTo(i)}>
+                    <LearningCard L={L} onOpen={()=>openLearning(L)}/>
+                  </div>
+                ))}
+              </div>
+              {/* Dots nav */}
+              {learnings.length > 1 && <div className="lcarousel-nav">
+                {learnings.map((_,i)=>(
+                  <button key={i} className={"lcarousel-dot" + (i===activeIdx ? " active" : "")} onClick={()=>scrollTo(i)} aria-label={`Ver aprofundamento ${i+1}`}/>
+                ))}
+              </div>}
+            </>
+      }
+    </main>
+  </div>;
+}
+
 function PodcastsPage(){
   const [podcasts,setPodcasts] = useState([]);
   const [loading,setLoading] = useState(true);
@@ -2173,6 +2564,74 @@ function PodcastsPage(){
 // ═══════════════════════════════════════════════════════════════════════════
 // PODCAST DETAIL — YouTube-style player view
 // ═══════════════════════════════════════════════════════════════════════════
+function LearningsPage(){
+  const [learnings,setLearnings] = useState([]);
+  const [loading,setLoading] = useState(true);
+  useEffect(()=>{(async()=>{ setLearnings(await learningsApi.list()); setLoading(false); })()},[]);
+
+  const openLearning = (L) => {
+    try {
+      const html = (L.preserveRaw && L.rawHtml) ? L.rawHtml : renderLearningHTML(L);
+      const blob = new Blob([html], {type:"text/html"});
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    } catch(e){ console.error(e); }
+  };
+
+  return <div style={{background:BRAND.paper, minHeight:"100vh"}}>
+    <Nav activeSection="learnings" isAdmin={false} session={null}/>
+    <main style={{paddingTop:120}}>
+      {/* Header — channel context, same green panel feel */}
+      <header style={{position:"relative", overflow:"hidden", background:"linear-gradient(165deg,rgba(126,142,106,.96),rgba(80,93,64,.98))", color:"#F4F1E6", padding:"clamp(60px,9vw,110px) 24px clamp(48px,7vw,86px)"}}>
+        <div style={{position:"absolute",inset:0,opacity:.14,mixBlendMode:"soft-light",pointerEvents:"none",backgroundImage:"repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 2px,transparent 2px 22px),repeating-linear-gradient(0deg,rgba(0,0,0,.4) 0 1px,transparent 1px 120px)"}}/>
+        <div className="container" style={{position:"relative", zIndex:2, maxWidth:1180, margin:"0 auto"}}>
+          <div style={{fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontWeight:300,fontSize:"clamp(74px,11vw,128px)",lineHeight:.8,color:"rgba(244,241,230,.92)"}}>03</div>
+          <div className="mono" style={{fontSize:11,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(244,241,230,.78)",marginTop:14}}>Learning de Inovação · Sync·MI</div>
+          <h1 style={{fontFamily:"'Instrument Serif',serif",fontWeight:400,fontSize:"clamp(34px,5.6vw,68px)",lineHeight:1.04,letterSpacing:"-.015em",marginTop:36,maxWidth:"16ch"}}>
+            Quando um tema merece mais que cinco minutos.
+          </h1>
+          <p style={{fontSize:"clamp(15px,1.7vw,18.5px)",lineHeight:1.6,color:"rgba(244,241,230,.9)",marginTop:24,maxWidth:"56ch"}}>
+            Cada aprofundamento destila um tema denso — IA, agentes, arquitetura, computação soberana — em um explicador prático: o que é, por que importa agora, e o que fazer com isso. Pesquisado em fontes, com KPIs, gráficos e FAQ.
+          </p>
+          <div style={{marginTop:36, display:"flex", gap:18, alignItems:"baseline", flexWrap:"wrap"}}>
+            <div className="mono" style={{fontSize:11,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(244,241,230,.78)"}}>
+              {learnings.length} aprofundamento{learnings.length!==1?"s":""} publicado{learnings.length!==1?"s":""}
+            </div>
+            <a href="?view=landing" style={{color:"rgba(244,241,230,.65)",textDecoration:"none",fontSize:14}}>← Voltar para o início</a>
+          </div>
+        </div>
+      </header>
+
+      {/* Carousel */}
+      {loading
+        ? <div style={{textAlign:"center",padding:"80px 20px",color:BRAND.mute}}>Carregando aprofundamentos...</div>
+        : learnings.length===0
+          ? <div style={{textAlign:"center",padding:"80px 20px",color:BRAND.mute,maxWidth:560,margin:"0 auto"}}>
+              <div style={{fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:"2rem",color:BRAND.inkSoft,marginBottom:12}}>Em breve.</div>
+              O primeiro aprofundamento está sendo finalizado.
+            </div>
+          : <LearningCarousel items={learnings} onOpen={openLearning}/>}
+
+      {/* List of all (titles, below carousel for SEO + fallback navigation) */}
+      {learnings.length > 0 && <section style={{maxWidth:980, margin:"40px auto 80px", padding:"0 24px"}}>
+        <div className="mono" style={{fontSize:".62rem",letterSpacing:".22em",textTransform:"uppercase",color:BRAND.mute,marginBottom:18}}>Todos os aprofundamentos</div>
+        <div style={{borderTop:`1px solid ${BRAND.rule}`}}>
+          {learnings.map(L=>(
+            <button key={L.id} onClick={()=>openLearning(L)} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:18,width:"100%",padding:"22px 0",borderBottom:`1px solid ${BRAND.rule}`,background:"transparent",border:"none",borderTop:"none",borderLeft:"none",borderRight:"none",borderBottomColor:BRAND.rule,cursor:"pointer",textAlign:"left",color:BRAND.ink}}>
+              <span style={{display:"flex",alignItems:"baseline",gap:18,flex:1,minWidth:0}}>
+                <span className="mono" style={{fontSize:".62rem",letterSpacing:".22em",color:BRAND.accent,minWidth:50}}>№ {String(L.editionNumber||1).padStart(2,"0")}</span>
+                <span style={{fontFamily:"'Instrument Serif',serif",fontSize:"1.3rem",lineHeight:1.2,flex:1}}>{L.title||L.topic}</span>
+              </span>
+              <span style={{color:BRAND.mute, fontSize:".85rem"}}>{estimateReadTime(L)} min →</span>
+            </button>
+          ))}
+        </div>
+      </section>}
+    </main>
+  </div>;
+}
+
 function PodcastDetail(){
   const [podcast,setPodcast] = useState(null);
   const [related,setRelated] = useState([]);
@@ -3139,6 +3598,7 @@ function LearningEditor({ apiKey, keyValidated }){
   const [chatInput,setChatInput] = useState("");
   const [showJson,setShowJson] = useState(false);
   const teaserRef = useRef(null);
+  const linkedinRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(()=>{(async()=>{ setList(await learningsApi.list()); })()},[]);
@@ -3326,6 +3786,15 @@ Devolva o JSON COMPLETO do aprofundamento atualizado, com mesma estrutura, alter
     if(!w) setErr("Pop-up bloqueado. Permita pop-ups deste site para usar o preview.");
   }
 
+  function previewTeaserCard(){
+    const html = renderLearningTeaserHTML({...L, topic:L.topic||topic, editionNumber:L.editionNumber||(list.length+1)});
+    const blob = new Blob([html], {type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    if(!w) setErr("Pop-up bloqueado. Permita pop-ups deste site para usar o preview.");
+  }
+
   async function generateTeaserPost(){
     if(!apiKey||!keyValidated){ setErr("Configure a API Key."); return; }
     setBusy(true); setStage("Gerando posts de divulgação…"); setErr("");
@@ -3351,17 +3820,37 @@ Responda em JSON puro (sem markdown):
     setBusy(false); setStage("");
   }
 
-  async function downloadTeaserImage(){
-    const el = teaserRef.current; if(!el || !window.html2canvas){ setErr("html2canvas não carregado."); return; }
-    setBusy(true); setStage("Renderizando imagem…");
+  // Helper to render any DOM ref to a PNG at native size (ignoring CSS scale)
+  async function renderRefToImagePNG(ref, filename){
+    const el = ref?.current; if(!el || !window.html2canvas){ setErr("html2canvas não carregado."); return; }
+    // Temporarily clear any CSS transform on the wrapper so html2canvas sees true size
+    const prevTransform = el.style.transform;
+    el.style.transform = "none";
     try {
-      const canvas = await window.html2canvas(el, {scale:3, backgroundColor:null, useCORS:true});
-      canvas.toBlob(blob=>{
-        const url=URL.createObjectURL(blob); const a=document.createElement("a");
-        a.href=url; a.download=`learning-teaser-${slugify(L.topic||topic)}.png`; a.click();
-        setTimeout(()=>URL.revokeObjectURL(url),500);
-      },"image/png");
-    } catch(e){ setErr(e.message||"Falha na imagem."); }
+      const canvas = await window.html2canvas(el, {scale:2, backgroundColor:null, useCORS:true, logging:false});
+      await new Promise(resolve => {
+        canvas.toBlob(blob=>{
+          const url=URL.createObjectURL(blob); const a=document.createElement("a");
+          a.href=url; a.download=filename; a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),500);
+          resolve();
+        },"image/png");
+      });
+    } finally {
+      el.style.transform = prevTransform;
+    }
+  }
+
+  async function downloadTeaserImage(){
+    setBusy(true); setStage("Renderizando Instagram…"); setErr("");
+    try { await renderRefToImagePNG(teaserRef, `learning-instagram-${slugify(L.topic||topic)}.png`); }
+    catch(e){ setErr(e.message||"Falha na imagem."); }
+    setBusy(false); setStage("");
+  }
+  async function downloadLinkedinImage(){
+    setBusy(true); setStage("Renderizando LinkedIn…"); setErr("");
+    try { await renderRefToImagePNG(linkedinRef, `learning-linkedin-${slugify(L.topic||topic)}.png`); }
+    catch(e){ setErr(e.message||"Falha na imagem."); }
     setBusy(false); setStage("");
   }
 
@@ -3548,30 +4037,40 @@ Responda em JSON puro (sem markdown):
         </div>
       </div>
 
-      {/* TEASERS (Instagram + LinkedIn) */}
+      {/* TEASERS (Instagram + LinkedIn) — both use unified LearningCard */}
       <div style={{marginTop:24,padding:20,border:`1px solid ${BRAND.rule}`,borderRadius:14}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
-          <div className="mono small-caps" style={{color:BRAND.accent}}>📣 Divulgação</div>
+          <div className="mono small-caps" style={{color:BRAND.accent}}>📣 Divulgação · cards exportáveis</div>
           <Btn onClick={generateTeaserPost} disabled={busy||!keyValidated}>{busy&&stage.startsWith("Gerando")?<><Spin/> {stage}</>:"🪄 Gerar posts"}</Btn>
         </div>
-        {/* Teaser Instagram card (renderable to image) */}
-        <div ref={teaserRef} style={{width:1080,height:1080,maxWidth:"100%",aspectRatio:"1/1",background:BRAND.ink,color:BRAND.paper,padding:"clamp(28px,5%,60px)",position:"relative",overflow:"hidden",borderRadius:14,fontFamily:"'Geist',sans-serif",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:10,height:10,background:BRAND.accent,borderRadius:"50%"}}></div><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".78rem",letterSpacing:".22em",opacity:.7}}>SYNC·MI · LEARNING DE INOVAÇÃO</span></div>
-            <div style={{marginTop:36,fontFamily:"'JetBrains Mono',monospace",fontSize:".78rem",letterSpacing:".22em",color:BRAND.accent}}>APROFUNDAMENTO № {String(L.editionNumber||(list.length+1)).padStart(2,"0")}</div>
-          </div>
-          <div>
-            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(2.4rem,6vw,4.6rem)",lineHeight:1.05,letterSpacing:"-.015em"}}>{L.teaser?.instagramHeadline || L.title || L.topic || "Seu tema"}</div>
-            {L.takeaway && <div style={{marginTop:24,fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:"1.25rem",opacity:.78,maxWidth:"38ch",lineHeight:1.45}}>"{L.takeaway}"</div>}
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
-            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"1.7rem"}}>Sync<em style={{fontStyle:"normal",color:BRAND.accent}}>·MI</em></div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".7rem",letterSpacing:".22em",opacity:.6}}>SYNCMI.COM</div>
+        <div style={{fontSize:".82rem",color:BRAND.mute,marginBottom:14,lineHeight:1.5}}>
+          O mesmo card usado na landing e no carrossel da página /learnings vira a imagem do Instagram (1080×1080) e do LinkedIn (1200×627).
+        </div>
+
+        {/* Instagram square preview (1080×1080) */}
+        <div style={{marginBottom:24}}>
+          <div className="mono" style={{fontSize:".62rem",letterSpacing:".22em",color:BRAND.mute,marginBottom:10}}>📷 Instagram · 1080 × 1080</div>
+          <div style={{maxHeight:480,overflow:"hidden",borderRadius:8,border:`1px solid ${BRAND.rule}`,background:BRAND.paperLight,padding:20,display:"flex",justifyContent:"center"}}>
+            <div ref={teaserRef} style={{transform:"scale(.42)",transformOrigin:"top center",width:1080,height:1080,flexShrink:0}}>
+              <LearningCard L={{...L, editionNumber: L.editionNumber || (list.length+1)}} variant="square"/>
+            </div>
           </div>
         </div>
-        <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap",alignItems:"center"}}>
-          <Btn onClick={previewLearning} style={{background:BRAND.ink,color:BRAND.paper}}>👁 Preview (nova aba)</Btn>
-          <Btn onClick={downloadTeaserImage} disabled={busy}>📸 Baixar imagem Instagram (PNG)</Btn>
+
+        {/* LinkedIn horizontal preview (1200×627) */}
+        <div style={{marginBottom:24}}>
+          <div className="mono" style={{fontSize:".62rem",letterSpacing:".22em",color:BRAND.mute,marginBottom:10}}>💼 LinkedIn · 1200 × 627</div>
+          <div style={{maxHeight:380,overflow:"hidden",borderRadius:8,border:`1px solid ${BRAND.rule}`,background:BRAND.paperLight,padding:20,display:"flex",justifyContent:"center"}}>
+            <div ref={linkedinRef} style={{transform:"scale(.5)",transformOrigin:"top center",width:1200,height:627,flexShrink:0}}>
+              <LearningCard L={{...L, editionNumber: L.editionNumber || (list.length+1)}} variant="linkedin"/>
+            </div>
+          </div>
+        </div>
+
+        <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap",alignItems:"center"}}>
+          <Btn onClick={previewLearning} style={{background:BRAND.ink,color:BRAND.paper}}>👁 Preview do Aprofundamento (HTML)</Btn>
+          <Btn onClick={downloadTeaserImage} disabled={busy}>📷 Baixar Instagram (PNG)</Btn>
+          <Btn onClick={downloadLinkedinImage} disabled={busy}>💼 Baixar LinkedIn (PNG)</Btn>
           <Btn onClick={downloadHTML}>📄 Baixar HTML standalone</Btn>
           <Btn onClick={()=>setShowJson(x=>!x)}>{showJson?"Esconder":"Ver"} JSON</Btn>
           {L.rawHtml && <label style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 12px",background:L.preserveRaw?`${BRAND.accent}1A`:BRAND.paperLight,border:`1px solid ${L.preserveRaw?BRAND.accent:BRAND.rule}`,borderRadius:8,cursor:"pointer",fontSize:".84rem",fontWeight:600,color:L.preserveRaw?BRAND.accent:BRAND.inkSoft}}>
@@ -5110,6 +5609,7 @@ function App(){
   if(view === "public") return <PublicNewsletter/>;
   if(view === "podcasts") return <PodcastsPage/>;
   if(view === "podcast") return <PodcastDetail/>;
+  if(view === "learnings") return <LearningsPage/>;
 
   return <LandingPage/>;
 }
