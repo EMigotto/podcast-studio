@@ -491,6 +491,7 @@ const BRAND = {
 const ADMIN_TABS = [
   { id:"newsletter",  label:"Newsletter",    icon:"📰" },
   { id:"podcast",     label:"Podcast Semanal", icon:"🎬" },
+  { id:"learning",    label:"Learning",      icon:"🎓" },
   { id:"divulgacao",  label:"Divulgação",    icon:"📣" },
   { id:"fontes",      label:"Fontes",        icon:"📡" },
   { id:"audiencia",   label:"Audiência",     icon:"📊" },
@@ -509,7 +510,7 @@ const CAT_LABELS = ["IA","LLM","Brasil","Produtividade","Sistêmico","Podcast","
 // ═══════════════════════════════════════════════════════════════════════════
 // DB (Supabase + localStorage fallback)
 // ═══════════════════════════════════════════════════════════════════════════
-const TABLE_MAP = { "newsletter":"newsletters", "comment":"comments", "view":"views", "episode":"episodes", "videoblob":"videoblobs", "user":"settings", "source":"news_sources", "audioblob":"audioblobs", "podcast":"podcasts", "podview":"podviews", "subscriber":"subscribers", "open":"opens", "emaillog":"email_logs" };
+const TABLE_MAP = { "newsletter":"newsletters", "comment":"comments", "view":"views", "episode":"episodes", "videoblob":"videoblobs", "user":"settings", "source":"news_sources", "audioblob":"audioblobs", "podcast":"podcasts", "podview":"podviews", "subscriber":"subscribers", "open":"opens", "emaillog":"email_logs", "learning":"learnings" };
 const tableForKey = k => TABLE_MAP[k.split(":")[0]] || null;
 
 const db = {
@@ -741,6 +742,22 @@ const podcastsApi = {
     await db.set(vid,{id:vid,podcastId:id,timestamp:Date.now(),ua,device:parseDevice(ua),browser:parseBrowser(ua),os:parseOS(ua)});
     await this.incrementView(id);
   },
+};
+
+// LEARNING DE INOVAÇÃO API — structured deep-dive content
+function slugify(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"learning";}
+const learningsApi = {
+  async list(){return(await db.listByPrefix("learning:")).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))},
+  async get(id){return await db.get(id)},
+  async upsert(L){
+    const slug = L.slug || slugify(L.topic);
+    const id = L.id || `learning:${slug}-${Date.now().toString(36)}`;
+    const obj = {...L, id, slug, updatedAt:Date.now()};
+    if(!obj.createdAt) obj.createdAt = Date.now();
+    if(!obj.editionNumber){ const all = await this.list(); obj.editionNumber = all.length + 1; }
+    await db.set(id, obj); return obj;
+  },
+  async remove(id){ await db.delete(id); },
 };
 
 const parseBrowser = ua => /Edg\//.test(ua)?"Edge":/OPR\/|Opera/.test(ua)?"Opera":/Firefox\//.test(ua)?"Firefox":/Chrome\//.test(ua)&&!/Edg\//.test(ua)?"Chrome":/Safari\//.test(ua)&&!/Chrome\//.test(ua)?"Safari":"Outro";
@@ -1350,6 +1367,7 @@ const seekToFrame = (e) => { try { e.currentTarget.currentTime = 1; } catch(_){}
 function LandingPage(){
   const [newsletters,setNewsletters] = useState([]);
   const [podcasts,setPodcasts] = useState([]);
+  const [learnings,setLearnings] = useState([]);
   const [emailInput,setEmailInput] = useState("");
   const [emailSent,setEmailSent] = useState(false);
   const [subscribing,setSubscribing] = useState(false);
@@ -1364,9 +1382,21 @@ function LandingPage(){
     setSubscribing(false);
   };
 
+  // Open a learning as standalone styled HTML in a new tab
+  const openLearning = (L) => {
+    try {
+      const html = renderLearningHTML(L);
+      const blob = new Blob([html], {type:"text/html"});
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    } catch(e){ console.error(e); }
+  };
+
   useEffect(()=>{(async()=>{
     setNewsletters(await db.listNewsletters());
     setPodcasts(await podcastsApi.list());
+    setLearnings(await learningsApi.list());
     const h=window.location.hash; if(h&&h.length>1){ setTimeout(()=>{ const el=document.querySelector(h); if(el) el.scrollIntoView({behavior:"smooth"}); }, 300); }
   })()},[]);
 
@@ -1554,7 +1584,7 @@ function LandingPage(){
       </div>
     </section>
 
-    {/* ── CHAPTER 03 — Learning (sage green + books bg) ── */}
+    {/* ── CHAPTER 03 — Learning (sage green + books bg, dynamic) ── */}
     <section id="chapter-03" className="fl-chapter fl-c-green">
       <div className="fl-chapter-bg" style={{backgroundImage:"url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&auto=format&fit=crop&q=80')"}}></div>
       <div className="container fl-chapter-in">
@@ -1564,19 +1594,44 @@ function LandingPage(){
           <div className="fl-chapter-text fl-reveal">
             <h2 className="fl-chapter-title">Quando um tema merece mais que cinco minutos.</h2>
             <p className="fl-chapter-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. O Learning destila um tema por vez em um explicador prático: o que é, por que importa, e o que fazer com isso.</p>
-            <a href="#learning" className="fl-cta">Abrir o aprofundamento <span>→</span></a>
+            {learnings[0]
+              ? <button onClick={()=>openLearning(learnings[0])} className="fl-cta" style={{border:"none",cursor:"pointer"}}>Abrir aprofundamento atual <span>→</span></button>
+              : <a href="#learning" className="fl-cta">Em breve <span>→</span></a>}
+            {learnings.length>1 && <div style={{marginTop:36}}>
+              <div className="mono" style={{fontSize:".62rem",letterSpacing:".22em",textTransform:"uppercase",color:"rgba(36,31,33,.6)",marginBottom:14}}>Aprofundamentos anteriores</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:"42ch"}}>
+                {learnings.slice(1,5).map(x=>(
+                  <button key={x.id} onClick={()=>openLearning(x)} style={{textAlign:"left",background:"transparent",border:"none",cursor:"pointer",padding:"10px 0",borderTop:"1px solid rgba(36,31,33,.18)",color:"#241F21",fontFamily:"'Instrument Serif',serif",fontSize:"1.1rem",lineHeight:1.2,display:"flex",justifyContent:"space-between",gap:14,alignItems:"baseline"}}>
+                    <span><span className="mono" style={{fontSize:".58rem",letterSpacing:".18em",opacity:.55,marginRight:10}}>№ {String(x.editionNumber||1).padStart(2,"0")}</span>{x.title||x.topic}</span>
+                    <span style={{opacity:.5,fontSize:".9rem"}}>→</span>
+                  </button>
+                ))}
+              </div>
+            </div>}
           </div>
           <div className="fl-chapter-visual fl-reveal" id="learning">
-            <div className="fl-learning-card">
-              <div className="fl-lc-badge">Aprofundamento № 04 · 8 min</div>
-              <h3 className="fl-lc-title">IA Agêntica: o que muda quando o software deixa de responder e passa a agir.</h3>
+            {learnings[0] ? <button onClick={()=>openLearning(learnings[0])} className="fl-learning-card" style={{textAlign:"left",border:"1px solid var(--rule)",cursor:"pointer",width:"100%",font:"inherit",color:"inherit"}}>
+              <div className="fl-lc-badge">Aprofundamento № {String(learnings[0].editionNumber||1).padStart(2,"0")}{learnings[0].kpis?.length?` · ${learnings[0].kpis.length} KPIs`:""}</div>
+              <h3 className="fl-lc-title">{learnings[0].title||learnings[0].topic}</h3>
               <div className="fl-lc-steps">
-                <div className="fl-lc-step"><div className="fl-lc-n">01 · O conceito</div><div className="fl-lc-st">De ferramenta a agente — o software recebe um objetivo, planeja e executa sozinho.</div></div>
-                <div className="fl-lc-step"><div className="fl-lc-n">02 · Por que importa</div><div className="fl-lc-st">Sai de "a IA me ajuda" para "a IA resolve". Isso reorganiza fluxos, papéis e produtividade.</div></div>
-                <div className="fl-lc-step"><div className="fl-lc-n">03 · Na prática</div><div className="fl-lc-st">Mapeie 1 processo repetitivo e de baixo risco — é o candidato natural a virar agente.</div></div>
+                {["conceito","porQueImporta","naPratica"].map((k,i)=>{
+                  const text = (learnings[0].sections?.[k]||"").split(/\n+/)[0].slice(0,150);
+                  if(!text) return null;
+                  return <div key={k} className="fl-lc-step"><div className="fl-lc-n">{`0${i+1}`} · {["O conceito","Por que importa","Na prática"][i]}</div><div className="fl-lc-st">{text}{text.length>=150?"…":""}</div></div>;
+                })}
               </div>
-              <div className="fl-lc-takeaway">Em uma frase: <b>agentes transformam IA de copiloto em colega de equipe.</b></div>
-            </div>
+              {learnings[0].takeaway && <div className="fl-lc-takeaway">Em uma frase: <b>{learnings[0].takeaway}</b></div>}
+            </button>
+            : <div className="fl-learning-card">
+              <div className="fl-lc-badge">Aprofundamento № 01 · em breve</div>
+              <h3 className="fl-lc-title">O primeiro aprofundamento chega em breve.</h3>
+              <div className="fl-lc-steps">
+                <div className="fl-lc-step"><div className="fl-lc-n">01 · O conceito</div><div className="fl-lc-st">Cada Learning destila um tema denso em explicador prático.</div></div>
+                <div className="fl-lc-step"><div className="fl-lc-n">02 · Por que importa</div><div className="fl-lc-st">Pesquisa em fontes, KPIs e exemplos práticos por edição.</div></div>
+                <div className="fl-lc-step"><div className="fl-lc-n">03 · Na prática</div><div className="fl-lc-st">O que fazer hoje — ações de baixo risco que ensinam a tecnologia.</div></div>
+              </div>
+              <div className="fl-lc-takeaway">Em uma frase: <b>aprofundamento útil quando 5 minutos não bastam.</b></div>
+            </div>}
           </div>
         </div>
       </div>
@@ -2755,6 +2810,518 @@ function SocialStudio({ apiKey, keyValidated, newsletters }){
 // ═══════════════════════════════════════════════════════════════════════════
 // ADMIN APP (editorial style)
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// LEARNING DE INOVAÇÃO EDITOR — research, structure, refine via chat, export
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Build full standalone HTML in the style of the Sync·MI Learning deep-dive
+function renderLearningHTML(L){
+  const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const md=s=>esc(s||"").split(/\n{2,}/).map(p=>{
+    if(p.trim().startsWith("- ")) return "<ul>"+p.split("\n").map(l=>l.replace(/^- /,"")).filter(Boolean).map(l=>"<li>"+l+"</li>").join("")+"</ul>";
+    return "<p>"+p.replace(/\n/g,"<br/>")+"</p>";
+  }).join("");
+  const num=String(L.editionNumber||1).padStart(2,"0");
+  const kpis=(L.kpis||[]).map((k,i)=>`<div class="kpi"><div class="kpi-v">${esc(k.value)}</div><div class="kpi-l">${esc(k.label)}</div>${k.note?`<div class="kpi-n">${esc(k.note)}</div>`:""}</div>`).join("");
+  const chartMax=Math.max(1,...((L.chartData||[]).map(c=>+c.value||0)));
+  const chart=(L.chartData||[]).map(c=>{const pct=Math.round((+c.value||0)/chartMax*100);return `<div class="bar-row"><div class="bar-lbl">${esc(c.label)}</div><div class="bar-wrap"><div class="bar" style="width:${pct}%"><span>${esc(String(c.value))}</span></div></div></div>`;}).join("");
+  const faqs=(L.faqs||[]).map(f=>`<details class="faq-it"><summary>${esc(f.q)}</summary><div class="faq-a">${md(f.a)}</div></details>`).join("");
+  const sources=(L.sources||[]).map((s,i)=>`<li><span class="src-n">${String(i+1).padStart(2,"0")}</span> <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></li>`).join("");
+  const chips=(L.chips||[]).map(c=>`<span class="chip">${esc(c)}</span>`).join("");
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(L.topic)} — Sync·MI Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F5F1E6;--paper2:#FBF8EE;--ink:#241F21;--ink-soft:#3A3236;--mute:#807679;--accent:#E5431B;--coral:#E97852;--rule:#DDD4BD;--maxw:780px}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:'Geist',sans-serif;font-size:17px;line-height:1.7}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:.22em;text-transform:uppercase;font-size:.66rem}
+.progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:99;transition:width .1s}
+.hero{padding:88px 24px 56px;background:linear-gradient(160deg,var(--ink),#3A3236);color:#F5F1E6;position:relative;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.18)}
+.hero::after{content:"";position:absolute;inset:0;opacity:.18;mix-blend-mode:soft-light;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.5) 0 1px,transparent 1px 46px)}
+.hero-in{max-width:var(--maxw);margin:0 auto;position:relative;z-index:2}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(245,241,230,.7);margin-bottom:24px;display:flex;align-items:center;gap:14px}
+.kicker::before{content:"";width:32px;height:1px;background:rgba(245,241,230,.55)}
+.bignum{font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(60px,13vw,128px);line-height:.85;color:rgba(245,241,230,.92);margin-bottom:8px}
+.hero h1{font-family:'Instrument Serif',serif;font-size:clamp(34px,5.4vw,58px);line-height:1.06;letter-spacing:-.015em;margin:18px 0 22px;max-width:18ch}
+.dek{font-size:clamp(17px,2vw,21px);line-height:1.55;color:rgba(245,241,230,.88);max-width:54ch}
+.chips{margin-top:34px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;border:1px solid rgba(245,241,230,.4);border-radius:40px;padding:7px 14px;color:rgba(245,241,230,.9)}
+.toggle-wrap{position:sticky;top:14px;z-index:60;display:flex;justify-content:center;margin:-26px auto 0;pointer-events:none}
+.toggle{pointer-events:auto;display:inline-flex;background:var(--ink);border-radius:46px;padding:5px;box-shadow:0 10px 30px rgba(36,31,33,.22);border:1px solid rgba(255,255,255,.08)}
+.toggle button{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;border:none;background:transparent;color:rgba(245,241,230,.6);padding:11px 22px;border-radius:40px;cursor:pointer;transition:.25s;display:flex;align-items:center;gap:8px}
+.toggle button.active{background:var(--paper);color:var(--ink)}
+.content{max-width:var(--maxw);margin:0 auto;padding:54px 24px 80px}
+.pillar{padding:48px 0;border-top:1px solid var(--rule)}
+.pillar:first-of-type{border-top:none}
+.p-num{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.p-title{font-family:'Instrument Serif',serif;font-size:clamp(26px,4vw,38px);line-height:1.1;margin-bottom:22px;letter-spacing:-.01em}
+.p-body p{margin-bottom:16px}.p-body ul{margin:14px 0 16px 22px}.p-body li{margin-bottom:8px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:30px 0}
+.kpi{padding:22px 18px;background:var(--paper2);border:1px solid var(--rule);border-radius:14px}
+.kpi-v{font-family:'Instrument Serif',serif;font-size:2.3rem;color:var(--accent);line-height:1;margin-bottom:8px}
+.kpi-l{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.kpi-n{font-size:.85rem;color:var(--mute);line-height:1.45}
+.chart{margin:30px 0;padding:24px;background:var(--paper2);border:1px solid var(--rule);border-radius:14px}
+.bar-row{margin-bottom:14px}.bar-row:last-child{margin-bottom:0}
+.bar-lbl{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.bar-wrap{background:var(--paper);border-radius:6px;height:24px;overflow:hidden;border:1px solid var(--rule)}
+.bar{height:100%;background:linear-gradient(90deg,var(--coral),var(--accent));display:flex;align-items:center;justify-content:flex-end;padding:0 10px;color:#F5F1E6;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:500;transition:width .8s}
+.faq-it{margin-bottom:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper2);overflow:hidden}
+.faq-it summary{padding:18px 22px;cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:1.05rem}
+.faq-it summary::after{content:"+";color:var(--accent);font-size:1.4rem;transition:transform .25s}
+.faq-it[open] summary::after{transform:rotate(45deg)}
+.faq-a{padding:0 22px 20px;color:var(--ink-soft)}
+.sources ol{list-style:none;padding:0}.sources li{padding:14px 0;border-top:1px solid var(--rule);display:flex;gap:14px;align-items:baseline}
+.sources li:first-child{border-top:none}
+.src-n{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--mute);min-width:28px}
+.sources a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}.sources a:hover{color:var(--accent);border-color:var(--accent)}
+.takeaway{margin:48px 0 0;padding:32px;background:var(--ink);color:var(--paper);border-radius:18px;font-family:'Instrument Serif',serif;font-size:1.3rem;line-height:1.4;font-style:italic}
+.takeaway b{font-style:normal;color:var(--coral);font-weight:500}
+.foot{padding:40px 24px;text-align:center;border-top:1px solid var(--rule);background:var(--paper2)}
+.foot-mark{font-family:'Instrument Serif',serif;font-size:1.6rem}.foot-mark em{font-style:normal;color:var(--accent)}
+/* Infographic view */
+.info-view{display:none;max-width:920px;margin:0 auto;padding:54px 24px}
+body.info-mode .content{display:none}body.info-mode .info-view{display:block}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.info-card{padding:24px;background:var(--paper2);border:1px solid var(--rule);border-radius:14px}
+.info-card h4{font-family:'Instrument Serif',serif;font-size:1.4rem;margin-bottom:10px;line-height:1.15}
+.info-card p{font-size:.95rem;color:var(--ink-soft);line-height:1.55}
+.info-hero{padding:36px;background:var(--accent);color:var(--ink);border-radius:18px;margin-bottom:18px}
+.info-hero h2{font-family:'Instrument Serif',serif;font-size:clamp(28px,4.4vw,44px);line-height:1.05;margin-bottom:10px;max-width:18ch}
+.info-takeaway{padding:32px;background:var(--ink);color:var(--paper);border-radius:18px;font-family:'Instrument Serif',serif;font-size:1.4rem;line-height:1.35;font-style:italic;text-align:center;margin-top:18px}
+</style></head><body>
+<div class="progress" id="prog"></div>
+<section class="hero"><div class="hero-in">
+<div class="kicker">Sync·MI · Learning de Inovação · Aprofundamento № ${num}</div>
+<div class="bignum">${num}</div>
+<h1>${esc(L.title||L.topic)}</h1>
+<p class="dek">${esc(L.subtitle||"")}</p>
+${chips?`<div class="chips">${chips}</div>`:""}
+</div></section>
+<div class="toggle-wrap"><div class="toggle"><button id="bRead" class="active">Leitura</button><button id="bInfo">Infográfico</button></div></div>
+<main class="content">
+<section class="pillar"><div class="p-num">01 — O conceito</div><h2 class="p-title">${esc(L.sectionTitles?.conceito||"De ferramenta a agente")}</h2><div class="p-body">${md(L.sections?.conceito)}</div></section>
+<section class="pillar"><div class="p-num">02 — Por que importa</div><h2 class="p-title">${esc(L.sectionTitles?.porQueImporta||"O sinal forte agora")}</h2><div class="p-body">${md(L.sections?.porQueImporta)}</div>${kpis?`<div class="kpis">${kpis}</div>`:""}${chart?`<div class="chart">${chart}</div>`:""}</section>
+<section class="pillar"><div class="p-num">03 — Na prática</div><h2 class="p-title">${esc(L.sectionTitles?.naPratica||"O que isso muda no seu dia")}</h2><div class="p-body">${md(L.sections?.naPratica)}</div></section>
+<section class="pillar"><div class="p-num">04 — Minhas próximas ações</div><h2 class="p-title">Aplicar nesta semana</h2><div class="p-body">${md(L.sections?.proximasAcoes)}</div></section>
+${faqs?`<section class="pillar"><div class="p-num">05 — FAQ</div><h2 class="p-title">Perguntas frequentes</h2>${faqs}</section>`:""}
+${sources?`<section class="pillar sources"><div class="p-num">Fontes</div><h2 class="p-title">Pesquisado em</h2><ol>${sources}</ol></section>`:""}
+${L.takeaway?`<div class="takeaway">${esc(L.takeaway)}</div>`:""}
+</main>
+<section class="info-view"><div class="info-hero"><div class="mono">№ ${num} · LEARNING DE INOVAÇÃO</div><h2 style="margin-top:14px">${esc(L.title||L.topic)}</h2><p style="opacity:.85;max-width:42ch">${esc(L.subtitle||"")}</p></div>
+${kpis?`<div class="info-grid">${(L.kpis||[]).map(k=>`<div class="info-card"><div class="kpi-l">${esc(k.label)}</div><div class="kpi-v" style="margin:8px 0">${esc(k.value)}</div><p>${esc(k.note||"")}</p></div>`).join("")}</div>`:""}
+<div class="info-grid">${["conceito","porQueImporta","naPratica","proximasAcoes"].map((sk,i)=>L.sections?.[sk]?`<div class="info-card"><div class="mono" style="color:var(--accent);margin-bottom:8px">0${i+1} · ${["O CONCEITO","POR QUE IMPORTA","NA PRÁTICA","PRÓXIMAS AÇÕES"][i]}</div><p>${esc((L.sections[sk]||"").replace(/^\s*[-•]\s*/gm,"").split(/\n+/).slice(0,2).join(" ").slice(0,240))}…</p></div>`:"").join("")}</div>
+${L.takeaway?`<div class="info-takeaway">"${esc(L.takeaway)}"</div>`:""}
+</section>
+<footer class="foot"><div class="foot-mark">Sync<em>·MI</em></div><p style="margin-top:8px;color:var(--mute);font-size:.9rem">Curadoria de IA, sem o ruído · © 2026</p></footer>
+<scr`+`ipt>
+const prog=document.getElementById('prog');
+addEventListener('scroll',()=>{const h=document.documentElement;const p=h.scrollTop/(h.scrollHeight-h.clientHeight)*100;prog.style.width=p+'%'},{passive:true});
+const bR=document.getElementById('bRead'),bI=document.getElementById('bInfo');
+bR.onclick=()=>{document.body.classList.remove('info-mode');bR.classList.add('active');bI.classList.remove('active');window.scrollTo({top:0,behavior:'smooth'})};
+bI.onclick=()=>{document.body.classList.add('info-mode');bI.classList.add('active');bR.classList.remove('active');window.scrollTo({top:0,behavior:'smooth'})};
+</scr`+`ipt></body></html>`;
+}
+
+function emptyLearning(){
+  return {
+    topic:"", title:"", subtitle:"", chips:[],
+    sectionTitles:{conceito:"",porQueImporta:"",naPratica:""},
+    sections:{conceito:"",porQueImporta:"",naPratica:"",proximasAcoes:""},
+    kpis:[], chartData:[], faqs:[], sources:[], takeaway:""
+  };
+}
+
+function tryParseJSON(text){
+  if(!text) return null;
+  // Extract JSON from possibly-wrapped response
+  const cleaned = text.replace(/^```(?:json)?\s*/i,"").replace(/```\s*$/,"").trim();
+  // Find first { and last }
+  const a = cleaned.indexOf("{"); const b = cleaned.lastIndexOf("}");
+  if(a<0||b<0) return null;
+  try { return JSON.parse(cleaned.slice(a,b+1)); } catch(_){ return null; }
+}
+
+function LearningEditor({ apiKey, keyValidated }){
+  const [list,setList] = useState([]);
+  const [editingId,setEditingId] = useState(null);
+  const [L,setL] = useState(emptyLearning());
+  const [topic,setTopic] = useState("");
+  const [busy,setBusy] = useState(false);
+  const [stage,setStage] = useState("");
+  const [err,setErr] = useState("");
+  const [ok,setOk] = useState("");
+  const [chatMsgs,setChatMsgs] = useState([]);
+  const [chatInput,setChatInput] = useState("");
+  const [showJson,setShowJson] = useState(false);
+  const teaserRef = useRef(null);
+
+  useEffect(()=>{(async()=>{ setList(await learningsApi.list()); })()},[]);
+  useEffect(()=>{ setErr(""); setOk(""); },[topic,editingId]);
+
+  async function doResearch(){
+    if(!apiKey||!keyValidated){ setErr("Configure e valide a API Key primeiro."); return; }
+    if(!topic.trim()){ setErr("Digite o tema a pesquisar."); return; }
+    setErr(""); setOk(""); setBusy(true); setStage("Pesquisando fontes…");
+    try {
+      const prompt = `Pesquise em fontes confiáveis e atualizadas (últimos 12 meses) o tema "${topic}" para produzir um aprofundamento estruturado do Sync·MI Learning de Inovação.
+
+Use a ferramenta web_search para coletar dados, estatísticas, fatos e citações. Quando possível, traga números (percentuais, valores, prazos) que sirvam de KPIs.
+
+Responda EXCLUSIVAMENTE em JSON válido, sem markdown, sem cercas de código. Estrutura obrigatória:
+{
+  "title": "Título principal forte e direto (1 frase, no estilo editorial)",
+  "subtitle": "Subtítulo em 1-2 frases explicando o aprofundamento",
+  "chips": ["3-5 tags de assunto curtas, em maiúsculas curtas"],
+  "sectionTitles": {
+    "conceito": "Subtítulo da seção 01 — 4-7 palavras",
+    "porQueImporta": "Subtítulo da seção 02 — 4-7 palavras",
+    "naPratica": "Subtítulo da seção 03 — 4-7 palavras"
+  },
+  "sections": {
+    "conceito": "180-260 palavras explicando claramente o que é o tema. Use parágrafos separados por \\n\\n.",
+    "porQueImporta": "180-260 palavras sobre por que isso importa AGORA. Cite ao menos 1 dado/estatística.",
+    "naPratica": "180-260 palavras com aplicação prática e 1 exemplo concreto.",
+    "proximasAcoes": "Lista markdown: 4-6 ações imediatas. Cada linha começa com \\"- \\" (sem aspas)."
+  },
+  "kpis": [
+    {"label": "Métrica curta", "value": "60%", "note": "Contexto em 1 frase"}
+  ],
+  "chartData": [
+    {"label": "Item curto", "value": 75}
+  ],
+  "faqs": [
+    {"q": "Pergunta", "a": "Resposta em 2-4 frases."}
+  ],
+  "sources": [
+    {"title": "Veículo — Título da matéria", "url": "https://url-real"}
+  ],
+  "takeaway": "Frase única de conclusão (a 'em uma frase')"
+}
+
+Regras: 4-6 KPIs com valor real; 4-5 itens de chartData (valores numéricos comparáveis); 4-6 FAQs; 5-7 fontes COM URL REAL (preferir veículos como MIT Tech Review, The Verge, Wired, Bloomberg, Reuters, FT, papers, blogs oficiais); português brasileiro; tom editorial sucinto, sem hype.`;
+
+      const text = await callClaude(apiKey, prompt, true, 6500);
+      setStage("Estruturando conteúdo…");
+      const parsed = tryParseJSON(text);
+      if(!parsed) throw new Error("Resposta não veio em JSON válido. Tente refinar o tema.");
+      const next = {...emptyLearning(), ...parsed, topic};
+      setL(next);
+      setChatMsgs([]);
+      setOk("Pesquisa concluída. Revise os campos abaixo e ajuste pelo chat se necessário.");
+    } catch(e){ setErr(e.message||"Falha na pesquisa."); }
+    setBusy(false); setStage("");
+  }
+
+  async function chatRefine(){
+    if(!chatInput.trim()) return;
+    if(!apiKey||!keyValidated){ setErr("Configure a API Key."); return; }
+    const userMsg = chatInput.trim();
+    setChatMsgs(m=>[...m,{role:"user",content:userMsg}]);
+    setChatInput(""); setBusy(true); setStage("Refinando…");
+    try {
+      const prompt = `Você está REFINANDO um aprofundamento Sync·MI Learning. Mantenha tudo idêntico e aplique APENAS o que o usuário pediu.
+
+APROFUNDAMENTO ATUAL (JSON):
+${JSON.stringify(L)}
+
+HISTÓRICO DE REFINAMENTOS:
+${chatMsgs.map(m=>(m.role==="user"?"USER: ":"ASSISTANT: ")+m.content).join("\n")}
+
+NOVO PEDIDO DO USUÁRIO:
+${userMsg}
+
+Devolva o JSON COMPLETO do aprofundamento atualizado, com mesma estrutura, alterando APENAS o que foi pedido. Sem markdown, sem cercas. Apenas JSON puro.`;
+      const text = await callClaude(apiKey, prompt, false, 6500);
+      const parsed = tryParseJSON(text);
+      if(!parsed) throw new Error("Refinamento não retornou JSON válido.");
+      setL(parsed);
+      setChatMsgs(m=>[...m,{role:"assistant",content:"Atualizei: "+userMsg}]);
+    } catch(e){ setErr(e.message||"Falha no refinamento."); }
+    setBusy(false); setStage("");
+  }
+
+  async function save(){
+    if(!L.topic && !topic){ setErr("Defina o tema."); return; }
+    setBusy(true); setErr(""); setOk("");
+    try {
+      const toSave = {...L, topic: L.topic||topic};
+      if(editingId) toSave.id = editingId;
+      const saved = await learningsApi.upsert(toSave);
+      setEditingId(saved.id);
+      setOk("Learning salvo · #"+String(saved.editionNumber).padStart(2,"0"));
+      setList(await learningsApi.list());
+    } catch(e){ setErr(e.message||"Falha ao salvar."); }
+    setBusy(false);
+  }
+
+  async function loadFor(id){
+    const x = await learningsApi.get(id);
+    if(!x) return;
+    setL({...emptyLearning(), ...x});
+    setTopic(x.topic||"");
+    setEditingId(id);
+    setChatMsgs([]);
+    setOk("Carregado: "+x.topic);
+  }
+  async function removeLearning(id){
+    if(!confirm("Apagar este Learning?")) return;
+    await learningsApi.remove(id);
+    setList(await learningsApi.list());
+    if(editingId===id){ setEditingId(null); setL(emptyLearning()); setTopic(""); }
+  }
+  function newLearning(){ setEditingId(null); setL(emptyLearning()); setTopic(""); setChatMsgs([]); setOk(""); setErr(""); }
+
+  function downloadHTML(){
+    const html = renderLearningHTML({...L, topic:L.topic||topic, editionNumber:L.editionNumber||(list.length+1)});
+    const blob = new Blob([html], {type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download=`learning-${slugify(L.topic||topic)}.html`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 500);
+  }
+
+  async function generateTeaserPost(){
+    if(!apiKey||!keyValidated){ setErr("Configure a API Key."); return; }
+    setBusy(true); setStage("Gerando posts de divulgação…"); setErr("");
+    try {
+      const prompt = `Crie 2 posts para divulgar este novo Learning de Inovação do Sync·MI.
+TEMA: ${L.topic||topic}
+TÍTULO: ${L.title||""}
+SUBTÍTULO: ${L.subtitle||""}
+TAKEAWAY: ${L.takeaway||""}
+
+Responda em JSON puro (sem markdown):
+{
+  "linkedin": "Post para LinkedIn em PT-BR — 6-9 linhas, profissional+instigante, gancho de 1 linha que para o scroll, 2-3 frases sobre o tema, fechamento convidando a abrir o estudo, 3-4 hashtags ao final. Sem markdown. Sem URL no corpo.",
+  "instagramCaption": "Legenda Instagram em PT-BR — 4-6 linhas + 6-10 hashtags. Tom direto.",
+  "instagramHeadline": "Frase curta (até 80 chars) que vai sobre a imagem do post"
+}`;
+      const text = await callClaude(apiKey, prompt, false, 1200);
+      const p = tryParseJSON(text);
+      if(!p) throw new Error("Resposta não veio em JSON.");
+      setL(x=>({...x, teaser:p}));
+      setOk("Posts gerados — role pra ver e copiar.");
+    } catch(e){ setErr(e.message||"Falha."); }
+    setBusy(false); setStage("");
+  }
+
+  async function downloadTeaserImage(){
+    const el = teaserRef.current; if(!el || !window.html2canvas){ setErr("html2canvas não carregado."); return; }
+    setBusy(true); setStage("Renderizando imagem…");
+    try {
+      const canvas = await window.html2canvas(el, {scale:3, backgroundColor:null, useCORS:true});
+      canvas.toBlob(blob=>{
+        const url=URL.createObjectURL(blob); const a=document.createElement("a");
+        a.href=url; a.download=`learning-teaser-${slugify(L.topic||topic)}.png`; a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),500);
+      },"image/png");
+    } catch(e){ setErr(e.message||"Falha na imagem."); }
+    setBusy(false); setStage("");
+  }
+
+  // helpers for editing arrays
+  const updateSec = (k,v) => setL(x=>({...x, sections:{...x.sections, [k]:v}}));
+  const updateField = (k,v) => setL(x=>({...x, [k]:v}));
+  const updateArr = (key, idx, sub, val) => setL(x=>{ const a=[...(x[key]||[])]; a[idx]={...a[idx],[sub]:val}; return {...x, [key]:a}; });
+  const addArr = (key, item) => setL(x=>({...x, [key]:[...(x[key]||[]), item]}));
+  const removeArr = (key, idx) => setL(x=>({...x, [key]:(x[key]||[]).filter((_,i)=>i!==idx)}));
+
+  const fieldStyle = {width:"100%", padding:"10px 14px", background:BRAND.paperLight, border:`1px solid ${BRAND.rule}`, borderRadius:8, fontFamily:"'Geist',sans-serif", fontSize:".95rem", color:BRAND.ink, outline:"none", resize:"vertical"};
+
+  return <div className="fade">
+    <SectionLabel num="🎓">Learning de Inovação · Aprofundamento</SectionLabel>
+    <p style={{color:BRAND.inkSoft, marginBottom:24, maxWidth:"66ch"}}>Crie um aprofundamento estruturado a partir de um tema prático. A IA pesquisa em fontes, propõe a estrutura completa (5 seções, KPIs, gráfico, FAQ, fontes) e o conteúdo fica editável. Refine via chat sem refazer tudo. Exporte HTML standalone, gere posts de divulgação e publique na landing.</p>
+
+    {/* RESEARCH BLOCK */}
+    <div className="card card-pad" style={{padding:24,marginBottom:24,background:`linear-gradient(180deg,${BRAND.paperLight} 0%, rgba(229,67,27,.04) 100%)`}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:14,gap:14,flexWrap:"wrap"}}>
+        <div>
+          <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>🔍 Pesquisa Profunda</div>
+          <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"1.25rem",fontStyle:"italic"}}>Digite um tema. A IA pesquisa em fontes e estrutura o aprofundamento completo.</div>
+        </div>
+        {editingId && <button onClick={newLearning} className="btn btn-ghost btn-sm">+ Novo</button>}
+      </div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        <input value={topic} onChange={e=>setTopic(e.target.value)} placeholder="Ex.: IA Agêntica, Modelos Multimodais, Computação Soberana, RAG em Produção…" style={{...fieldStyle, flex:1, minWidth:280}}/>
+        <Btn onClick={doResearch} disabled={busy||!keyValidated||!topic.trim()}>{busy&&stage.startsWith("Pesquis")?<><Spin/> {stage}</>:"🔍 Pesquisar & Gerar"}</Btn>
+      </div>
+      {!keyValidated && <div style={{marginTop:10,fontSize:".85rem",color:BRAND.mute}}>Configure e valide a API Key na aba Configurações antes de pesquisar.</div>}
+    </div>
+
+    {err && <div className="alert-error">⚠ {err}</div>}
+    {ok && <div className="alert-ok">✓ {ok}</div>}
+
+    {(L.title || L.sections?.conceito) && <>
+      {/* META FIELDS */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
+        <Field label="Título">
+          <textarea value={L.title||""} onChange={e=>updateField("title",e.target.value)} rows={2} style={fieldStyle}/>
+        </Field>
+        <Field label="Subtítulo">
+          <textarea value={L.subtitle||""} onChange={e=>updateField("subtitle",e.target.value)} rows={2} style={fieldStyle}/>
+        </Field>
+      </div>
+      <Field label="Tags (separadas por vírgula)">
+        <input value={(L.chips||[]).join(", ")} onChange={e=>updateField("chips", e.target.value.split(",").map(x=>x.trim()).filter(Boolean))} style={fieldStyle}/>
+      </Field>
+
+      {/* 5 SECTIONS */}
+      {[
+        ["conceito","01 · O CONCEITO","Subtítulo da Seção 01"],
+        ["porQueImporta","02 · POR QUE IMPORTA","Subtítulo da Seção 02"],
+        ["naPratica","03 · NA PRÁTICA","Subtítulo da Seção 03"],
+        ["proximasAcoes","04 · MINHAS PRÓXIMAS AÇÕES",null]
+      ].map(([k,label,subLabel])=>(
+        <div key={k} style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
+          <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10,fontSize:".62rem"}}>{label}</div>
+          {subLabel && <Field label={subLabel}><input value={L.sectionTitles?.[k]||""} onChange={e=>setL(x=>({...x, sectionTitles:{...x.sectionTitles, [k]:e.target.value}}))} style={fieldStyle}/></Field>}
+          <textarea value={L.sections?.[k]||""} onChange={e=>updateSec(k,e.target.value)} rows={k==="proximasAcoes"?5:7} style={{...fieldStyle, marginTop:8, fontFamily:"'Geist',sans-serif"}}/>
+        </div>
+      ))}
+
+      {/* KPIs */}
+      <div style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>KPIs</div>
+        {(L.kpis||[]).map((k,i)=>(
+          <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 100px 2fr 36px",gap:8,marginBottom:8,alignItems:"center"}}>
+            <input value={k.label||""} placeholder="Label" onChange={e=>updateArr("kpis",i,"label",e.target.value)} style={fieldStyle}/>
+            <input value={k.value||""} placeholder="60%" onChange={e=>updateArr("kpis",i,"value",e.target.value)} style={fieldStyle}/>
+            <input value={k.note||""} placeholder="Contexto" onChange={e=>updateArr("kpis",i,"note",e.target.value)} style={fieldStyle}/>
+            <button onClick={()=>removeArr("kpis",i)} className="btn btn-ghost btn-sm" style={{padding:"6px 10px"}}>✕</button>
+          </div>
+        ))}
+        <button onClick={()=>addArr("kpis",{label:"",value:"",note:""})} className="btn btn-ghost btn-sm">+ KPI</button>
+      </div>
+
+      {/* CHART DATA */}
+      <div style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>Gráfico (dados de barra)</div>
+        {(L.chartData||[]).map((c,i)=>(
+          <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 100px 36px",gap:8,marginBottom:8,alignItems:"center"}}>
+            <input value={c.label||""} placeholder="Label do item" onChange={e=>updateArr("chartData",i,"label",e.target.value)} style={fieldStyle}/>
+            <input value={c.value||""} type="number" placeholder="Valor" onChange={e=>updateArr("chartData",i,"value",+e.target.value||0)} style={fieldStyle}/>
+            <button onClick={()=>removeArr("chartData",i)} className="btn btn-ghost btn-sm" style={{padding:"6px 10px"}}>✕</button>
+          </div>
+        ))}
+        <button onClick={()=>addArr("chartData",{label:"",value:0})} className="btn btn-ghost btn-sm">+ Item</button>
+      </div>
+
+      {/* FAQs */}
+      <div style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>05 · FAQ</div>
+        {(L.faqs||[]).map((f,i)=>(
+          <div key={i} style={{marginBottom:14,padding:12,background:BRAND.paperLight,borderRadius:8,border:`1px solid ${BRAND.rule}`}}>
+            <input value={f.q||""} placeholder="Pergunta" onChange={e=>updateArr("faqs",i,"q",e.target.value)} style={{...fieldStyle, marginBottom:6, fontWeight:600}}/>
+            <textarea value={f.a||""} placeholder="Resposta" rows={3} onChange={e=>updateArr("faqs",i,"a",e.target.value)} style={fieldStyle}/>
+            <button onClick={()=>removeArr("faqs",i)} className="btn btn-ghost btn-sm" style={{marginTop:6,padding:"4px 10px",fontSize:".72rem"}}>Remover</button>
+          </div>
+        ))}
+        <button onClick={()=>addArr("faqs",{q:"",a:""})} className="btn btn-ghost btn-sm">+ FAQ</button>
+      </div>
+
+      {/* SOURCES */}
+      <div style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:10}}>📡 Fontes</div>
+        {(L.sources||[]).map((s,i)=>(
+          <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 3fr 36px",gap:8,marginBottom:8,alignItems:"center"}}>
+            <input value={s.title||""} placeholder="Veículo — Título" onChange={e=>updateArr("sources",i,"title",e.target.value)} style={fieldStyle}/>
+            <input value={s.url||""} placeholder="https://…" onChange={e=>updateArr("sources",i,"url",e.target.value)} style={fieldStyle}/>
+            <button onClick={()=>removeArr("sources",i)} className="btn btn-ghost btn-sm" style={{padding:"6px 10px"}}>✕</button>
+          </div>
+        ))}
+        <button onClick={()=>addArr("sources",{title:"",url:""})} className="btn btn-ghost btn-sm">+ Fonte</button>
+      </div>
+
+      {/* TAKEAWAY */}
+      <div style={{marginTop:24,paddingTop:20,borderTop:`1px solid ${BRAND.rule}`}}>
+        <Field label="✦ Em uma frase (takeaway)">
+          <textarea value={L.takeaway||""} onChange={e=>updateField("takeaway",e.target.value)} rows={2} style={fieldStyle}/>
+        </Field>
+      </div>
+
+      {/* CHAT REFINEMENT */}
+      <div style={{marginTop:30,padding:20,border:`1px solid ${BRAND.rule}`,borderRadius:14,background:BRAND.paperLight}}>
+        <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>💬 Refinar via chat (sem refazer tudo)</div>
+        {chatMsgs.length>0 && <div style={{marginBottom:12,maxHeight:200,overflowY:"auto",display:"flex",flexDirection:"column",gap:8}}>
+          {chatMsgs.map((m,i)=>(
+            <div key={i} style={{padding:"8px 12px",borderRadius:8,background:m.role==="user"?BRAND.paperDark:BRAND.paper,fontSize:".88rem",alignSelf:m.role==="user"?"flex-end":"flex-start",maxWidth:"85%"}}>
+              <span className="mono" style={{fontSize:".55rem",opacity:.6,marginRight:8}}>{m.role==="user"?"VOCÊ":"IA"}</span>{m.content}
+            </div>
+          ))}
+        </div>}
+        <div style={{display:"flex",gap:8}}>
+          <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")chatRefine()}} placeholder='Ex.: "Adicione um KPI sobre adoção em empresas brasileiras" ou "Reduza o tom da seção 02"' style={{...fieldStyle, flex:1}}/>
+          <Btn onClick={chatRefine} disabled={busy||!chatInput.trim()}>{busy&&stage==="Refinando…"?<><Spin/> Refinando</>:"Enviar →"}</Btn>
+        </div>
+      </div>
+
+      {/* TEASERS (Instagram + LinkedIn) */}
+      <div style={{marginTop:24,padding:20,border:`1px solid ${BRAND.rule}`,borderRadius:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
+          <div className="mono small-caps" style={{color:BRAND.accent}}>📣 Divulgação</div>
+          <Btn onClick={generateTeaserPost} disabled={busy||!keyValidated}>{busy&&stage.startsWith("Gerando")?<><Spin/> {stage}</>:"🪄 Gerar posts"}</Btn>
+        </div>
+        {/* Teaser Instagram card (renderable to image) */}
+        <div ref={teaserRef} style={{width:1080,height:1080,maxWidth:"100%",aspectRatio:"1/1",background:BRAND.ink,color:BRAND.paper,padding:"clamp(28px,5%,60px)",position:"relative",overflow:"hidden",borderRadius:14,fontFamily:"'Geist',sans-serif",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:10,height:10,background:BRAND.accent,borderRadius:"50%"}}></div><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".78rem",letterSpacing:".22em",opacity:.7}}>SYNC·MI · LEARNING DE INOVAÇÃO</span></div>
+            <div style={{marginTop:36,fontFamily:"'JetBrains Mono',monospace",fontSize:".78rem",letterSpacing:".22em",color:BRAND.accent}}>APROFUNDAMENTO № {String(L.editionNumber||(list.length+1)).padStart(2,"0")}</div>
+          </div>
+          <div>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(2.4rem,6vw,4.6rem)",lineHeight:1.05,letterSpacing:"-.015em"}}>{L.teaser?.instagramHeadline || L.title || L.topic || "Seu tema"}</div>
+            {L.takeaway && <div style={{marginTop:24,fontFamily:"'Instrument Serif',serif",fontStyle:"italic",fontSize:"1.25rem",opacity:.78,maxWidth:"38ch",lineHeight:1.45}}>"{L.takeaway}"</div>}
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"1.7rem"}}>Sync<em style={{fontStyle:"normal",color:BRAND.accent}}>·MI</em></div>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:".7rem",letterSpacing:".22em",opacity:.6}}>SYNCMI.COM</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
+          <Btn onClick={downloadTeaserImage} disabled={busy}>📸 Baixar imagem Instagram (PNG)</Btn>
+          <Btn onClick={downloadHTML}>📄 Baixar HTML standalone</Btn>
+          <Btn onClick={()=>setShowJson(x=>!x)}>{showJson?"Esconder":"Ver"} JSON</Btn>
+        </div>
+        {L.teaser?.linkedin && <div style={{marginTop:14,padding:14,background:BRAND.paperLight,borderRadius:10,border:`1px solid ${BRAND.rule}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div className="mono small-caps" style={{color:BRAND.inkSoft,fontSize:".58rem"}}>POST · LINKEDIN</div><button onClick={()=>{navigator.clipboard.writeText(L.teaser.linkedin); setOk("LinkedIn copiado")}} className="btn btn-ghost btn-sm" style={{padding:"4px 10px",fontSize:".72rem"}}>📋 Copiar</button></div>
+          <div style={{whiteSpace:"pre-wrap",fontSize:".92rem",lineHeight:1.55}}>{L.teaser.linkedin}</div>
+        </div>}
+        {L.teaser?.instagramCaption && <div style={{marginTop:10,padding:14,background:BRAND.paperLight,borderRadius:10,border:`1px solid ${BRAND.rule}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div className="mono small-caps" style={{color:BRAND.inkSoft,fontSize:".58rem"}}>LEGENDA · INSTAGRAM</div><button onClick={()=>{navigator.clipboard.writeText(L.teaser.instagramCaption); setOk("Legenda IG copiada")}} className="btn btn-ghost btn-sm" style={{padding:"4px 10px",fontSize:".72rem"}}>📋 Copiar</button></div>
+          <div style={{whiteSpace:"pre-wrap",fontSize:".92rem",lineHeight:1.55}}>{L.teaser.instagramCaption}</div>
+        </div>}
+      </div>
+
+      {showJson && <pre style={{marginTop:18,padding:16,background:BRAND.ink,color:BRAND.paper,borderRadius:8,overflow:"auto",maxHeight:300,fontSize:".75rem"}}>{JSON.stringify(L,null,2)}</pre>}
+
+      {/* SAVE */}
+      <div style={{display:"flex",gap:10,marginTop:24,paddingTop:20,borderTop:`2px solid ${BRAND.ink}`,flexWrap:"wrap"}}>
+        <Btn onClick={save} disabled={busy} style={{background:BRAND.ink,color:BRAND.paper,padding:"12px 28px"}}>{busy?<><Spin/> Salvando</>:editingId?"💾 Atualizar Learning":"💾 Publicar Learning"}</Btn>
+        <div style={{flex:1}}/>
+        {editingId && <button onClick={()=>removeLearning(editingId)} className="btn btn-ghost btn-sm" style={{borderColor:BRAND.accent,color:BRAND.accent}}>🗑 Apagar</button>}
+      </div>
+    </>}
+
+    {/* PUBLISHED LIST */}
+    {list.length>0 && <div style={{marginTop:48,paddingTop:24,borderTop:`2px solid ${BRAND.ink}`}}>
+      <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:14}}>📚 Aprofundamentos Publicados ({list.length})</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
+        {list.map(x=>(
+          <div key={x.id} style={{padding:16,border:`1px solid ${BRAND.rule}`,borderRadius:10,background:editingId===x.id?BRAND.paperDark:BRAND.paperLight,transition:"all .2s"}}>
+            <div className="mono small-caps" style={{color:BRAND.accent,fontSize:".58rem",marginBottom:6}}>№ {String(x.editionNumber).padStart(2,"0")} · {new Date(x.createdAt).toLocaleDateString("pt-BR")}</div>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"1.15rem",lineHeight:1.2,marginBottom:10}}>{x.title||x.topic}</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              <button onClick={()=>loadFor(x.id)} className="btn btn-ghost btn-sm" style={{padding:"4px 10px",fontSize:".72rem"}}>✏️ Editar</button>
+              <button onClick={()=>removeLearning(x.id)} className="btn btn-ghost btn-sm" style={{padding:"4px 10px",fontSize:".72rem",color:BRAND.accent,borderColor:`${BRAND.accent}55`}}>🗑</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>}
+  </div>;
+}
+
+
 function AdminApp({ session, onLogout }){
   const [tab,setTab] = useState(0);
   const [storageReady,setStorageReady] = useState(false);
@@ -4075,10 +4642,11 @@ ${t.slice(0,3000)}`,
       </div>}
 
       {/* TAB 2: DIVULGAÇÃO (Social Studio) */}
-      {tab===2 && <SocialStudio apiKey={apiKey} keyValidated={keyValidated} newsletters={newsletters}/>}
+      {tab===2 && <LearningEditor apiKey={apiKey} keyValidated={keyValidated}/>}
+      {tab===3 && <SocialStudio apiKey={apiKey} keyValidated={keyValidated} newsletters={newsletters}/>}
 
       {/* TAB 3: FONTES */}
-      {tab===3 && <div className="fade">
+      {tab===4 && <div className="fade">
         <SectionLabel num="📡">Fontes de Notícias</SectionLabel>
         <p style={{fontFamily:"'Fraunces',serif",fontStyle:"italic",color:BRAND.inkSoft,fontSize:"1.05rem",marginTop:-24,marginBottom:24}}>
           Fontes que a IA prioriza ao buscar manchetes no Passo 1 da Newsletter. O catálogo padrão tem <strong>{DEFAULT_SOURCES.length}</strong> fontes (Brasil, internacional, labs de IA, podcasts e dev).
@@ -4145,10 +4713,10 @@ ${t.slice(0,3000)}`,
       </div>}
 
       {/* TAB 4: AUDIÊNCIA */}
-      {tab===4 && <AudiencePanel/>}
+      {tab===5 && <AudiencePanel/>}
 
       {/* TAB 5: CONFIGURAÇÕES */}
-      {tab===5 && <div className="fade">
+      {tab===6 && <div className="fade">
         <SectionLabel num="⚙️">Configurações</SectionLabel>
 
         {!SB_OK && <div className="alert-error" style={{marginBottom:24}}>
@@ -4183,7 +4751,7 @@ ${t.slice(0,3000)}`,
       </div>}
 
       {/* TAB 6: ARQUIVO */}
-      {tab===6 && <div className="fade">
+      {tab===7 && <div className="fade">
         <SectionLabel num="📚">Arquivo de Edições</SectionLabel>
         {newsletters.length===0 ? <div style={{padding:80,textAlign:"center",border:`1px dashed ${BRAND.rule}`,borderRadius:4,color:BRAND.mute,fontStyle:"italic",fontFamily:"'Fraunces',serif",fontSize:"1.2rem"}}>Nenhuma edição publicada ainda</div>
         : <div style={{borderTop:`1px solid ${BRAND.ink}`}}>
