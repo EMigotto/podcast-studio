@@ -2956,6 +2956,70 @@ function tryParseJSON(text){
   try { return JSON.parse(cleaned.slice(a,b+1)); } catch(_){ return null; }
 }
 
+// Parse uploaded HTML (Sync·MI template OR similar harness-style template) into Learning fields
+function parseHTMLToLearning(html, topicHint){
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const L = emptyLearning();
+  L.topic = topicHint || "";
+  // Title
+  const h1 = doc.querySelector(".hero h1") || doc.querySelector("h1");
+  if(h1) L.title = h1.textContent.trim();
+  // Subtitle / dek
+  const dek = doc.querySelector(".dek") || doc.querySelector(".hero p");
+  if(dek) L.subtitle = dek.textContent.trim();
+  // Chips
+  const chipEls = doc.querySelectorAll(".chip");
+  if(chipEls.length) L.chips = Array.from(chipEls).map(e=>e.textContent.trim()).filter(Boolean).slice(0,8);
+  // Sections (pillars): first 4 are conceito/porQueImporta/naPratica/proximasAcoes
+  const pillars = Array.from(doc.querySelectorAll(".pillar"));
+  const keys = ["conceito","porQueImporta","naPratica","proximasAcoes"];
+  pillars.forEach((p,i)=>{
+    if(i>=4) return;
+    const k = keys[i];
+    const pTitle = p.querySelector(".p-title");
+    const pBody = p.querySelector(".p-body");
+    if(pTitle && i<3) L.sectionTitles[k] = pTitle.textContent.trim();
+    if(pBody){
+      let txt = "";
+      Array.from(pBody.childNodes).forEach(node=>{
+        if(node.nodeName==="P") txt += node.textContent.trim() + "\n\n";
+        else if(node.nodeName==="UL"){
+          Array.from(node.querySelectorAll("li")).forEach(li=>{ txt += "- " + li.textContent.trim() + "\n"; });
+          txt += "\n";
+        }
+      });
+      L.sections[k] = txt.trim();
+    }
+  });
+  // KPIs
+  L.kpis = Array.from(doc.querySelectorAll(".kpi")).map(k=>({
+    label: k.querySelector(".kpi-l")?.textContent.trim() || "",
+    value: k.querySelector(".kpi-v")?.textContent.trim() || "",
+    note: k.querySelector(".kpi-n")?.textContent.trim() || ""
+  }));
+  // Chart data (bar-row)
+  L.chartData = Array.from(doc.querySelectorAll(".bar-row")).map(b=>{
+    const txt = b.querySelector(".bar span")?.textContent || b.querySelector(".bar")?.textContent || "0";
+    const numMatch = txt.match(/[\d.]+/);
+    return { label: b.querySelector(".bar-lbl")?.textContent.trim() || "", value: numMatch ? parseFloat(numMatch[0]) : 0 };
+  });
+  // FAQs (mark all imported as selected so user can prune)
+  L.faqs = Array.from(doc.querySelectorAll(".faq-it, details")).map(f=>({
+    q: f.querySelector("summary")?.textContent.trim() || "",
+    a: (f.querySelector(".faq-a") || f).textContent.replace(f.querySelector("summary")?.textContent||"", "").trim(),
+    selected: true
+  })).filter(x=>x.q);
+  // Sources
+  L.sources = Array.from(doc.querySelectorAll(".sources li a, .sources ol li a")).map(a=>({
+    title: a.textContent.trim(),
+    url: a.href || a.getAttribute("href") || ""
+  })).filter(s=>s.title);
+  // Takeaway
+  const tk = doc.querySelector(".takeaway");
+  if(tk) L.takeaway = tk.textContent.trim().replace(/^["'"\u201C]+|["'"\u201D]+$/g, "");
+  return L;
+}
+
 function LearningEditor({ apiKey, keyValidated }){
   const [list,setList] = useState([]);
   const [editingId,setEditingId] = useState(null);
@@ -2969,6 +3033,7 @@ function LearningEditor({ apiKey, keyValidated }){
   const [chatInput,setChatInput] = useState("");
   const [showJson,setShowJson] = useState(false);
   const teaserRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(()=>{(async()=>{ setList(await learningsApi.list()); })()},[]);
   useEffect(()=>{ setErr(""); setOk(""); },[topic,editingId]);
@@ -3114,6 +3179,26 @@ Devolva o JSON COMPLETO do aprofundamento atualizado, com mesma estrutura, alter
   }
   function newLearning(){ setEditingId(null); setL(emptyLearning()); setTopic(""); setChatMsgs([]); setOk(""); setErr(""); }
 
+  async function handleFileUpload(e){
+    const file = e.target.files?.[0]; if(!file) return;
+    setBusy(true); setStage("Lendo arquivo HTML…"); setErr(""); setOk("");
+    try {
+      const text = await file.text();
+      const inferredTopic = topic || file.name.replace(/\.html?$/i,"").replace(/[-_]/g," ");
+      const parsed = parseHTMLToLearning(text, inferredTopic);
+      // ensure at most 5 FAQs marked selected (limit constraint)
+      if(parsed.faqs.length > 5){
+        parsed.faqs = parsed.faqs.map((f,i)=>({...f, selected: i<5}));
+      }
+      setL(parsed);
+      setTopic(inferredTopic);
+      setChatMsgs([]);
+      setOk(`HTML carregado: "${parsed.title || file.name}" — ${parsed.kpis.length} KPIs, ${parsed.faqs.length} FAQs, ${parsed.sources.length} fontes. Edite à vontade ou publique.`);
+    } catch(err){ setErr(err.message || "Falha ao processar HTML"); }
+    setBusy(false); setStage("");
+    e.target.value = ""; // allow re-upload of same file
+  }
+
   function downloadHTML(){
     const html = renderLearningHTML({...L, topic:L.topic||topic, editionNumber:L.editionNumber||(list.length+1)});
     const blob = new Blob([html], {type:"text/html"});
@@ -3186,6 +3271,13 @@ Responda em JSON puro (sem markdown):
       <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
         <input value={topic} onChange={e=>setTopic(e.target.value)} placeholder="Ex.: IA Agêntica, Modelos Multimodais, Computação Soberana, RAG em Produção…" style={{...fieldStyle, flex:1, minWidth:280}}/>
         <Btn onClick={doResearch} disabled={busy||!keyValidated||!topic.trim()}>{busy&&stage.startsWith("Pesquis")?<><Spin/> {stage}</>:"🔍 Pesquisar & Gerar"}</Btn>
+      </div>
+      <div style={{marginTop:12,paddingTop:12,borderTop:`1px dashed ${BRAND.rule}`,display:"flex",alignItems:"center",justifyContent:"space-between",gap:14,flexWrap:"wrap"}}>
+        <div style={{fontSize:".82rem",color:BRAND.mute,maxWidth:"54ch",lineHeight:1.5}}>
+          <strong style={{color:BRAND.inkSoft}}>OU</strong> · suba um HTML já pronto (gerado externamente ou exportado de outro Sync·MI Learning). O sistema parseia título, sessões, KPIs, FAQs e fontes do template.
+        </div>
+        <input type="file" accept=".html,.htm,text/html" ref={fileInputRef} style={{display:"none"}} onChange={handleFileUpload}/>
+        <Btn onClick={()=>fileInputRef.current?.click()} disabled={busy} style={{background:"transparent",color:BRAND.ink,border:`1px solid ${BRAND.ink}`}}>{busy&&stage.startsWith("Lendo")?<><Spin/> {stage}</>:"📤 Subir HTML pronto"}</Btn>
       </div>
       {!keyValidated && <div style={{marginTop:10,fontSize:".85rem",color:BRAND.mute}}>Configure e valide a API Key na aba Configurações antes de pesquisar.</div>}
     </div>
