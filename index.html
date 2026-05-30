@@ -1680,6 +1680,7 @@ ${L.takeaway?`<p class="frase"><b>Em uma frase:</b> ${esc(L.takeaway)}</p>`:""}
 // LANDING — Floema model (numbered chapters, chartreuse + near-black 2-color)
 // ═══════════════════════════════════════════════════════════════════════════
 function LandingPage(){
+  const [newsletters,setNewsletters] = useState([]);
   const [podcasts,setPodcasts] = useState([]);
   const [learnings,setLearnings] = useState([]);
   const [emailInput,setEmailInput] = useState("");
