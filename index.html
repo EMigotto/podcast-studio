@@ -33,6 +33,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tus-js-client/4.1.0/tus.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lenis/1.1.13/lenis.min.js"></script>
 
 <style>
   :root{
@@ -117,7 +118,13 @@
   .nav-links a:hover { color:var(--accent); }
   .nav-cta { background:var(--ink); color:var(--paper); padding:8px 18px; border-radius:999px; font-size:.82rem; transition:all .2s; }
   .nav-cta:hover { background:var(--accent); color:var(--paper) !important; }
-  @media (max-width:760px) { .nav-links a:not(.nav-cta) { display:none; } }
+  @media (max-width:760px) {
+    .nav-inner{ gap:10px; }
+    .nav-links{ gap:14px; font-size:.8rem; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    .nav-links::-webkit-scrollbar{ display:none; }
+    .nav-links a{ white-space:nowrap; font-size:.82rem; }
+    .brand-name{ font-size:1.3rem !important; }
+  }
 
   /* BUTTONS */
   .btn { display:inline-flex; align-items:center; gap:10px; padding:14px 22px; border-radius:999px; text-decoration:none; font-size:.92rem; font-weight:500; transition:all .2s ease; border:1px solid transparent; cursor:pointer; font-family:'Geist',sans-serif; }
@@ -366,6 +373,10 @@
   }
   @media(max-width:760px){.lcard:not(.lcard-fixed){grid-template-columns:1fr}}
 
+  /* Preview variant — only the cream body (used in Chapter 03 where the green panel would be redundant with the section bg) */
+  .lcard.lcard-preview{ grid-template-columns:1fr; max-width:680px; }
+  .lcard.lcard-preview .lcard-panel{ display:none; }
+
   /* Square variant — Instagram 1080×1080, stacked vertically */
   .lcard.lcard-square{
     grid-template-columns:1fr; grid-template-rows:1fr 1fr;
@@ -558,11 +569,83 @@
   .lcarousel-track > *:hover{transform:scale(1.005)}
 
   /* Square card (Instagram 1080x1080) */
-  .ltc-sq{aspect-ratio:1/1; width:1080px; max-width:100%; display:grid; grid-template-rows:1fr 1fr; border-radius:32px; overflow:hidden; background:#F6F2E8; box-shadow:0 30px 80px -30px rgba(27,25,20,.35)}
-  .ltc-sq .ltc-panel{min-height:0; padding:clamp(32px,5%,60px)}
-  .ltc-sq .ltc-panel h2{font-size:clamp(28px,4.2vw,46px); max-width:18ch}
-  .ltc-sq .ltc-card{padding:clamp(32px,5%,60px); justify-content:space-between}
-  .ltc-sq .ltc-card h3{font-size:clamp(26px,3.8vw,42px)}
+  /* ═══════════════════════════════════════════════════════════════════════
+     RESPONSIVE — mobile & tablet (consolidated)
+     ═══════════════════════════════════════════════════════════════════════ */
+  html, body { max-width:100%; overflow-x:hidden; }
+  * { -webkit-tap-highlight-color: transparent; }
+  img, video, canvas, svg { max-width:100%; height:auto; }
+
+  /* TABLET (≤1024px) */
+  @media (max-width:1024px){
+    .fl-chapter{ padding:80px 0 !important; }
+    .fl-hero{ min-height:auto; padding:110px 0 70px; }
+    .lcarousel-item{ flex-basis:clamp(420px,90vw,720px); }
+  }
+
+  /* MOBILE (≤760px) */
+  @media (max-width:760px){
+    .container{ padding:0 18px; }
+    /* Hero */
+    .fl-hero{ min-height:auto; padding:100px 0 56px; }
+    .fl-hero-title{ font-size:clamp(2rem,9vw,3.2rem) !important; line-height:1.08; }
+    .fl-hero-sub{ font-size:1.05rem !important; }
+    .fl-hero-in > svg:first-child{ width:44px !important; height:44px !important; }
+    /* Chapters */
+    .fl-chapter{ padding:64px 0 !important; }
+    .fl-num{ font-size:clamp(3.5rem,18vw,6rem) !important; }
+    .fl-chapter-title{ font-size:clamp(1.7rem,7vw,2.6rem) !important; }
+    .fl-chapter-desc{ font-size:1rem !important; }
+    .fl-cat{ font-size:.62rem !important; }
+    /* Marquee smaller */
+    .marquee{ padding:22px 0; }
+    .marquee-item{ font-size:clamp(1.1rem,5vw,1.6rem); gap:32px; padding-right:32px; }
+    /* Unified learning card stacks */
+    .lcard{ grid-template-columns:1fr !important; border-radius:18px; }
+    .lcard-panel{ min-height:280px; padding:32px; }
+    .lcard-num{ font-size:84px; }
+    .lcard-h{ font-size:28px; padding-top:20px; }
+    .lcard-body{ padding:32px; }
+    .lcard-preview{ max-width:100% !important; }
+    /* Newsletter edition cover — remove tall 3/4 ratio that leaves empty gap on mobile */
+    .fl-edition-cover{ aspect-ratio:auto !important; min-height:300px; }
+    .fl-ec-title{ font-size:1.5rem; }
+    .fl-ec-big{ font-size:4rem; }
+    /* Learnings carousel — one card near-full width */
+    .lcarousel{ gap:16px; }
+    .lcarousel-item{ flex-basis:88vw; transform:scale(.97); }
+    .lcarousel-item.active{ transform:scale(1); }
+    /* Section headings */
+    .lp-ultra{ font-size:clamp(2rem,9vw,3rem) !important; }
+    /* Video carousel cards smaller */
+    .lp-vcard{ flex-basis:78vw !important; }
+    /* Process / footer / moments single column (already set, reinforce) */
+    .fl-process-grid, .fl-footer-grid, .fl-moments{ grid-template-columns:1fr !important; }
+    /* Hide heavy bg particle canvas on small screens for perf */
+    .particle-canvas{ opacity:.5; }
+    /* Subscribe + buttons full width */
+    .btn{ min-height:44px; } /* touch target */
+  }
+
+  /* SMALL MOBILE (≤420px) */
+  @media (max-width:420px){
+    .container{ padding:0 14px; }
+    .fl-hero-title{ font-size:clamp(1.8rem,9.5vw,2.6rem) !important; }
+    .lcard-panel, .lcard-body{ padding:24px; }
+    .lcard-num{ font-size:68px; }
+  }
+
+  /* ADMIN responsive — tabs scroll, grids stack */
+  @media (max-width:860px){
+    .admin-tabs, .tabbar{ overflow-x:auto; flex-wrap:nowrap !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .admin-tabs::-webkit-scrollbar, .tabbar::-webkit-scrollbar{ display:none; }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
+    .flow-line, .flow-particle, .marquee-track{ animation:none !important; }
+  }
 
 </style>
 </head>
@@ -1321,14 +1404,17 @@ const LearningCard = memo(function LearningCard({ L, onOpen, variant = "full" })
     { lab: "03 · Na prática",      text: snip(L?.sections?.naPratica, 180), hl: true },
   ].filter(r => r.text);
 
-  return <div className={"lcard" + (variant==="square"?" lcard-square lcard-fixed":"") + (variant==="linkedin"?" lcard-linkedin lcard-fixed":"")} onClick={onOpen} style={{cursor: onOpen ? "pointer" : "default"}}>
-    <div className="lcard-panel">
+  return <div className={"lcard"
+      + (variant==="square"?" lcard-square lcard-fixed":"")
+      + (variant==="linkedin"?" lcard-linkedin lcard-fixed":"")
+      + (variant==="preview"?" lcard-preview":"")} onClick={onOpen} style={{cursor: onOpen ? "pointer" : "default"}}>
+    {variant!=="preview" && <div className="lcard-panel">
       <div className="lcard-num">{num}</div>
       <div className="lcard-kick">Learning de Inovação</div>
       <h2 className="lcard-h">Quando um tema merece mais que cinco minutos.</h2>
       <p className="lcard-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. O Learning destila um tema por vez: o que é, por que importa, e o que fazer.</p>
       {onOpen && <button className="lcard-cta" onClick={e=>{e.stopPropagation(); onOpen();}}>Abrir o aprofundamento <span className="arr">→</span></button>}
-    </div>
+    </div>}
     <div className="lcard-body">
       <span className="lcard-badge">Aprofundamento Nº {num} · {minRead} min</span>
       <h3>{title}</h3>
@@ -1343,6 +1429,7 @@ const LearningCard = memo(function LearningCard({ L, onOpen, variant = "full" })
         <div className="lcard-rule"></div>
         <p className="lcard-frase"><b>Em uma frase:</b> {L.takeaway}</p>
       </>}
+      {variant==="preview" && onOpen && <button className="lcard-cta" style={{marginTop:24}} onClick={e=>{e.stopPropagation(); onOpen();}}>Abrir o aprofundamento <span className="arr">→</span></button>}
     </div>
   </div>;
 });
@@ -1899,34 +1986,34 @@ function LandingPage(){
       </div>
     </section>
 
-    {/* ── CHAPTER 03 — Learning (sage green, unified LearningCard) ── */}
+    {/* ── CHAPTER 03 — Learning (sage green, preview card / no duplication) ── */}
     <section id="chapter-03" className="fl-chapter fl-c-green" style={{padding:"100px 0 80px"}}>
       <div className="fl-chapter-bg" style={{backgroundImage:"url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&auto=format&fit=crop&q=80')"}}></div>
       <div className="container fl-chapter-in">
         <div className="fl-num">03</div>
         <div className="fl-cat">Learning de Inovação</div>
-        <div style={{maxWidth:"68ch",margin:"24px 0 32px"}}>
-          <h2 className="fl-chapter-title">Quando um tema merece mais que cinco minutos.</h2>
-          <p className="fl-chapter-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. Cada aprofundamento destila um tema em explicador prático: o que é, por que importa, e o que fazer com isso.</p>
+        <div className="fl-chapter-grid" style={{alignItems:"center"}}>
+          <div className="fl-chapter-text fl-reveal">
+            <h2 className="fl-chapter-title">Quando um tema merece mais que cinco minutos.</h2>
+            <p className="fl-chapter-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. Cada aprofundamento destila um tema em explicador prático: o que é, por que importa, e o que fazer com isso.</p>
+            {learnings.length > 0 && <a href="?view=learnings" className="fl-cta" style={{marginTop:8}}>Ver todos os {learnings.length} aprofundamento{learnings.length>1?"s":""} <span>→</span></a>}
+          </div>
+          <div className="fl-chapter-visual fl-reveal">
+            {learnings.length > 0
+              ? <LearningCard L={learnings[0]} variant="preview" onOpen={()=>openLearning(learnings[0])}/>
+              : <LearningCard variant="preview" L={{
+                  editionNumber:1,
+                  title:"O primeiro aprofundamento chega em breve.",
+                  sections:{
+                    conceito:"Cada Learning destila um tema denso em explicador prático: o que é, por que importa, e o que fazer com isso.",
+                    porQueImporta:"Pesquisa em fontes, KPIs com fontes citadas, e exemplos práticos por edição.",
+                    naPratica:"Comece pelas ações de baixo risco — elas ensinam a tecnologia sem o custo de adoção em produção."
+                  },
+                  takeaway:"aprofundamento útil quando 5 minutos não bastam."
+                }}/>
+            }
+          </div>
         </div>
-      </div>
-      <div style={{maxWidth:1180,margin:"0 auto",padding:"0 clamp(20px,5vw,40px)",position:"relative",zIndex:2}}>
-        {learnings.length > 0
-          ? <LearningCard L={learnings[0]} onOpen={()=>openLearning(learnings[0])}/>
-          : <LearningCard L={{
-              editionNumber:1,
-              title:"O primeiro aprofundamento chega em breve.",
-              sections:{
-                conceito:"Cada Learning destila um tema denso em explicador prático: o que é, por que importa, e o que fazer com isso.",
-                porQueImporta:"Pesquisa em fontes, KPIs com fontes citadas, e exemplos práticos por edição.",
-                naPratica:"Comece pelas ações de baixo risco — elas ensinam a tecnologia sem o custo de adoção em produção."
-              },
-              takeaway:"aprofundamento útil quando 5 minutos não bastam."
-            }}/>
-        }
-        {learnings.length > 0 && <div style={{textAlign:"center",marginTop:32}}>
-          <a href="?view=learnings" className="fl-cta">Ver todos os {learnings.length} aprofundamento{learnings.length>1?"s":""} <span>→</span></a>
-        </div>}
       </div>
     </section>
 
@@ -3788,6 +3875,151 @@ Responda em JSON puro (sem markdown):
     setBusy(false); setStage("");
   }
 
+  // ── ANIMATED INSTAGRAM VIDEO (Canvas 2D + MediaRecorder → WebM) ──
+  async function generateInstagramVideo(){
+    setBusy(true); setStage("Gerando vídeo animado…"); setErr("");
+    try {
+      const W = 1080, H = 1080, FPS = 30, DUR = 6; // 6 second loop
+      const canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d");
+      const num = String(L.editionNumber || (list.length+1)).padStart(2, "0");
+      const title = L.title || L.topic || "Aprofundamento";
+      const takeaway = L.takeaway || "";
+      const minRead = estimateLearningReadTime(L);
+
+      // easing
+      const easeOut = t => 1 - Math.pow(1-t, 3);
+      const clamp01 = t => Math.max(0, Math.min(1, t));
+      // wrap text helper
+      const wrap = (txt, maxW, font) => {
+        ctx.font = font;
+        const words = String(txt).split(" "); const lines = []; let line = "";
+        for(const w of words){
+          const test = line ? line+" "+w : w;
+          if(ctx.measureText(test).width > maxW && line){ lines.push(line); line = w; }
+          else line = test;
+        }
+        if(line) lines.push(line);
+        return lines;
+      };
+
+      // Ensure fonts are loaded before drawing
+      try { await document.fonts.load("400 120px Fraunces"); await document.fonts.load("400 40px Mulish"); await document.fonts.load("700 24px 'Space Mono'"); await document.fonts.ready; } catch(_){}
+
+      const drawFrame = (p) => { // p = progress 0..1 over whole duration
+        ctx.clearRect(0,0,W,H);
+        // ---- TOP PANEL (sage gradient, animated light sweep) ----
+        const panelH = H*0.52;
+        const g = ctx.createLinearGradient(0, 0, W, panelH);
+        const shift = Math.sin(p*Math.PI*2)*0.12;
+        g.addColorStop(0, `rgba(126,142,106,0.98)`);
+        g.addColorStop(clamp01(0.5+shift), `rgba(94,107,77,0.98)`);
+        g.addColorStop(1, `rgba(70,82,56,0.99)`);
+        ctx.fillStyle = g; ctx.fillRect(0,0,W,panelH);
+        // animated vertical "shelf" lines
+        ctx.save(); ctx.globalAlpha = 0.10; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+        const off = (p*60)%44;
+        for(let x=-44+off; x<W; x+=44){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,panelH); ctx.stroke(); }
+        ctx.restore();
+        // light sweep
+        const sweepX = (p*1.4-0.2)*W*1.5;
+        const sweep = ctx.createLinearGradient(sweepX-160,0,sweepX+160,panelH);
+        sweep.addColorStop(0,"rgba(255,255,255,0)"); sweep.addColorStop(0.5,"rgba(255,255,255,0.10)"); sweep.addColorStop(1,"rgba(255,255,255,0)");
+        ctx.fillStyle = sweep; ctx.fillRect(0,0,W,panelH);
+
+        const pad = 72;
+        // kicker
+        const kAlpha = easeOut(clamp01((p-0.02)/0.12));
+        ctx.globalAlpha = kAlpha; ctx.fillStyle = "rgba(244,241,230,0.8)";
+        ctx.font = "700 22px 'Space Mono', monospace"; ctx.textBaseline = "alphabetic";
+        ctx.fillText("L E A R N I N G   D E   I N O V A Ç Ã O", pad, 110);
+        // big number (fade+rise)
+        const nP = easeOut(clamp01((p-0.05)/0.2));
+        ctx.globalAlpha = nP; ctx.fillStyle = "rgba(244,241,230,0.94)";
+        ctx.font = "italic 300 200px Fraunces, serif";
+        ctx.fillText(num, pad, 160 + 200 - (1-nP)*30);
+        // panel headline (generic)
+        const hP = easeOut(clamp01((p-0.12)/0.25));
+        ctx.globalAlpha = hP; ctx.fillStyle = "#F4F1E6";
+        ctx.font = "400 52px Fraunces, serif";
+        wrap("Quando um tema merece mais que cinco minutos.", W-pad*2, "400 52px Fraunces, serif").forEach((ln,i)=>{
+          ctx.fillText(ln, pad, 430 + i*60 + (1-hP)*20);
+        });
+
+        // ---- BOTTOM CARD (cream, slides up) ----
+        const cardP = easeOut(clamp01((p-0.18)/0.25));
+        const cardY = panelH + (1-cardP)*40;
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "#F6F2E8"; ctx.fillRect(0, cardY, W, H-cardY);
+        // badge
+        const bP = easeOut(clamp01((p-0.28)/0.18));
+        ctx.globalAlpha = bP;
+        ctx.strokeStyle = "rgba(27,25,20,0.2)"; ctx.lineWidth = 2;
+        ctx.font = "700 22px 'Space Mono', monospace";
+        const badgeTxt = `APROFUNDAMENTO Nº ${num} · ${minRead} MIN`;
+        const bw = ctx.measureText(badgeTxt).width;
+        const by = cardY + 64;
+        ctx.beginPath(); ctx.roundRect(pad-4, by-30, bw+36, 46, 23); ctx.stroke();
+        ctx.fillStyle = "#4A463B"; ctx.fillText(badgeTxt, pad+14, by);
+        // title
+        const tP = easeOut(clamp01((p-0.34)/0.25));
+        ctx.globalAlpha = tP; ctx.fillStyle = "#1B1914";
+        ctx.font = "430 46px Fraunces, serif";
+        let ty = by + 80;
+        wrap(title, W-pad*2, "430 46px Fraunces, serif").slice(0,3).forEach((ln,i)=>{
+          ctx.fillText(ln, pad, ty + i*54 + (1-tP)*16); 
+        });
+        ty += Math.min(3, wrap(title, W-pad*2, "430 46px Fraunces, serif").length)*54;
+        // takeaway (italic, last to appear)
+        if(takeaway){
+          const kP = easeOut(clamp01((p-0.5)/0.3));
+          ctx.globalAlpha = kP; 
+          ctx.fillStyle = "#AF452B"; ctx.font = "700 26px Mulish, sans-serif";
+          ctx.fillText("Em uma frase:", pad, ty + 60);
+          ctx.fillStyle = "#1B1914"; ctx.font = "italic 380 30px Fraunces, serif";
+          wrap(takeaway, W-pad*2, "italic 380 30px Fraunces, serif").slice(0,3).forEach((ln,i)=>{
+            ctx.fillText(ln, pad, ty + 104 + i*40 + (1-kP)*12);
+          });
+        }
+        // footer brand
+        ctx.globalAlpha = easeOut(clamp01((p-0.6)/0.3));
+        ctx.fillStyle = "#1B1914"; ctx.font = "400 34px Fraunces, serif";
+        ctx.fillText("Sync", pad, H-56);
+        const sw = ctx.measureText("Sync").width;
+        ctx.fillStyle = "#AF452B"; ctx.fillText("·MI", pad+sw, H-56);
+        ctx.fillStyle = "#7A7466"; ctx.font = "700 18px 'Space Mono', monospace"; ctx.textAlign = "right";
+        ctx.fillText("SYNCMI.COM", W-pad, H-58); ctx.textAlign = "left";
+        ctx.globalAlpha = 1;
+      };
+
+      // Record the canvas
+      const stream = canvas.captureStream(FPS);
+      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+      const chunks = [];
+      rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+      const done = new Promise(res => rec.onstop = res);
+      rec.start();
+
+      const totalFrames = FPS*DUR;
+      for(let f=0; f<totalFrames; f++){
+        drawFrame(f/totalFrames);
+        await new Promise(r => setTimeout(r, 1000/FPS));
+      }
+      rec.stop();
+      await done;
+
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `learning-instagram-${slugify(L.topic||topic)}.webm`; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 800);
+      setOk("Vídeo gerado! WebM 1080×1080, 6s. Para Instagram, suba direto (Reels/Stories aceitam WebM convertido — use um conversor p/ MP4 se o feed recusar).");
+    } catch(e){ setErr("Falha no vídeo: " + (e.message||"")); }
+    setBusy(false); setStage("");
+  }
+
   // helpers for editing arrays
   const updateSec = (k,v) => setL(x=>({...x, sections:{...x.sections, [k]:v}}));
   const updateField = (k,v) => setL(x=>({...x, [k]:v}));
@@ -4004,6 +4236,7 @@ Responda em JSON puro (sem markdown):
         <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap",alignItems:"center"}}>
           <Btn onClick={previewLearning} style={{background:BRAND.ink,color:BRAND.paper}}>👁 Preview do Aprofundamento (HTML)</Btn>
           <Btn onClick={downloadTeaserImage} disabled={busy}>📷 Baixar Instagram (PNG)</Btn>
+          <Btn onClick={generateInstagramVideo} disabled={busy} style={{background:"#AF452B",color:"#F4F1E6"}}>{busy&&stage.startsWith("Gerando vídeo")?<><Spin/> {stage}</>:"🎬 Baixar vídeo animado (WebM)"}</Btn>
           <Btn onClick={downloadLinkedinImage} disabled={busy}>💼 Baixar LinkedIn (PNG)</Btn>
           <Btn onClick={downloadHTML}>📄 Baixar HTML standalone</Btn>
           <Btn onClick={()=>setShowJson(x=>!x)}>{showJson?"Esconder":"Ver"} JSON</Btn>
@@ -5566,6 +5799,41 @@ function App(){
   } catch(e){ /* sem /api (local) ou timeout — usa o fallback hardcoded, se houver */ }
   if(!SB_OK) initSupabase(SUPABASE_URL, SUPABASE_ANON_KEY);
   ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+  // ── Smooth scroll (Floema-style momentum) via Lenis ──
+  // Disabled on touch devices (mobile/tablet) where native scroll is smoother + avoids jank
+  try {
+    const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches || window.innerWidth < 1024;
+    if(window.Lenis && !isTouch && !window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+      const lenis = new window.Lenis({
+        duration: 1.15,
+        easing: (t)=> Math.min(1, 1.001 - Math.pow(2, -10 * t)), // expo-out
+        smoothWheel: true,
+        wheelMultiplier: 0.9,
+        touchMultiplier: 1.5,
+      });
+      function raf(time){ lenis.raf(time); requestAnimationFrame(raf); }
+      requestAnimationFrame(raf);
+      // Keep GSAP ScrollTrigger in sync with Lenis
+      if(window.ScrollTrigger){
+        lenis.on("scroll", window.ScrollTrigger.update);
+        window.gsap && window.gsap.ticker && window.gsap.ticker.add((t)=>lenis.raf(t*1000));
+        window.gsap && window.gsap.ticker && window.gsap.ticker.lagSmoothing(0);
+      }
+      // Anchor links scroll smoothly via Lenis
+      document.addEventListener("click", (e)=>{
+        const a = e.target.closest('a[href^="#"], a[href*="#"]');
+        if(!a) return;
+        const href = a.getAttribute("href")||"";
+        const hash = href.includes("#") ? "#"+href.split("#")[1] : "";
+        if(hash && hash.length>1){
+          const el = document.querySelector(hash);
+          if(el){ e.preventDefault(); lenis.scrollTo(el, { offset: -20 }); }
+        }
+      });
+      window.__lenis = lenis;
+    }
+  } catch(e){ /* smooth scroll optional — fail silently */ }
 })();
 </script>
 </body>
