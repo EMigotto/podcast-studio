@@ -3492,179 +3492,186 @@ function tryParseJSON(text){
 // Parse uploaded HTML into Learning fields. Understands BOTH the Sync·MI template
 // (classes .kpi, .faq-it, .takeaway, .sources) AND custom harness-style templates
 // (classes .pillar > .pillar-label/.stats > .stat/.num/.lab, <details>, .em-frase, .mkt, .ig-card).
+// Parse uploaded HTML into Learning fields. CLASS-AGNOSTIC: works across multiple
+// aprofundamento templates (harness .pillar, teaser, claude-security .section-tag).
+// Since rawHtml is preserved and shown verbatim, the parser only needs to extract
+// enough metadata for the listing + preview card + script inputs.
 function parseHTMLToLearning(html, topicHint){
   const doc = new DOMParser().parseFromString(html, "text/html");
   const L = emptyLearning();
   L.topic = topicHint || "";
-  L.rawHtml = html;          // preserve full source of truth
-  L.preserveRaw = true;      // default: keep uploaded HTML as is when publishing
-
+  L.rawHtml = html;
+  L.preserveRaw = true;
   const text = el => el ? el.textContent.replace(/\s+/g," ").trim() : "";
+  const allText = doc.body ? doc.body.textContent : "";
 
-  // HERO — title (h1), subtitle (.dek or first hero p), chips
-  const h1 = doc.querySelector(".hero h1, .hero-inner h1, header h1, h1");
+  // ── TITLE ── first h1
+  const h1 = doc.querySelector(".hero h1, header h1, h1");
   if(h1) L.title = text(h1);
-  const dek = doc.querySelector(".hero .dek, .hero-inner .dek, .dek, .lede");
+
+  // ── SUBTITLE ── .dek → .lede → .subtitle → first hero <p>
+  const dek = doc.querySelector(".dek, .lede, .subtitle, .hero p, header p");
   if(dek) L.subtitle = text(dek);
-  // If no .dek, try the first <p> inside hero
-  if(!L.subtitle){
-    const heroP = doc.querySelector(".hero p, .hero-inner p, header p");
-    if(heroP) L.subtitle = text(heroP);
-  }
-  const chips = Array.from(doc.querySelectorAll(".chip, .tag.mono, .meta-row .tag")).map(c=>text(c)).filter(Boolean);
-  if(chips.length) L.chips = Array.from(new Set(chips)).slice(0,8);
 
-  // Edition number from .bignum or .num inside .pillar-label
-  const bignum = doc.querySelector(".bignum");
-  if(bignum){
-    const m = text(bignum).match(/\d+/);
-    if(m) L.editionNumber = parseInt(m[0]);
-  }
+  // ── EDITION NUMBER ── from "Aprofundamento Nº N" anywhere, or .bignum
+  let em = allText.match(/aprofundamento\s*n[º°o]?\s*(\d+)/i);
+  if(!em){ const bn = doc.querySelector(".bignum"); if(bn){ const m = text(bn).match(/\d+/); if(m) em = [null, m[0]]; } }
+  if(em) L.editionNumber = parseInt(em[1]);
 
-  // PILLARS — handles both <section class="pillar"> and Sync·MI <section class="pillar">
-  const allPillars = Array.from(doc.querySelectorAll("section.pillar, div.pillar, .pillar"));
-  // Filter top-level pillars (not nested inside .info-wrap)
-  const pillars = allPillars.filter(p => !p.closest(".info-wrap, .info-view, #info-view"));
-  const sectionKeys = ["conceito","porQueImporta","naPratica","proximasAcoes"];
-  let pIdx = 0;
+  // ── CHIPS ── tags/chips
+  const chips = Array.from(doc.querySelectorAll(".chip, .tag.mono, .section-tag")).map(c=>text(c)).filter(t=>t && t.length<40 && !/^\d/.test(t));
+  if(chips.length) L.chips = Array.from(new Set(chips)).slice(0,5);
 
-  pillars.forEach(p => {
-    const isFAQ = p.classList.contains("faq") || /faq|perguntas frequentes/i.test(text(p.querySelector(".pillar-label, .p-num, h2"))||"");
-    const h2 = p.querySelector("h2, .p-title");
-    const label = p.querySelector(".pillar-label, .p-num");
+  // ── SECTION MARKERS ── elements whose text matches "NN · Title" (any class)
+  // Covers .section-tag, .pillar-label, .p-num, .kicker, [class*=num], [class*=tag]
+  const markerSel = ".section-tag, .pillar-label, .p-num, [class*='section'], [class*='tag'], [class*='num']";
+  const isMarker = el => /^\s*\d{1,2}\s*[·.\-—:]/.test(el.textContent.trim());
+  const markers = Array.from(doc.querySelectorAll(markerSel)).filter(isMarker);
 
-    if(isFAQ){
-      // FAQ: gather <details> children (harness) OR .faq-it (Sync·MI)
-      const items = p.querySelectorAll(":scope > details, :scope > .faq-it, details, .faq-it");
-      const faqs = Array.from(items).map(d=>{
-        const summ = d.querySelector("summary");
-        const ans = d.querySelector(".a, .faq-a");
-        const q = summ ? text(summ) : "";
-        let a = "";
-        if(ans) a = text(ans);
-        else if(summ){
-          // fallback: textContent minus summary
-          const full = text(d);
-          a = full.startsWith(q) ? full.slice(q.length).trim() : full;
+  const keys = ["conceito","porQueImporta","naPratica","proximasAcoes"];
+  let contentIdx = 0;
+  const faqMarkers = [];
+
+  // Collect section content by walking siblings from a marker until the next marker.
+  // Works both for flat layouts (markers + h2 + p as siblings) and wrapped layouts
+  // (markers inside <section>/.pillar with content as siblings within the wrapper).
+  const collectSection = (marker, nextMarker) => {
+    let title = "", body = "";
+    const reached = el => !el || el === nextMarker || (nextMarker && el.contains && el.contains(nextMarker));
+    let cursor = marker.nextElementSibling;
+    while(cursor && !reached(cursor)){
+      const tag = cursor.nodeName;
+      if((tag === "H2" || tag === "H3") && !title) title = text(cursor);
+      else if(tag === "P"){
+        if(!cursor.closest(".sources, .ig, #info-view")){
+          const t = text(cursor);
+          if(t && t.length > 20) body += t + "\n\n";
         }
-        return { q, a, selected: false };
-      }).filter(x=>x.q);
-      // Mark first 5 as selected (typical: published HTML already has only 5)
-      faqs.forEach((f,i)=>{ f.selected = i < Math.min(5, faqs.length); });
-      L.faqs = faqs;
-      return; // FAQ doesn't advance section index
-    }
-
-    // Regular content pillar
-    if(pIdx >= 4) return;
-    const k = sectionKeys[pIdx];
-
-    // Section title — prefer h2 text; if h2 is rich (has <em>), keep textContent
-    if(h2 && pIdx < 3) L.sectionTitles[k] = text(h2);
-
-    // Body: collect <p>, <ul>, <ol>, <blockquote> in DOM order (top-level children of the pillar)
-    let body = "";
-    Array.from(p.children).forEach(c => {
-      const tag = c.nodeName;
-      if(tag === "H2" || c.classList?.contains("pillar-label")) return; // skip title block
-      if(c.classList?.contains("stats") || c.classList?.contains("kpis")) return; // KPIs handled separately
-      if(tag === "FIGURE" || c.tagName === "FIGURE") return; // skip svg/figure
-      if(tag === "P"){
-        const t = text(c);
-        if(t) body += t + "\n\n";
       } else if(tag === "UL" || tag === "OL"){
-        Array.from(c.querySelectorAll(":scope > li")).forEach(li=>{
-          body += "- " + text(li) + "\n";
-        });
+        cursor.querySelectorAll("li").forEach(li=>{ const t=text(li); if(t) body += "- "+t+"\n"; });
         body += "\n";
-      } else if(tag === "BLOCKQUOTE"){
-        body += "> " + text(c) + "\n\n";
       }
-    });
-    L.sections[k] = body.trim();
+      cursor = cursor.nextElementSibling;
+    }
+    // Fallback: if sibling-walk found nothing, use the wrapping section/pillar
+    if(!body){
+      const sec = marker.closest("section, .pillar, article");
+      if(sec){
+        const h = sec.querySelector("h2, h3, .p-title"); if(h && !title) title = text(h);
+        sec.querySelectorAll("p").forEach(p=>{
+          if(p.closest(".sources, .ig, #info-view")) return;
+          const t = text(p); if(t && t.length>20) body += t + "\n\n";
+        });
+      }
+    }
+    return { title, body: body.trim().slice(0, 600) };
+  };
 
-    // KPIs in this pillar — both .stats > .stat (harness) and .kpis > .kpi (Sync·MI)
-    const stats = p.querySelectorAll(".stats > .stat, .stat, .kpi");
-    stats.forEach(s => {
-      const num = s.querySelector(".num, .kpi-v");
-      const lab = s.querySelector(".lab, .kpi-l");
-      const note = s.querySelector(".kpi-n");
-      const labText = lab ? lab.innerHTML.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g,"") : "";
-      const labLines = labText.split(/\n+/).map(x=>x.trim()).filter(Boolean);
-      L.kpis.push({
-        value: text(num),
-        label: labLines[0] || "",
-        note: note ? text(note) : labLines.slice(1).join(" — ")
-      });
-    });
-
-    pIdx++;
+  markers.forEach((marker, mi) => {
+    const labelTxt = text(marker);
+    const isFaq = /faq|perguntas|dúvidas|duvidas/i.test(labelTxt);
+    if(isFaq){ faqMarkers.push(marker.closest("section") || marker.parentElement); return; }
+    if(contentIdx >= 3) return; // only need 3 sections for the card
+    const k = keys[contentIdx];
+    const nextMarker = markers[mi+1] || null;
+    const { title, body } = collectSection(marker, nextMarker);
+    if(title) L.sectionTitles[k] = title;
+    L.sections[k] = body;
+    contentIdx++;
   });
 
-  // Fallback / merge: KPIs from infographic .mkt cards (.mkt > .n + .l)
-  if(L.kpis.length < 3){
-    const mkts = doc.querySelectorAll(".mkt, .ig-stat, .info-card");
-    mkts.forEach(m => {
-      const n = m.querySelector(".n, .num, .kpi-v, .ig-num");
-      const l = m.querySelector(".l, .lab, .kpi-l, .ig-lab");
-      const note = m.querySelector(".ig-note, .kpi-n, p");
-      if(n && text(n).match(/\d/)){
-        // avoid duplicates
-        const v = text(n);
-        if(!L.kpis.some(k=>k.value===v)){
-          L.kpis.push({ value: v, label: l ? text(l) : "", note: note ? text(note).slice(0,120) : "" });
-        }
-      }
+  // ── FAQ ── try multiple patterns
+  let faqs = [];
+  // Pattern A: <details><summary>Q</summary>…A</details>
+  const details = doc.querySelectorAll("details");
+  if(details.length){
+    faqs = Array.from(details).map(d=>{
+      const s = d.querySelector("summary");
+      const a = d.querySelector(".a, .faq-a, .ans");
+      return { q: s?text(s):"", a: a?text(a):text(d).replace(s?text(s):"","").trim(), selected:false };
+    }).filter(x=>x.q);
+  }
+  // Pattern B: .qt (question) + .ans (answer) pairs
+  if(!faqs.length){
+    const qts = doc.querySelectorAll(".qt, .q, .faq-q, .qh");
+    qts.forEach(q=>{
+      // find the following answer
+      let a = q.nextElementSibling;
+      while(a && !a.matches(".ans, .a, .faq-a, p")) a = a.nextElementSibling;
+      // or answer inside same parent
+      if(!a){ const par = q.parentElement; a = par ? par.querySelector(".ans, .a, .faq-a") : null; }
+      const qTxt = text(q);
+      if(qTxt && qTxt.length > 4) faqs.push({ q: qTxt, a: a?text(a):"", selected:false });
     });
   }
-
-  // Chart data — try to extract from SVG bars if main has none (best effort)
-  if(L.chartData.length === 0){
-    const ladders = doc.querySelectorAll(".ladder .bar, .bar-row, .chart .row, .bars .bar, [data-bar]");
-    ladders.forEach(b => {
-      const label = b.querySelector(".name, .bar-lbl, .bar-label, .lbl") || b;
-      const val = b.querySelector(".val, .bar span, .value, [data-val]");
-      const txt = (val ? text(val) : "") || b.getAttribute("data-val") || "";
-      const m = txt.match(/[\d.]+/);
-      const lblTxt = (label && label!==b) ? text(label) : "";
-      if(lblTxt && m) L.chartData.push({ label: lblTxt, value: parseFloat(m[0]) });
-    });
-  }
-
-  // TAKEAWAY — .em-frase p (harness) or .takeaway (Sync·MI)
-  const tk = doc.querySelector(".em-frase p, .takeaway p, .takeaway");
-  if(tk) L.takeaway = text(tk).replace(/^["'""\u201C\u201D]+|["'""\u201C\u201D]+$/g, "");
-
-  // SOURCES — handles harness <ol><li>Title — <a>link</a></li> and Sync·MI structured list
-  const sourceItems = doc.querySelectorAll(".sources ol li, .sources li, ol.sources li");
-  L.sources = Array.from(sourceItems).map(li => {
-    const a = li.querySelector("a");
-    const url = a ? (a.getAttribute("href") || a.href || "") : "";
-    let title = text(li);
-    // If anchor exists, build a clean "Outlet — Article title" format
-    if(a){
-      const anchorText = text(a);
-      const beforeAnchor = (li.textContent.split(anchorText)[0]||"").replace(/[—–-]\s*$/,"").trim();
-      title = beforeAnchor ? `${beforeAnchor} — ${anchorText}` : anchorText;
+  // Pattern C: inside the FAQ section, pair strong/headers with following text
+  if(!faqs.length && faqMarkers.length){
+    const sec = faqMarkers[0];
+    if(sec){
+      sec.querySelectorAll(".ans, .a").forEach(a=>{
+        let q = a.previousElementSibling;
+        faqs.push({ q: q?text(q):"Pergunta", a: text(a), selected:false });
+      });
     }
-    return { title: title.replace(/\s+/g," ").trim(), url };
-  }).filter(s => s.title);
+  }
+  // Dedup + select first 5
+  faqs = faqs.filter((f,i,arr)=>f.q && arr.findIndex(x=>x.q===f.q)===i);
+  faqs.forEach((f,i)=>{ f.selected = i < Math.min(5, faqs.length); });
+  if(faqs.length) L.faqs = faqs;
 
-  // IMAGES — collect <img> with alt/captions
-  const figures = doc.querySelectorAll("figure");
-  L.images = Array.from(figures).map(f => {
-    const img = f.querySelector("img");
-    const cap = f.querySelector("figcaption");
-    return {
-      caption: cap ? text(cap) : "",
-      query: "",
-      alt: img ? (img.getAttribute("alt") || "") : "",
-      url: img ? (img.getAttribute("src") || "") : ""
-    };
-  }).filter(x => x.url || x.caption);
+  // ── KPIs ── number+label cards across templates
+  const kpiCards = doc.querySelectorAll(".ig-stat, .stat, .kpi, .mkt, .stats > div, .ig-stats > div");
+  const seenK = new Set();
+  kpiCards.forEach(c=>{
+    const numEl = c.querySelector(".n, .num, .kpi-v, .val, .ig-num");
+    const labEls = c.querySelectorAll(".l, .lab, .kpi-l, .ig-lab");
+    const numTxt = numEl ? text(numEl) : "";
+    if(numTxt && /\d/.test(numTxt) && !seenK.has(numTxt)){
+      seenK.add(numTxt);
+      const labTxt = labEls.length ? text(labEls[labEls.length-1]) : "";
+      const noteEl = c.querySelector(".kpi-n, .note");
+      L.kpis.push({ value: numTxt, label: labTxt.slice(0,60), note: noteEl?text(noteEl).slice(0,120):(labTxt.length>60?labTxt.slice(60,180):"") });
+    }
+  });
+
+  // ── CHART DATA ── bar-style viz
+  const bars = doc.querySelectorAll(".gap-col, .bar-row, .ladder .bar, .bars .bar, .chart .row");
+  bars.forEach(b=>{
+    const lbl = b.querySelector(".gap-lbl, .name, .bar-lbl, .lbl, .l");
+    const val = b.querySelector(".gap-val, .val, .bar span, .value");
+    const txt = val ? text(val) : "";
+    const m = txt.match(/[\d.]+/);
+    if(lbl && m) L.chartData.push({ label: text(lbl).slice(0,40), value: parseFloat(m[0]) });
+  });
+
+  // ── TAKEAWAY ── .pull / .em-frase / .takeaway / fallback lede
+  const tk = doc.querySelector(".em-frase p, .takeaway p, .takeaway, .pull");
+  if(tk) L.takeaway = text(tk).replace(/^["'"\u201C\u201D]+|["'"\u201C\u201D]+$/g, "");
+
+  // ── SOURCES ── .sources li (with or without <a>)
+  const srcItems = doc.querySelectorAll(".sources ol li, .sources li, .sources ul li, ol.sources li");
+  L.sources = Array.from(srcItems).map(li=>{
+    const a = li.querySelector("a");
+    const url = a ? (a.getAttribute("href")||a.href||"") : "";
+    let title = text(li);
+    if(a){
+      const at = text(a);
+      const before = (li.textContent.split(at)[0]||"").replace(/[—–-]\s*$/,"").trim();
+      title = before ? `${before} — ${at}` : at;
+    }
+    return { title: title.replace(/\s+/g," ").trim().slice(0,200), url };
+  }).filter(s=>s.title && s.title.length>4);
+
+  // ── IMAGES ── figures
+  const figs = doc.querySelectorAll("figure");
+  L.images = Array.from(figs).map(f=>{
+    const img = f.querySelector("img"); const cap = f.querySelector("figcaption");
+    return { caption: cap?text(cap):"", query:"", alt: img?(img.getAttribute("alt")||""):"", url: img?(img.getAttribute("src")||""):"" };
+  }).filter(x=>x.url||x.caption);
 
   return L;
 }
+
 
 function LearningEditor({ apiKey, keyValidated }){
   const [list,setList] = useState([]);
