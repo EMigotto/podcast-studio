@@ -1,0 +1,9 @@
+{
+  "name": "syncmi-app",
+  "version": "1.0.0",
+  "description": "Sync·MI — static single-file app + Vercel serverless functions. No build pipeline.",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Sync·MI is a static deploy — no build step.'"
+  }
+}
