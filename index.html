@@ -2781,7 +2781,8 @@ function PodcastDetail(){
     </main>
   </>;
 
-  const effectiveVideoUrl = videoBlob || podcast.videoUrl;
+  // Prefer the Supabase Storage URL (reliable, public) over any local blob ref
+  const effectiveVideoUrl = podcast.videoUrl || videoBlob;
   const aspectRatio = podcast.aspectRatio || "16/9";
 
   return <>
