@@ -1633,10 +1633,10 @@ function LandingCarousel({ eyebrow, title, dark, children, id }){
 
 const LP_VCARD_GRADS = ["linear-gradient(135deg,#1a2e3a,#0d1620)","linear-gradient(135deg,#3a241a,#1d120c)","linear-gradient(135deg,#2a2030,#16101c)","linear-gradient(135deg,#1f3328,#0e1813)"];
 const isDirectVideo = (u) => u && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
+// True for any video that can play inline (direct files, Supabase storage, HeyGen mp4) — NOT iframe embeds
+const isPlayableVideo = (u) => { try { const i = getVideoEmbedInfo(u); return !!(i && i.type === "video"); } catch(_){ return false; } };
 const seekToFrame = (e) => { try { e.currentTarget.currentTime = 1; } catch(_){} };
-// Default poster shown for any video without its own thumbnail
-const DEFAULT_POSTER = "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=900&auto=format&fit=crop&q=70";
-// Hover-to-play (short ~6s preview loop) handlers for direct-video cards
+// Hover-to-play (short ~6s preview loop) handlers
 const previewPlay = (e) => { const v = e.currentTarget.querySelector("video"); if(v){ try{ v.currentTime = 1; v.play().catch(()=>{}); }catch(_){} } };
 const previewStop = (e) => { const v = e.currentTarget.querySelector("video"); if(v){ try{ v.pause(); v.currentTime = 1; }catch(_){} } };
 const previewLoop = (e) => { const v = e.currentTarget; if(v.currentTime >= 7){ try{ v.currentTime = 1; }catch(_){} } };
@@ -1992,9 +1992,11 @@ function LandingPage(){
           <a href={featuredPod?`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`:"?view=podcasts"} className="fl-chapter-visual fl-reveal"
              onMouseEnter={previewPlay} onMouseLeave={previewStop}>
             <div className="fl-vframe">
-              {featuredPod && isDirectVideo(featuredPod.videoUrl)
-                ? <video className="fl-vframe-media" src={featuredPod.videoUrl} muted playsInline loop preload="metadata" poster={featuredPod.thumbnailUrl||DEFAULT_POSTER} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop}/>
-                : <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod?.thumbnailUrl||DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center"}}/>}
+              {featuredPod && isPlayableVideo(featuredPod.videoUrl)
+                ? <video className="fl-vframe-media" src={getVideoEmbedInfo(featuredPod.videoUrl).src} muted playsInline loop preload="metadata" poster={featuredPod.thumbnailUrl||undefined} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop}/>
+                : featuredPod?.thumbnailUrl
+                  ? <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod.thumbnailUrl})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
+                  : <div className="fl-vframe-media fl-vframe-grad"/>}
               <div className="fl-vframe-overlay"/>
               <div className="fl-vframe-play"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div>
               {featuredPod && <div className="fl-vframe-meta">
@@ -2101,9 +2103,13 @@ function LandingPage(){
            onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}
         >
           <span className="vbadge">№ {padNum(podcasts.length-i)}</span>
-          {isDirectVideo(p.videoUrl)
-            ? <video className="th" src={p.videoUrl} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||DEFAULT_POSTER} style={{width:"100%",height:"100%",objectFit:"cover"}} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop}/>
-            : <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl||DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center"}}></div>}
+          {isPlayableVideo(p.videoUrl)
+            ? <video className="th" src={getVideoEmbedInfo(p.videoUrl).src} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||undefined} style={{width:"100%",height:"100%",objectFit:"cover",background:"#241F21"}} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop}/>
+            : p.thumbnailUrl
+              ? <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl})`}}></div>
+              : <div className="th" style={{background:"linear-gradient(135deg,#3A3236,#241F21)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+                  <div style={{fontFamily:"'Instrument Serif',serif",color:BRAND.paper,fontSize:"1.2rem",textAlign:"center",lineHeight:1.15}}>{p.title||"Episódio"}</div>
+                </div>}
           <div className="gr"></div>
           <div className="pl"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff"/></svg></div>
           <div className="mt">
@@ -2645,13 +2651,12 @@ function PodcastsPage(){
                onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.play().catch(()=>{})}catch(_){}}}}
                onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}>
               <div style={{position:"relative",borderRadius:14,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
-                {isDirectVideo(featured.videoUrl)
-                  ? <video src={featured.videoUrl} muted playsInline loop preload="metadata" poster={featured.thumbnailUrl||DEFAULT_POSTER} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
-                  : featured.thumbnailUrl
-                    ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    : <div style={{position:"absolute",inset:0,backgroundImage:`url(${DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      <div style={{position:"absolute",inset:0,background:"rgba(36,31,33,.55)"}}></div>
-                      <div style={{position:"relative",fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
+                {featured.thumbnailUrl
+                  ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : isPlayableVideo(featured.videoUrl)
+                    ? <video src={getVideoEmbedInfo(featured.videoUrl).src} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                    : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
                     </div>}
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.75) 100%)",pointerEvents:"none"}}></div>
                 <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
@@ -2705,14 +2710,11 @@ function PodcastsPage(){
                   if(v){try{v.pause(); v.currentTime=1;}catch(_){}}
                 }}>
                 <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:14,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:14}}>
-                  {isDirectVideo(p.videoUrl)
-                    ? <video src={p.videoUrl} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||DEFAULT_POSTER} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
-                    : p.thumbnailUrl
-                      ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                      : <div style={{position:"absolute",inset:0,backgroundImage:`url(${DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        <div style={{position:"absolute",inset:0,background:"rgba(36,31,33,.5)"}}></div>
-                        <div style={{position:"relative",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>
-                      </div>}
+                  {p.thumbnailUrl
+                    ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : isPlayableVideo(p.videoUrl)
+                      ? <video src={getVideoEmbedInfo(p.videoUrl).src} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                      : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
                   <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.6) 100%)",pointerEvents:"none"}}></div>
                   <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
                     <div style={{width:48,height:48,background:"rgba(245,241,230,.92)",color:BRAND.ink,borderRadius:"50%",display:"grid",placeItems:"center",backdropFilter:"blur(4px)"}}>
