@@ -50,6 +50,10 @@
     --sage-panel-from: #7E8E6A; --sage-panel-to: #505D40;
     --sage-cream: #F6F2E8; --sage-rust: #AF452B; --sage-hl: #C9D3B6;
     --bg-deep:#241F21; --ease:cubic-bezier(.22,.61,.36,1);
+    --font-display:'Instrument Serif',Georgia,serif;
+    --font-fraunces:'Fraunces',Georgia,serif;
+    --font-sans:'Geist',system-ui,-apple-system,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
     --shadow: 0 1px 0 rgba(36,31,33,.06), 0 8px 24px -12px rgba(36,31,33,.14);
     --shadow-lg: 0 4px 12px rgba(36,31,33,.08), 0 16px 40px -16px rgba(36,31,33,.24);
     --shadow-card: 0 30px 80px -30px rgba(27,25,20,.35);
@@ -281,10 +285,10 @@
   /* ═══ FLOEMA SYSTEM (chartreuse + near-black 2-color, chaptered) ═══ */
   .fl-reveal{opacity:0; transform:translateY(40px); transition:opacity 1.1s var(--ease), transform 1.1s var(--ease)}
   .fl-reveal.in{opacity:1; transform:none}
-  .fl-eyebrow{font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.24em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:48px}
+  .fl-eyebrow{font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.24em; text-transform:uppercase; color:var(--ink-soft)}
   .fl-mark{background:var(--accent); padding:0 .15em; color:var(--ink)}
   /* HERO */
-  .fl-hero{min-height:100vh; display:flex; align-items:center; padding:120px 0 80px; background:var(--paper); position:relative; overflow:hidden}
+  .fl-hero{min-height:88vh; display:flex; align-items:center; padding:90px 0 70px; background:var(--paper); position:relative; overflow:hidden}
   .fl-hero-in svg:first-child{margin:0 auto 0; display:block; color:var(--accent)}
   .fl-hero-in{text-align:center; max-width:1100px}
   .fl-hero-title{font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(2.6rem,9vw,8rem); line-height:1.02; letter-spacing:-.02em; color:var(--ink); margin:0 auto; max-width:18ch}
@@ -368,14 +372,19 @@
   .fl-cta-onDark:hover{background:var(--paper); color:var(--ink)}
   /* edition cover visual */
   .fl-chapter-visual{display:block; text-decoration:none}
-  .fl-edition-cover{aspect-ratio:3/4; background:var(--paper-light); border:1px solid rgba(36,31,33,.18); border-radius:18px; padding:32px; display:flex; flex-direction:column; position:relative; overflow:hidden; transition:transform .5s var(--ease)}
+  .fl-edition-cover{aspect-ratio:3/4; background:#1B2330; border-radius:18px; overflow:hidden; position:relative; display:flex; flex-direction:column; transition:transform .5s var(--ease); box-shadow:var(--shadow-lg)}
   .fl-chapter-visual:hover .fl-edition-cover{transform:translateY(-6px)}
-  .fl-ec-top{display:flex; justify-content:space-between; gap:16px; font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft)}
-  .fl-ec-meta{font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase}
-  .fl-ec-title{font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(1.5rem,2.6vw,2.2rem); line-height:1.12; margin-top:auto; color:var(--ink)}
-  .fl-ec-bottom{display:flex; justify-content:space-between; align-items:flex-end; margin-top:24px}
-  .fl-ec-big{font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(4.5rem,10vw,8rem); line-height:.85; color:var(--accent-deep); opacity:.6}
-  .fl-ec-cta{font-family:'JetBrains Mono',monospace; font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink)}
+  .fl-ec-net{position:absolute; inset:0; z-index:0}
+  .fl-ec-layer{position:relative; z-index:2; display:flex; flex-direction:column; height:100%}
+  .fl-ec-band{display:flex; align-items:center; justify-content:space-between; padding:18px 22px}
+  .fl-ec-cat{font-family:var(--font-mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase; font-weight:600; padding:5px 12px; border-radius:100px; background:var(--accent); color:#fff; white-space:nowrap}
+  .fl-ec-meta{font-family:var(--font-mono); font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:rgba(245,241,230,.55); white-space:nowrap}
+  .fl-ec-headzone{flex:1; display:flex; flex-direction:column; justify-content:center; padding:10px 22px}
+  .fl-ec-kick{font-family:var(--font-mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; margin-bottom:12px; color:#5FA9D6}
+  .fl-ec-title{font-family:var(--font-display); font-weight:400; font-size:clamp(1.6rem,2.6vw,2.1rem); line-height:1.05; letter-spacing:-.01em; color:#F5F1E6; margin:0}
+  .fl-ec-bottom{display:flex; justify-content:space-between; align-items:flex-end; padding:18px 22px; border-top:1px solid rgba(245,241,230,.14)}
+  .fl-ec-big{font-family:var(--font-display); font-weight:400; font-size:clamp(3rem,6vw,4rem); line-height:.8; color:var(--accent)}
+  .fl-ec-cta{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:rgba(245,241,230,.7); padding-bottom:6px}
   /* video frame */
   .fl-vframe{position:relative; aspect-ratio:16/10; border-radius:18px; overflow:hidden; background:#0f0d0e}
   .fl-vframe-media{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
@@ -386,79 +395,56 @@
   .fl-vframe-play svg{margin-left:3px}
   .fl-vframe-meta{position:absolute; left:24px; right:24px; bottom:22px; color:var(--paper); z-index:2}
   /* learning card */
-  /* ═══ UNIFIED LEARNING CARD — used in Chapter 03, Learnings page, IG teaser, LinkedIn ═══ */
-  .lcard{
-    display:grid; grid-template-columns:1fr 1fr;
-    border-radius:26px; overflow:hidden;
-    background:#F6F2E8;
-    box-shadow:0 30px 80px -30px rgba(27,25,20,.35);
-    font-family:'Mulish',sans-serif;
-    color:#1B1914;
-    width:100%;
-  }
-  @media(max-width:760px){.lcard:not(.lcard-fixed){grid-template-columns:1fr}}
+  /* ═══ UNIFIED LEARNING CARD — timeline stepper (DS) — Ch.03, /learnings, IG, LinkedIn ═══ */
+  .lcard{display:grid; grid-template-columns:.86fr 1.14fr; border-radius:24px; overflow:hidden; background:#F6F2E8; box-shadow:0 30px 80px -34px rgba(27,25,20,.4); color:#1B1914; width:100%; font-family:var(--font-sans)}
+  .lcard.lcard-preview{grid-template-columns:1fr; max-width:640px}
+  .lcard.lcard-preview .lcard-panel{display:none}
+  @media(max-width:760px){.lcard:not(.lcard-fixed):not(.lcard-preview){grid-template-columns:1fr}}
 
-  /* Preview variant — only the cream body (used in Chapter 03 where the green panel would be redundant with the section bg) */
-  .lcard.lcard-preview{ grid-template-columns:1fr; max-width:680px; }
-  .lcard.lcard-preview .lcard-panel{ display:none; }
-
-  /* Square variant — Instagram 1080×1080, stacked vertically */
-  .lcard.lcard-square{
-    grid-template-columns:1fr; grid-template-rows:1fr 1fr;
-    width:1080px; height:1080px; max-width:100%;
-    border-radius:0;
-  }
+  /* Square variant — Instagram 1080×1080, stacked */
+  .lcard.lcard-square{grid-template-columns:1fr; grid-template-rows:auto 1fr; width:1080px; height:1080px; max-width:100%; border-radius:0}
   .lcard.lcard-square .lcard-panel{padding:56px; min-height:0}
-  .lcard.lcard-square .lcard-num{font-size:120px}
-  .lcard.lcard-square .lcard-h{font-size:42px; max-width:14ch; padding-top:24px}
-  .lcard.lcard-square .lcard-desc{display:none}
-  .lcard.lcard-square .lcard-cta{display:none}
+  .lcard.lcard-square .lcard-num{font-size:130px}
+  .lcard.lcard-square .lcard-h{font-size:44px; max-width:15ch}
   .lcard.lcard-square .lcard-body{padding:56px}
   .lcard.lcard-square .lcard-body h3{font-size:34px}
-  .lcard.lcard-square .lcard-row p{font-size:16px}
-  .lcard.lcard-square .lcard-frase{font-size:22px}
+  .lcard.lcard-square .lcard-cta{display:none}
+  /* LinkedIn variant — 1200×627 */
+  .lcard.lcard-linkedin{width:1200px; height:627px; max-width:100%; border-radius:0}
+  .lcard.lcard-linkedin .lcard-panel{padding:46px; min-height:0}
+  .lcard.lcard-linkedin .lcard-num{font-size:104px}
+  .lcard.lcard-linkedin .lcard-body{padding:46px}
+  .lcard.lcard-linkedin .lcard-cta{display:none}
 
-  /* Horizontal LinkedIn variant — 1200×627 wide format */
-  .lcard.lcard-linkedin{
-    width:1200px; height:627px; max-width:100%;
-    border-radius:0;
-  }
-  .lcard.lcard-linkedin .lcard-panel{padding:48px; min-height:0}
-  .lcard.lcard-linkedin .lcard-num{font-size:120px}
-  .lcard.lcard-linkedin .lcard-body{padding:48px}
-  .lcard-panel{
-    position:relative; color:#F4F1E6;
-    padding:clamp(30px,5vw,58px);
-    overflow:hidden;
-    background:linear-gradient(165deg,var(--sage-panel-from),var(--sage-panel-to));
-    display:flex; flex-direction:column;
-    min-height:420px;
-  }
-  .lcard-panel::before{
-    content:""; position:absolute; inset:0; opacity:.14; mix-blend-mode:soft-light; pointer-events:none;
-    background-image:
-      repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 2px,transparent 2px 22px),
-      repeating-linear-gradient(0deg,rgba(0,0,0,.4) 0 1px,transparent 1px 120px);
-  }
-  .lcard-num{font-family:'Fraunces',serif; font-style:italic; font-weight:300; font-size:clamp(70px,10vw,128px); line-height:.8; color:rgba(244,241,230,.92); position:relative}
-  .lcard-kick{font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:rgba(244,241,230,.78); margin-top:14px; position:relative}
-  .lcard-h{font-family:'Fraunces',serif; font-weight:400; font-size:clamp(26px,3.4vw,42px); line-height:1.04; letter-spacing:-.015em; margin:auto 0 0; padding-top:32px; position:relative; max-width:13ch}
-  .lcard-desc{font-size:clamp(14px,1.5vw,16px); line-height:1.55; color:rgba(244,241,230,.9); margin:18px 0 26px; position:relative; max-width:42ch}
-  .lcard-cta{position:relative; align-self:flex-start; display:inline-flex; align-items:center; gap:12px; background:#1B1914; color:#F4F1E6; font-family:'Mulish'; font-weight:600; font-size:15px; border:none; cursor:pointer; text-decoration:none; padding:14px 24px; border-radius:40px; transition:.25s}
-  .lcard-cta:hover{background:#AF452B; transform:translateX(3px)}
-  .lcard-cta .arr{transition:.25s}.lcard-cta:hover .arr{transform:translateX(4px)}
+  .lcard-panel{position:relative; color:#F4F1E6; padding:clamp(26px,3.5vw,46px); overflow:hidden; display:flex; flex-direction:column; min-height:400px; background:#3f4b30}
+  .lcard-bg{position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:.42; mix-blend-mode:luminosity}
+  .lcard-tint{position:absolute; inset:0; z-index:1; background:linear-gradient(158deg,rgba(132,148,111,.80) 0%,rgba(92,107,71,.88) 58%,rgba(74,87,57,.94) 100%)}
+  .lcard-panel::before{content:""; position:absolute; inset:0; z-index:2; opacity:.15; mix-blend-mode:soft-light; pointer-events:none; background-image:linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px); background-size:24px 24px}
+  .lcard-panel::after{content:""; position:absolute; top:-26%; right:-18%; z-index:2; width:58%; height:58%; border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%); pointer-events:none}
+  .lcard-kick{position:relative; z-index:3; display:flex; align-items:center; gap:9px; font-family:var(--font-mono); font-size:.66rem; letter-spacing:.2em; text-transform:uppercase; color:rgba(244,241,230,.9)}
+  .lcard-kick .d{width:7px; height:7px; border-radius:50%; background:#E5431B}
+  .lcard-num{position:relative; z-index:3; font-family:var(--font-fraunces); font-variation-settings:'opsz' 144,'SOFT' 60,'WONK' 1; font-style:italic; font-weight:300; font-size:clamp(70px,9vw,120px); line-height:.78; margin-top:18px; text-shadow:0 2px 28px rgba(27,25,20,.3)}
+  .lcard-h{position:relative; z-index:3; font-family:var(--font-display); font-weight:400; font-size:clamp(24px,2.6vw,34px); line-height:1.05; letter-spacing:-.012em; margin:14px 0 auto; max-width:13ch; text-shadow:0 1px 18px rgba(27,25,20,.25)}
+  .lcard-pills{position:relative; z-index:3; display:flex; flex-wrap:wrap; gap:8px; margin-top:24px}
+  .lcard-pill{font-family:var(--font-mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:#F4F1E6; border:1px solid rgba(244,241,230,.5); border-radius:100px; padding:5px 12px; backdrop-filter:blur(2px)}
 
-  .lcard-body{padding:clamp(28px,4vw,50px); display:flex; flex-direction:column; background:#F6F2E8}
-  .lcard-badge{align-self:flex-start; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#4A463B; border:1px solid rgba(27,25,20,.13); border-radius:30px; padding:8px 16px; margin-bottom:22px}
-  .lcard-body h3{font-family:'Fraunces',serif; font-weight:430; font-size:clamp(20px,2.4vw,30px); line-height:1.14; letter-spacing:-.012em; color:#1B1914; margin:0}
-  .lcard-rule{height:1px; background:rgba(27,25,20,.13); margin:22px 0}
-  .lcard-row{margin-bottom:18px}
-  .lcard-row:last-child{margin-bottom:0}
-  .lcard-lab{font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#AF452B; margin-bottom:6px}
-  .lcard-lab.hl{background:#C9D3B6; display:inline-block; padding:1px 6px; border-radius:3px; color:#1B1914}
-  .lcard-row p{font-size:15px; line-height:1.5; color:#4A463B}
-  .lcard-frase{font-family:'Fraunces',serif; font-style:italic; font-weight:380; font-size:clamp(16px,1.9vw,19px); line-height:1.4; color:#1B1914; margin-top:4px}
-  .lcard-frase b{font-style:normal; font-weight:600}
+  .lcard-body{padding:clamp(26px,3vw,40px); display:flex; flex-direction:column; background:#F6F2E8}
+  .lcard-badge{align-self:flex-start; font-family:var(--font-mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase; color:#4A463B; border:1px solid rgba(27,25,20,.14); border-radius:30px; padding:7px 15px; margin-bottom:18px; white-space:nowrap}
+  .lcard-body h3{font-family:var(--font-display); font-weight:400; font-size:clamp(22px,2.2vw,30px); line-height:1.1; letter-spacing:-.012em; color:#1B1914; margin:0 0 24px}
+  .lcard-steps{position:relative; padding-left:32px}
+  .lcard-steps::before{content:""; position:absolute; left:10px; top:7px; bottom:20px; width:2px; background:rgba(27,25,20,.13)}
+  .lcard-step{position:relative; margin-bottom:18px}
+  .lcard-node{position:absolute; left:-32px; top:1px; width:22px; height:22px; border-radius:50%; background:#1B1914; color:#F6F2E8; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:.6rem; font-weight:600}
+  .lcard-step.hl .lcard-node{background:#E5431B; box-shadow:0 0 0 4px rgba(229,67,27,.16)}
+  .lcard-lab{font-family:var(--font-mono); font-size:.64rem; letter-spacing:.14em; text-transform:uppercase; color:#AF452B; margin-bottom:4px}
+  .lcard-step p{font-size:.95rem; line-height:1.5; color:#4A463B; margin:0}
+  .lcard-take{margin-top:8px; padding:16px 18px; border-left:3px solid #E5431B; background:rgba(229,67,27,.05); border-radius:0 10px 10px 0}
+  .lcard-take .t{font-family:var(--font-mono); font-size:.56rem; letter-spacing:.18em; text-transform:uppercase; color:#AF452B; margin-bottom:6px}
+  .lcard-take p{font-family:var(--font-display); font-style:italic; font-size:clamp(17px,1.8vw,20px); line-height:1.34; color:#1B1914; margin:0}
+  .lcard-cta{align-self:flex-start; display:inline-flex; align-items:center; gap:12px; background:#1B1914; color:#F4F1E6; font-family:var(--font-sans); font-weight:600; font-size:15px; border:none; cursor:pointer; padding:14px 24px; border-radius:40px; margin-top:24px; transition:.25s}
+  .lcard-cta:hover{background:#AF452B}
+  .lcard-cta .arr{transition:.25s; display:inline-block}
+  .lcard-cta:hover .arr{transform:translateX(4px)}
 
   /* ═══ LEARNINGS CAROUSEL (page /learnings) ═══ */
   .lcarousel{display:flex; gap:clamp(20px,3vw,40px); overflow-x:auto; scroll-snap-type:x mandatory; padding:24px 0 60px; scrollbar-width:thin}
@@ -597,7 +583,7 @@
   /* ═══════════════════════════════════════════════════════════════════════
      RESPONSIVE — mobile & tablet (consolidated)
      ═══════════════════════════════════════════════════════════════════════ */
-  html, body { max-width:100%; overflow-x:hidden; }
+  html, body { max-width:100%; overflow-x:clip; }
   * { -webkit-tap-highlight-color: transparent; }
   img, video, canvas, svg { max-width:100%; height:auto; }
 
@@ -1407,8 +1393,7 @@ const Logo = memo(function Logo({ size = 36, color, animate = true }){
 // Mirrors the harness-card-teaser.html template exactly
 // ═══════════════════════════════════════════════════════════════════════════
 const LearningCard = memo(function LearningCard({ L, onOpen, variant = "full" }){
-  // Extract first sentence/snippet from each section (max ~180 chars)
-  const snip = (s, max=180) => {
+  const snip = (s, max=170) => {
     if(!s) return "";
     const t = String(s).replace(/\n+/g, " ").trim();
     return t.length > max ? t.slice(0, max).replace(/[,;.\s]+\S*$/, "") + "…" : t;
@@ -1421,40 +1406,44 @@ const LearningCard = memo(function LearningCard({ L, onOpen, variant = "full" })
     (L?.sections?.proximasAcoes||"").length
   ) / 1200)) || 8;
   const title = L?.title || L?.topic || "Aprofundamento";
+  const chips = (L?.chips||[]).filter(c=>c && !/^\d/.test(c) && c.length<26).slice(0,3);
+  const bgImg = (L?.images||[]).find(im=>im.url)?.url || "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=900&auto=format&fit=crop&q=70";
 
-  // 3 section snippets for the right panel (always 01/02/03 - skip 04 actions)
-  const rows = [
-    { lab: "01 · O conceito",     text: snip(L?.sections?.conceito, 180) },
-    { lab: "02 · Por que importa", text: snip(L?.sections?.porQueImporta, 180) },
-    { lab: "03 · Na prática",      text: snip(L?.sections?.naPratica, 180), hl: true },
-  ].filter(r => r.text);
+  const steps = [
+    { lab: "01 · O conceito",      text: snip(L?.sections?.conceito) },
+    { lab: "02 · Por que importa",  text: snip(L?.sections?.porQueImporta) },
+    { lab: "03 · Na prática",       text: snip(L?.sections?.naPratica), hl: true },
+  ].filter(s => s.text);
 
   return <div className={"lcard"
       + (variant==="square"?" lcard-square lcard-fixed":"")
       + (variant==="linkedin"?" lcard-linkedin lcard-fixed":"")
       + (variant==="preview"?" lcard-preview":"")} onClick={onOpen} style={{cursor: onOpen ? "pointer" : "default"}}>
     {variant!=="preview" && <div className="lcard-panel">
+      <div className="lcard-bg" style={{backgroundImage:`url('${bgImg}')`}}></div>
+      <div className="lcard-tint"></div>
+      <div className="lcard-kick"><span className="d"></span> Learning de Inovação</div>
       <div className="lcard-num">{num}</div>
-      <div className="lcard-kick">Learning de Inovação</div>
       <h2 className="lcard-h">Quando um tema merece mais que cinco minutos.</h2>
-      <p className="lcard-desc">De tempos em tempos, um assunto é denso demais para um resumo rápido — e importante demais para passar batido. O Learning destila um tema por vez: o que é, por que importa, e o que fazer.</p>
-      {onOpen && <button className="lcard-cta" onClick={e=>{e.stopPropagation(); onOpen();}}>Abrir o aprofundamento <span className="arr">→</span></button>}
+      {chips.length>0 && <div className="lcard-pills">{chips.map((c,i)=><span key={i} className="lcard-pill">{c}</span>)}</div>}
     </div>}
     <div className="lcard-body">
       <span className="lcard-badge">Aprofundamento Nº {num} · {minRead} min</span>
       <h3>{title}</h3>
-      <div className="lcard-rule"></div>
-      {rows.map((r,i)=>(
-        <div key={i} className="lcard-row">
-          <div className={"lcard-lab" + (r.hl ? " hl" : "")}>{r.lab}</div>
-          <p>{r.text}</p>
-        </div>
-      ))}
-      {L?.takeaway && <>
-        <div className="lcard-rule"></div>
-        <p className="lcard-frase"><b>Em uma frase:</b> {L.takeaway}</p>
-      </>}
-      {variant==="preview" && onOpen && <button className="lcard-cta" style={{marginTop:24}} onClick={e=>{e.stopPropagation(); onOpen();}}>Abrir o aprofundamento <span className="arr">→</span></button>}
+      <div className="lcard-steps">
+        {steps.map((s,i)=>(
+          <div key={i} className={"lcard-step" + (s.hl ? " hl" : "")}>
+            <div className="lcard-node">{String(i+1).padStart(2,"0")}</div>
+            <div className="lcard-lab">{s.lab}</div>
+            <p>{s.text}</p>
+          </div>
+        ))}
+      </div>
+      {L?.takeaway && <div className="lcard-take">
+        <div className="t">Em uma frase</div>
+        <p>{L.takeaway}</p>
+      </div>}
+      {onOpen && <button className="lcard-cta" onClick={e=>{e.stopPropagation(); onOpen();}}>Abrir o aprofundamento <span className="arr">→</span></button>}
     </div>
   </div>;
 });
@@ -1645,6 +1634,12 @@ function LandingCarousel({ eyebrow, title, dark, children, id }){
 const LP_VCARD_GRADS = ["linear-gradient(135deg,#1a2e3a,#0d1620)","linear-gradient(135deg,#3a241a,#1d120c)","linear-gradient(135deg,#2a2030,#16101c)","linear-gradient(135deg,#1f3328,#0e1813)"];
 const isDirectVideo = (u) => u && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
 const seekToFrame = (e) => { try { e.currentTarget.currentTime = 1; } catch(_){} };
+// Default poster shown for any video without its own thumbnail
+const DEFAULT_POSTER = "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=900&auto=format&fit=crop&q=70";
+// Hover-to-play (short ~6s preview loop) handlers for direct-video cards
+const previewPlay = (e) => { const v = e.currentTarget.querySelector("video"); if(v){ try{ v.currentTime = 1; v.play().catch(()=>{}); }catch(_){} } };
+const previewStop = (e) => { const v = e.currentTarget.querySelector("video"); if(v){ try{ v.pause(); v.currentTime = 1; }catch(_){} } };
+const previewLoop = (e) => { const v = e.currentTarget; if(v.currentTime >= 7){ try{ v.currentTime = 1; }catch(_){} } };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LEARNING TEASER CARD — unified template used in landing, listing, IG, LinkedIn
@@ -1960,14 +1955,26 @@ function LandingPage(){
           </div>
           <a href={featuredNl?`?view=public&date=${featuredNl.date}`:"#recent-news"} className="fl-chapter-visual fl-reveal">
             <div className="fl-edition-cover">
-              <div className="fl-ec-top">
-                <div className="fl-ec-meta">Edição № {padNum(total||1)}</div>
-                <div className="fl-ec-meta">{featuredNl ? fmtDateMag(featuredNl.date) : "Próxima edição"}</div>
-              </div>
-              <div className="fl-ec-title">{featuredNl?.title || "Highlights de IA"}</div>
-              <div className="fl-ec-bottom">
-                <div className="fl-ec-big">{padNum(total||1,2)}</div>
-                <div className="fl-ec-cta">Abrir →</div>
+              <svg className="fl-ec-net" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" fill="none">
+                <g stroke="#5FA9D6" strokeWidth="1" opacity=".18">
+                  <path d="M-20 90 Q80 64 160 100 T340 82"/><path d="M-20 200 Q90 170 180 206 T360 186"/><path d="M-20 310 Q80 284 170 320 T350 300"/>
+                </g>
+                <g fill="#E5431B" opacity=".5"><circle cx="52" cy="82" r="2.6"/><circle cx="160" cy="100" r="3"/><circle cx="252" cy="78" r="2.2"/><circle cx="112" cy="200" r="2.6"/><circle cx="220" cy="206" r="2.2"/><circle cx="78" cy="310" r="2.8"/><circle cx="196" cy="320" r="2.4"/></g>
+                <g stroke="#E5431B" strokeWidth=".7" opacity=".22"><line x1="52" y1="82" x2="160" y2="100"/><line x1="160" y1="100" x2="112" y2="200"/><line x1="112" y1="200" x2="220" y2="206"/><line x1="220" y1="206" x2="196" y2="320"/><line x1="78" y1="310" x2="196" y2="320"/></g>
+              </svg>
+              <div className="fl-ec-layer">
+                <div className="fl-ec-band">
+                  <span className="fl-ec-cat">{featuredNl?.topics?.[0] || featuredNl?.companies?.[0] || "IA"}</span>
+                  <span className="fl-ec-meta">Edição № {padNum(total||1)}</span>
+                </div>
+                <div className="fl-ec-headzone">
+                  <div className="fl-ec-kick">{featuredNl ? fmtDateMag(featuredNl.date) : "Próxima edição"}{featuredNl?.readMin?` · ${featuredNl.readMin} min`:""}</div>
+                  <h3 className="fl-ec-title">{featuredNl?.title || "Highlights de IA"}</h3>
+                </div>
+                <div className="fl-ec-bottom">
+                  <div className="fl-ec-big">{padNum(total||1,2)}</div>
+                  <div className="fl-ec-cta">Abrir →</div>
+                </div>
               </div>
             </div>
           </a>
@@ -1982,13 +1989,12 @@ function LandingPage(){
         <div className="fl-num">02</div>
         <div className="fl-cat">Podcast Semanal</div>
         <div className="fl-chapter-grid fl-reverse">
-          <a href={featuredPod?`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`:"?view=podcasts"} className="fl-chapter-visual fl-reveal">
+          <a href={featuredPod?`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`:"?view=podcasts"} className="fl-chapter-visual fl-reveal"
+             onMouseEnter={previewPlay} onMouseLeave={previewStop}>
             <div className="fl-vframe">
               {featuredPod && isDirectVideo(featuredPod.videoUrl)
-                ? <video className="fl-vframe-media" src={featuredPod.videoUrl} muted playsInline preload="metadata" onLoadedMetadata={e=>{try{e.currentTarget.currentTime=1}catch(_){}}}/>
-                : featuredPod?.thumbnailUrl
-                  ? <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod.thumbnailUrl})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
-                  : <div className="fl-vframe-media fl-vframe-grad"/>}
+                ? <video className="fl-vframe-media" src={featuredPod.videoUrl} muted playsInline loop preload="metadata" poster={featuredPod.thumbnailUrl||DEFAULT_POSTER} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop}/>
+                : <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod?.thumbnailUrl||DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center"}}/>}
               <div className="fl-vframe-overlay"/>
               <div className="fl-vframe-play"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div>
               {featuredPod && <div className="fl-vframe-meta">
@@ -2096,10 +2102,8 @@ function LandingPage(){
         >
           <span className="vbadge">№ {padNum(podcasts.length-i)}</span>
           {isDirectVideo(p.videoUrl)
-            ? <video className="th" src={p.videoUrl} muted playsInline loop preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover"}} onLoadedMetadata={seekToFrame}/>
-            : p.thumbnailUrl
-              ? <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl})`}}></div>
-              : <div className="th" style={{background:"linear-gradient(135deg,#3A3236,#241F21)"}}></div>}
+            ? <video className="th" src={p.videoUrl} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||DEFAULT_POSTER} style={{width:"100%",height:"100%",objectFit:"cover"}} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop}/>
+            : <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl||DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center"}}></div>}
           <div className="gr"></div>
           <div className="pl"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff"/></svg></div>
           <div className="mt">
@@ -2641,12 +2645,13 @@ function PodcastsPage(){
                onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.play().catch(()=>{})}catch(_){}}}}
                onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}>
               <div style={{position:"relative",borderRadius:14,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
-                {featured.thumbnailUrl
-                  ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  : isDirectVideo(featured.videoUrl)
-                    ? <video src={featured.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
-                    : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
+                {isDirectVideo(featured.videoUrl)
+                  ? <video src={featured.videoUrl} muted playsInline loop preload="metadata" poster={featured.thumbnailUrl||DEFAULT_POSTER} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                  : featured.thumbnailUrl
+                    ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <div style={{position:"absolute",inset:0,backgroundImage:`url(${DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <div style={{position:"absolute",inset:0,background:"rgba(36,31,33,.55)"}}></div>
+                      <div style={{position:"relative",fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
                     </div>}
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.75) 100%)",pointerEvents:"none"}}></div>
                 <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
@@ -2700,11 +2705,14 @@ function PodcastsPage(){
                   if(v){try{v.pause(); v.currentTime=1;}catch(_){}}
                 }}>
                 <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:14,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:14}}>
-                  {p.thumbnailUrl
-                    ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    : isDirectVideo(p.videoUrl)
-                      ? <video src={p.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
-                      : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
+                  {isDirectVideo(p.videoUrl)
+                    ? <video src={p.videoUrl} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||DEFAULT_POSTER} onLoadedMetadata={seekToFrame} onTimeUpdate={previewLoop} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                    : p.thumbnailUrl
+                      ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      : <div style={{position:"absolute",inset:0,backgroundImage:`url(${DEFAULT_POSTER})`,backgroundSize:"cover",backgroundPosition:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <div style={{position:"absolute",inset:0,background:"rgba(36,31,33,.5)"}}></div>
+                        <div style={{position:"relative",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>
+                      </div>}
                   <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.6) 100%)",pointerEvents:"none"}}></div>
                   <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
                     <div style={{width:48,height:48,background:"rgba(245,241,230,.92)",color:BRAND.ink,borderRadius:"50%",display:"grid",placeItems:"center",backdropFilter:"blur(4px)"}}>
