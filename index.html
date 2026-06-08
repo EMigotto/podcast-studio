@@ -34,6 +34,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lenis/1.1.13/lenis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
   :root{
@@ -42,12 +44,35 @@
     --mute: #807679; --rule: #DDD4BD;
     --accent: #E5431B; --accent-deep: #A82C0F;
     --coral: #E97852; --green: #B3D29B; --blue: #99B0CD; --tan: #D4B896;
+    --blue-deep: #2A3645;
     --signal: #E5431B;
+    /* Learning card — deep sage panel (DS tokens) */
+    --sage-panel-from: #7E8E6A; --sage-panel-to: #505D40;
+    --sage-cream: #F6F2E8; --sage-rust: #AF452B; --sage-hl: #C9D3B6;
     --bg-deep:#241F21; --ease:cubic-bezier(.22,.61,.36,1);
     --shadow: 0 1px 0 rgba(36,31,33,.06), 0 8px 24px -12px rgba(36,31,33,.14);
     --shadow-lg: 0 4px 12px rgba(36,31,33,.08), 0 16px 40px -16px rgba(36,31,33,.24);
+    --shadow-card: 0 30px 80px -30px rgba(27,25,20,.35);
+    /* Radii (DS) */
+    --r-xs:4px; --r-sm:8px; --r-md:18px; --r-lg:26px; --r-pill:999px;
+    /* Spacing scale (8px base, DS) */
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px;
+    --sp-6:32px; --sp-7:48px; --sp-8:64px; --sp-9:96px; --sp-10:120px;
   }
   *, *::before, *::after { box-sizing: border-box; }
+  /* ═══ DESIGN SYSTEM — semantic type helpers (Sync·MI) ═══ */
+  .ds-display{ font-family:'Instrument Serif',Georgia,serif; font-weight:400; letter-spacing:-.02em; line-height:1.02; }
+  .ds-display-italic{ font-style:italic; }
+  .ds-fraunces{ font-family:'Fraunces',Georgia,serif; font-variation-settings:'opsz' 144,'SOFT' 30,'WONK' 0; font-weight:400; letter-spacing:-.035em; line-height:.9; }
+  em.acc, em.sig{ font-style:italic; color:var(--accent); }
+  .ds-h-hero{ font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(2.6rem,9vw,8rem); line-height:1.02; letter-spacing:-.02em; }
+  .ds-h1{ font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(2.4rem,6.5vw,5.5rem); line-height:1.02; letter-spacing:-.025em; }
+  .ds-h2{ font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(2rem,4.6vw,3.6rem); line-height:1.08; letter-spacing:-.015em; }
+  .ds-h3{ font-family:'Instrument Serif',serif; font-weight:400; font-size:clamp(1.4rem,2.6vw,2rem); line-height:1.15; }
+  .ds-lead{ font-family:'Instrument Serif',serif; font-style:italic; font-size:clamp(1.2rem,2vw,1.6rem); color:var(--ink-soft); line-height:1.4; }
+  .ds-p{ font-family:'Geist',system-ui,sans-serif; font-weight:300; font-size:clamp(1.05rem,1.6vw,1.25rem); line-height:1.55; color:var(--ink-soft); }
+  .ds-eyebrow{ font-family:'JetBrains Mono',monospace; font-size:.62rem; letter-spacing:.24em; text-transform:uppercase; color:var(--ink-soft); }
+  .mark{ background:var(--accent); padding:0 .15em; color:var(--ink); }
   html, body, #root { margin:0; padding:0; min-height:100%; }
   html { scroll-behavior: smooth; }
   body{
@@ -405,7 +430,7 @@
     position:relative; color:#F4F1E6;
     padding:clamp(30px,5vw,58px);
     overflow:hidden;
-    background:linear-gradient(165deg,rgba(126,142,106,.96),rgba(80,93,64,.98));
+    background:linear-gradient(165deg,var(--sage-panel-from),var(--sage-panel-to));
     display:flex; flex-direction:column;
     min-height:420px;
   }
@@ -541,7 +566,7 @@
   .ltc{display:grid; grid-template-columns:1fr 1fr; border-radius:26px; overflow:hidden; background:#F6F2E8; box-shadow:0 30px 80px -30px rgba(27,25,20,.35); border:1px solid rgba(27,25,20,.08); width:100%; max-width:1180px; transition:transform .5s var(--ease), box-shadow .5s var(--ease)}
   .ltc.in-view{transform:scale(1.015); box-shadow:0 50px 120px -40px rgba(27,25,20,.4)}
   @media(max-width:860px){.ltc{grid-template-columns:1fr}}
-  .ltc-panel{position:relative; color:#F4F1E6; padding:clamp(34px,5vw,62px); overflow:hidden; background:linear-gradient(165deg,rgba(126,142,106,.96),rgba(80,93,64,.98)); display:flex; flex-direction:column; min-height:420px}
+  .ltc-panel{position:relative; color:#F4F1E6; padding:clamp(34px,5vw,62px); overflow:hidden; background:linear-gradient(165deg,var(--sage-panel-from),var(--sage-panel-to)); display:flex; flex-direction:column; min-height:420px}
   .ltc-panel::before{content:""; position:absolute; inset:0; opacity:.14; mix-blend-mode:soft-light; pointer-events:none; background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 2px,transparent 2px 22px),repeating-linear-gradient(0deg,rgba(0,0,0,.4) 0 1px,transparent 1px 120px)}
   .ltc-panel-num{font-family:'Instrument Serif',serif; font-style:italic; font-weight:300; font-size:clamp(74px,11vw,128px); line-height:.8; color:rgba(244,241,230,.92); position:relative}
   .ltc-panel-kick{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:rgba(244,241,230,.78); margin-top:14px; position:relative}
@@ -1722,7 +1747,7 @@ body{background:var(--paper);font-family:'Mulish',sans-serif;color:var(--ink);-w
 .mono{font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.2em}
 .learning{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;border-radius:26px;overflow:hidden;box-shadow:0 30px 80px -30px rgba(27,25,20,.35);background:var(--paper-card)}
 @media(max-width:860px){.learning{grid-template-columns:1fr}}
-.panel{position:relative;color:#F4F1E6;padding:clamp(34px,5vw,62px);overflow:hidden;background:linear-gradient(165deg,rgba(126,142,106,.96),rgba(80,93,64,.98));display:flex;flex-direction:column;min-height:420px}
+.panel{position:relative;color:#F4F1E6;padding:clamp(34px,5vw,62px);overflow:hidden;background:linear-gradient(165deg,#7E8E6A,#505D40);display:flex;flex-direction:column;min-height:420px}
 .panel::before{content:"";position:absolute;inset:0;opacity:.14;mix-blend-mode:soft-light;pointer-events:none;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 2px,transparent 2px 22px),repeating-linear-gradient(0deg,rgba(0,0,0,.4) 0 1px,transparent 1px 120px)}
 .panel-num{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:clamp(74px,11vw,128px);line-height:.8;color:rgba(244,241,230,.92);position:relative}
 .panel .kick{font-size:11px;color:rgba(244,241,230,.78);margin-top:14px;position:relative}
@@ -4475,6 +4500,12 @@ function AdminApp({ session, onLogout }){
   // Learnings as script inputs for HeyGen
   const [podLearnings,setPodLearnings] = useState([]);
   const [podSelectedLearnings,setPodSelectedLearnings] = useState(new Set());
+  // External inputs (Spotify transcripts + dragged documents) as script inputs
+  const [podExtraInputs,setPodExtraInputs] = useState([]); // {type:'spotify'|'doc', label, url, content}
+  const [spotifyUrl,setSpotifyUrl] = useState("");
+  const [spotifyText,setSpotifyText] = useState("");
+  const [dragOver,setDragOver] = useState(false);
+  const [extractingDoc,setExtractingDoc] = useState(false);
 
   // Load on mount
   useEffect(()=>{let cancelled=false;(async()=>{
@@ -4968,9 +4999,64 @@ Retorne APENAS o resumo, em português brasileiro.`,
     setPodSelectedNls(prev=>{const s=new Set(prev);s.has(date)?s.delete(date):s.add(date);return s});
   };
 
+  // ── EXTERNAL INPUTS: extract text from dragged documents ──
+  async function extractDocText(file){
+    const name = file.name || "documento";
+    const ext = (name.split(".").pop()||"").toLowerCase();
+    if(ext === "txt" || ext === "md"){
+      return await file.text();
+    }
+    if(ext === "docx"){
+      if(!window.mammoth) throw new Error("Extrator .docx não carregou");
+      const buf = await file.arrayBuffer();
+      const res = await window.mammoth.extractRawText({arrayBuffer: buf});
+      return res.value || "";
+    }
+    if(ext === "pdf"){
+      if(!window.pdfjsLib){ 
+        if(window["pdfjs-dist/build/pdf"]) window.pdfjsLib = window["pdfjs-dist/build/pdf"];
+      }
+      const lib = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
+      if(!lib) throw new Error("Extrator .pdf não carregou");
+      lib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const buf = await file.arrayBuffer();
+      const pdf = await lib.getDocument({data: buf}).promise;
+      let txt = "";
+      for(let i=1;i<=pdf.numPages;i++){
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        txt += content.items.map(it=>it.str).join(" ") + "\n\n";
+      }
+      return txt;
+    }
+    throw new Error(`Tipo .${ext} não suportado (use txt, md, pdf ou docx)`);
+  }
+
+  async function handleDocFiles(fileList){
+    const files = Array.from(fileList||[]);
+    if(!files.length) return;
+    setExtractingDoc(true); setPodMsg({type:"",text:""});
+    for(const file of files){
+      try {
+        const content = (await extractDocText(file)).replace(/\s+\n/g,"\n").trim();
+        if(content){
+          setPodExtraInputs(prev=>[...prev, {type:"doc", label:file.name, url:"", content: content.slice(0, 8000)}]);
+        }
+      } catch(e){ setPodMsg({type:"err",text:`${file.name}: ${e.message}`}); }
+    }
+    setExtractingDoc(false);
+  }
+
+  function addSpotifyInput(){
+    if(!spotifyText.trim() && !spotifyUrl.trim()){ setPodMsg({type:"err",text:"Cole a URL e/ou a transcrição do episódio."}); return; }
+    const label = spotifyUrl ? `Spotify · ${spotifyUrl.split("/").pop().split("?")[0]}` : "Spotify · transcrição";
+    setPodExtraInputs(prev=>[...prev, {type:"spotify", label, url:spotifyUrl.trim(), content:spotifyText.trim().slice(0,8000)}]);
+    setSpotifyUrl(""); setSpotifyText("");
+  }
+
   const generateHeyGenScript = async () => {
     if(!keyValidated){setPodMsg({type:"err",text:"Configure a chave em Configurações."});return;}
-    if(podSelectedList.length===0 && podSelectedLearningsList.length===0){setPodMsg({type:"err",text:"Selecione ao menos 1 newsletter ou 1 aprofundamento."});return;}
+    if(podSelectedList.length===0 && podSelectedLearningsList.length===0 && podExtraInputs.length===0){setPodMsg({type:"err",text:"Selecione ao menos 1 newsletter, 1 aprofundamento ou adicione um insumo externo."});return;}
     setIsGenScript(true);setPodMsg({type:"",text:""});
     const guidance = buildEditorGuidance(aiPrompts.script, "Orientação do editor para este roteiro");
     try {
@@ -4998,7 +5084,13 @@ Retorne APENAS o resumo, em português brasileiro.`,
         `🔗 URL do infográfico (para B-roll/tela no HeyGen): ${urlBase}&mode=infografico`;
       }).join("\n\n═══════════════════\n\n");
 
-      const fullCtx = [ctx, learnCtx].filter(Boolean).join("\n\n═══════════════════\n\n");
+      // External inputs — Spotify transcripts + dragged documents
+      const extraCtx = podExtraInputs.map(x=>{
+        const head = x.type==="spotify" ? `═══ ÁUDIO/SPOTIFY: ${x.label} ═══${x.url?`\n(fonte: ${x.url})`:""}` : `═══ DOCUMENTO: ${x.label} ═══`;
+        return `${head}\n${x.content}`;
+      }).join("\n\n═══════════════════\n\n");
+
+      const fullCtx = [ctx, learnCtx, extraCtx].filter(Boolean).join("\n\n═══════════════════\n\n");
 
       const t = await callClaude(apiKey,
         `Crie um ROTEIRO DE PODCAST EM VÍDEO para o HeyGen.
@@ -5014,7 +5106,7 @@ INSTRUÇÕES DE FORMATO (HeyGen lê isto literalmente):
 - 4 a 6 cenas no total (abertura, 2-3 temas, fechamento)
 - Quando um APROFUNDAMENTO for usado, adicione ao FINAL da cena correspondente uma linha [B-ROLL · Infográfico: <URL do infográfico>] indicando que o operador deve exibir o infográfico publicado naquela cena. Use a URL exata fornecida no contexto.
 
-NEWSLETTERS E APROFUNDAMENTOS DE BASE:
+NEWSLETTERS, APROFUNDAMENTOS E INSUMOS EXTERNOS (áudios do Spotify, documentos) DE BASE:
 ${fullCtx}
 
 ESTRUTURA:
@@ -5630,11 +5722,57 @@ ${t.slice(0,3000)}`,
             ))}
           </div>}
         </div>
+
+        {/* STEP A3: External inputs — Spotify transcripts + dragged documents */}
+        <div className="card card-pad" style={{padding:24,marginBottom:18,background:`linear-gradient(180deg,${BRAND.paperLight} 0%,rgba(229,67,27,.04) 100%)`}}>
+          <div className="mono small-caps" style={{color:BRAND.accent,marginBottom:6}}>A³ · INSUMOS EXTERNOS ({podExtraInputs.length})</div>
+          <div style={{fontSize:".82rem",color:BRAND.mute,marginBottom:16,lineHeight:1.5}}>
+            Adicione transcrições de áudios do Spotify e documentos (txt, md, pdf, docx). A IA lê, resume e usa os pontos relevantes pra compor a narrativa do roteiro.
+          </div>
+
+          {/* Spotify */}
+          <div style={{padding:14,background:BRAND.paper,borderRadius:10,border:`1px solid ${BRAND.rule}`,marginBottom:14}}>
+            <div className="mono" style={{fontSize:".62rem",letterSpacing:".18em",color:"#1DB954",marginBottom:10,textTransform:"uppercase"}}>♫ Áudio do Spotify</div>
+            <input value={spotifyUrl} onChange={e=>setSpotifyUrl(e.target.value)} placeholder="URL do episódio (ex: open.spotify.com/episode/...)" style={{...fieldStyle,marginBottom:8}}/>
+            <textarea value={spotifyText} onChange={e=>setSpotifyText(e.target.value)} rows={4} placeholder="Cole aqui a transcrição ou as notas do episódio. (O Spotify mostra a transcrição de muitos podcasts no próprio app/site — copie de lá.)" style={{...fieldStyle,fontFamily:"'Geist',sans-serif"}}/>
+            <div style={{fontSize:".72rem",color:BRAND.mute,margin:"6px 0 10px",lineHeight:1.45}}>⚠ O Spotify não libera transcrição automática por API. Cole o texto manualmente (transcrição completa ou só os pontos principais).</div>
+            <Btn size="sm" onClick={addSpotifyInput}>+ Adicionar áudio</Btn>
+          </div>
+
+          {/* Document dropzone */}
+          <div
+            onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+            onDragLeave={()=>setDragOver(false)}
+            onDrop={e=>{e.preventDefault();setDragOver(false);handleDocFiles(e.dataTransfer.files);}}
+            onClick={()=>document.getElementById("pod-doc-input")?.click()}
+            style={{padding:"24px",border:`2px dashed ${dragOver?BRAND.accent:BRAND.rule}`,borderRadius:10,textAlign:"center",cursor:"pointer",background:dragOver?`${BRAND.accent}0D`:"transparent",transition:"all .15s"}}>
+            <input id="pod-doc-input" type="file" accept=".txt,.md,.pdf,.docx" multiple style={{display:"none"}} onChange={e=>handleDocFiles(e.target.files)}/>
+            <div style={{fontSize:"1.4rem",marginBottom:6}}>📄</div>
+            <div style={{fontWeight:600,color:BRAND.ink,marginBottom:4}}>{extractingDoc?"Lendo documento…":"Arraste documentos aqui ou clique"}</div>
+            <div style={{fontSize:".74rem",color:BRAND.mute}}>txt · md · pdf · docx</div>
+          </div>
+
+          {/* List of added inputs */}
+          {podExtraInputs.length>0 && <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:8}}>
+            {podExtraInputs.map((x,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:BRAND.paper,border:`1px solid ${BRAND.rule}`,borderRadius:8}}>
+                <span style={{fontSize:"1rem"}}>{x.type==="spotify"?"♫":"📄"}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:".88rem",color:BRAND.ink,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{x.label}</div>
+                  <div style={{fontSize:".72rem",color:BRAND.mute}}>{x.content.length.toLocaleString()} caracteres lidos</div>
+                </div>
+                <button onClick={()=>setPodExtraInputs(prev=>prev.filter((_,j)=>j!==i))} style={{background:"transparent",border:"none",color:BRAND.mute,cursor:"pointer",fontSize:"1rem"}} title="Remover">✕</button>
+              </div>
+            ))}
+          </div>}
+        </div>
+
+        {/* STEP B: Generate script */}
         <div className="card card-pad" style={{padding:24,marginBottom:18}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
             <div className="mono small-caps" style={{color:BRAND.accent}}>B · ROTEIRO PARA HEYGEN (com cenas, reações e quebras)</div>
             <div style={{display:"flex",gap:6}}>
-              <Btn onClick={generateHeyGenScript} disabled={isGenScript||!keyValidated||(podSelectedNls.size===0&&podSelectedLearnings.size===0)}>{isGenScript?<><Spin/> Gerando...</>:"✨ Gerar Roteiro com IA"}</Btn>
+              <Btn onClick={generateHeyGenScript} disabled={isGenScript||!keyValidated||(podSelectedNls.size===0&&podSelectedLearnings.size===0&&podExtraInputs.length===0)}>{isGenScript?<><Spin/> Gerando...</>:"✨ Gerar Roteiro com IA"}</Btn>
               {podScript && <Btn size="sm" onClick={copyScript}>📋 Copiar</Btn>}
             </div>
           </div>
