@@ -1076,7 +1076,7 @@ const VideoPlayer = memo(function VideoPlayer({ url, aspectRatio="9/16", maxWidt
     <div style={cs}>
       <div style={{position:"relative", paddingBottom:pb, height:0, overflow:"hidden", borderRadius:8, background:BRAND.ink, border:`1px solid ${BRAND.ink}`, boxShadow:"0 8px 24px -8px rgba(36,31,33,.3)"}}>
         {info.type === "video" ? (
-          <video controls playsInline preload="metadata" poster={poster||undefined} onLoadedMetadata={seekToFrame}
+          <video controls playsInline preload="metadata" poster={poster||undefined}
             style={{position:"absolute", top:0, left:0, width:"100%", height:"100%", objectFit:"contain", background:BRAND.ink}}>
             <source src={info.src} />
           </video>
@@ -1635,7 +1635,7 @@ const LP_VCARD_GRADS = ["linear-gradient(135deg,#1a2e3a,#0d1620)","linear-gradie
 const isDirectVideo = (u) => u && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
 // True for any video that can play inline (direct files, Supabase storage, HeyGen mp4) — NOT iframe embeds
 const isPlayableVideo = (u) => { try { const i = getVideoEmbedInfo(u); return !!(i && i.type === "video"); } catch(_){ return false; } };
-const seekToFrame = (e) => { const v = e.currentTarget; try { const d = v.duration; v.currentTime = (d && isFinite(d)) ? Math.min(Math.max(d*0.15, 1), 5) : 1; } catch(_){} };
+const seekToFrame = (e) => { try { e.currentTarget.currentTime = 1; } catch(_){} };
 // Hover-to-play (short ~6s preview loop) handlers
 const previewPlay = (e) => { const v = e.currentTarget.querySelector("video"); if(v){ try{ v.currentTime = 1; v.play().catch(()=>{}); }catch(_){} } };
 const previewStop = (e) => { const v = e.currentTarget.querySelector("video"); if(v){ try{ v.pause(); v.currentTime = 1; }catch(_){} } };
@@ -1992,10 +1992,10 @@ function LandingPage(){
           <a href={featuredPod?`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`:"?view=podcasts"} className="fl-chapter-visual fl-reveal"
              onMouseEnter={previewPlay} onMouseLeave={previewStop}>
             <div className="fl-vframe">
-              {featuredPod && isPlayableVideo(featuredPod.videoUrl)
-                ? <video className="fl-vframe-media" src={getVideoEmbedInfo(featuredPod.videoUrl).src} muted playsInline loop preload="metadata" poster={featuredPod.thumbnailUrl||undefined} onLoadedMetadata={seekToFrame}/>
-                : featuredPod?.thumbnailUrl
-                  ? <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod.thumbnailUrl})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
+              {featuredPod?.thumbnailUrl
+                ? <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod.thumbnailUrl})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
+                : featuredPod && isDirectVideo(featuredPod.videoUrl)
+                  ? <video className="fl-vframe-media" src={featuredPod.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame}/>
                   : <div className="fl-vframe-media fl-vframe-grad"/>}
               <div className="fl-vframe-overlay"/>
               <div className="fl-vframe-play"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div>
@@ -2103,10 +2103,10 @@ function LandingPage(){
            onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}
         >
           <span className="vbadge">№ {padNum(podcasts.length-i)}</span>
-          {isPlayableVideo(p.videoUrl)
-            ? <video className="th" src={getVideoEmbedInfo(p.videoUrl).src} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||undefined} style={{width:"100%",height:"100%",objectFit:"cover",background:"#241F21"}} onLoadedMetadata={seekToFrame}/>
-            : p.thumbnailUrl
-              ? <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl})`}}></div>
+          {p.thumbnailUrl
+            ? <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl})`}}></div>
+            : isDirectVideo(p.videoUrl)
+              ? <video className="th" src={p.videoUrl} muted playsInline loop preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover",background:"#241F21"}} onLoadedMetadata={seekToFrame}/>
               : <div className="th" style={{background:"linear-gradient(135deg,#3A3236,#241F21)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
                   <div style={{fontFamily:"'Instrument Serif',serif",color:BRAND.paper,fontSize:"1.2rem",textAlign:"center",lineHeight:1.15}}>{p.title||"Episódio"}</div>
                 </div>}
@@ -2651,10 +2651,10 @@ function PodcastsPage(){
                onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.play().catch(()=>{})}catch(_){}}}}
                onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}>
               <div style={{position:"relative",borderRadius:14,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
-                {isPlayableVideo(featured.videoUrl)
-                  ? <video src={getVideoEmbedInfo(featured.videoUrl).src} muted playsInline loop preload="metadata" poster={featured.thumbnailUrl||undefined} onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
-                  : featured.thumbnailUrl
-                    ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                {featured.thumbnailUrl
+                  ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : isDirectVideo(featured.videoUrl)
+                    ? <video src={featured.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
                     : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
                     </div>}
@@ -2710,10 +2710,10 @@ function PodcastsPage(){
                   if(v){try{v.pause(); v.currentTime=1;}catch(_){}}
                 }}>
                 <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:14,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:14}}>
-                  {isPlayableVideo(p.videoUrl)
-                    ? <video src={getVideoEmbedInfo(p.videoUrl).src} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||undefined} onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
-                    : p.thumbnailUrl
-                      ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  {p.thumbnailUrl
+                    ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : isDirectVideo(p.videoUrl)
+                      ? <video src={p.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
                       : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
                   <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.6) 100%)",pointerEvents:"none"}}></div>
                   <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
@@ -2794,7 +2794,7 @@ function PodcastDetail(){
         <div>
           {/* Video player */}
           {effectiveVideoUrl ? <div style={{marginBottom:24}}>
-            <VideoPlayer url={effectiveVideoUrl} aspectRatio={aspectRatio} maxWidth="100%" poster={podcast.thumbnailUrl||undefined}/>
+            <VideoPlayer url={effectiveVideoUrl} aspectRatio={aspectRatio} maxWidth="100%"/>
           </div>
           : <div style={{aspectRatio:"16/9",background:BRAND.ink,borderRadius:4,display:"grid",placeItems:"center",color:BRAND.paper,marginBottom:24}}>
             <div style={{textAlign:"center"}}>
@@ -4416,6 +4416,8 @@ Responda em JSON puro (sem markdown):
 function AdminApp({ session, onLogout }){
   const [tab,setTab] = useState(0);
   const [storageReady,setStorageReady] = useState(false);
+  // Shared input style (used by Podcast A³ external inputs and other admin fields)
+  const fieldStyle = {width:"100%", padding:"10px 14px", background:BRAND.paperLight, border:`1px solid ${BRAND.rule}`, borderRadius:8, fontFamily:"'Geist',sans-serif", fontSize:".95rem", color:BRAND.ink, outline:"none", resize:"vertical"};
 
   // Anthropic
   const [apiKey,setApiKey] = useState("");
