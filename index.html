@@ -251,8 +251,8 @@
   .lp-vcard{scroll-snap-align:start; flex:0 0 clamp(280px,42vw,440px); border-radius:22px; overflow:hidden; background:#111; position:relative; aspect-ratio:16/10; transition:transform .5s var(--ease),box-shadow .5s var(--ease); text-decoration:none; display:block}
   .lp-vcard:hover{transform:translateY(-6px); box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
   .lp-vcard .th{position:absolute; inset:0; background-size:cover; background-position:center}
-  .lp-vcard .gr{position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.8) 0%,transparent 55%)}
-  .lp-vcard .pl{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,.16); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.4); display:flex; align-items:center; justify-content:center; transition:all .4s var(--ease)}
+  .lp-vcard .gr{position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.8) 0%,transparent 55%); pointer-events:none}
+  .lp-vcard .pl{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,.16); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.4); display:flex; align-items:center; justify-content:center; transition:all .4s var(--ease); pointer-events:none}
   .lp-vcard:hover .pl{background:rgba(255,255,255,.95); transform:translate(-50%,-50%) scale(1.08)}
   .lp-vcard .pl svg{fill:#fff; margin-left:3px; transition:fill .4s}
   .lp-vcard:hover .pl svg{fill:#15130f}
@@ -1990,16 +1990,25 @@ function LandingPage(){
         <div className="fl-cat">Podcast Semanal</div>
         <div className="fl-chapter-grid fl-reverse">
           <a href={featuredPod?`?view=podcast&id=${encodeURIComponent(featuredPod.id)}`:"?view=podcasts"} className="fl-chapter-visual fl-reveal"
-             onMouseEnter={previewPlay} onMouseLeave={previewStop}>
+             onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v&&!v.controls){try{v.play().catch(()=>{})}catch(_){}}}}
+             onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v&&!v.controls){try{v.pause(); v.currentTime=1;}catch(_){}}}}
+             onClick={e=>{
+               const info = featuredPod && getVideoEmbedInfo(featuredPod.videoUrl);
+               if(info && info.type==="video"){
+                 e.preventDefault();
+                 const v=e.currentTarget.querySelector("video");
+                 if(v){ try{ v.muted=false; v.loop=false; v.controls=true; v.currentTime=0; v.play().catch(()=>{}); }catch(_){} }
+               }
+             }}>
             <div className="fl-vframe">
-              {featuredPod?.thumbnailUrl
-                ? <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod.thumbnailUrl})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
-                : featuredPod && isDirectVideo(featuredPod.videoUrl)
-                  ? <video className="fl-vframe-media" src={featuredPod.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame}/>
+              {featuredPod && isPlayableVideo(featuredPod.videoUrl)
+                ? <video className="fl-vframe-media" src={getVideoEmbedInfo(featuredPod.videoUrl).src} muted playsInline loop preload="metadata" poster={featuredPod.thumbnailUrl||undefined} onLoadedMetadata={seekToFrame}/>
+                : featuredPod?.thumbnailUrl
+                  ? <div className="fl-vframe-media" style={{backgroundImage:`url(${featuredPod.thumbnailUrl})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
                   : <div className="fl-vframe-media fl-vframe-grad"/>}
-              <div className="fl-vframe-overlay"/>
-              <div className="fl-vframe-play"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div>
-              {featuredPod && <div className="fl-vframe-meta">
+              <div className="fl-vframe-overlay" style={{pointerEvents:"none"}}/>
+              <div className="fl-vframe-play" style={{pointerEvents:"none"}}><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div>
+              {featuredPod && <div className="fl-vframe-meta" style={{pointerEvents:"none"}}>
                 <div className="fl-ec-meta" style={{color:"rgba(245,241,230,.7)"}}>{fmtDateMag(featuredPod.week)}</div>
                 <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"1.4rem",lineHeight:1.15,marginTop:6}}>{featuredPod.title}</div>
               </div>}
@@ -2099,14 +2108,22 @@ function LandingPage(){
     {podcasts.length > 0 && <LandingCarousel id="podcast" eyebrow="Episódios Recentes ↓" title={<>Os vídeos mais recentes.</>}>
       {podcasts.map((p,i)=>(
         <a key={p.id} href={`?view=podcast&id=${encodeURIComponent(p.id)}`} className="lp-vcard"
-           onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.play().catch(()=>{})}catch(_){}}}}
-           onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}
+           onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v&&!v.controls){try{v.play().catch(()=>{})}catch(_){}}}}
+           onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v&&!v.controls){try{v.pause(); v.currentTime=1;}catch(_){}}}}
+           onClick={e=>{
+             const info = getVideoEmbedInfo(p.videoUrl);
+             if(info && info.type==="video"){
+               e.preventDefault();
+               const v=e.currentTarget.querySelector("video");
+               if(v){ try{ v.muted=false; v.loop=false; v.controls=true; v.currentTime=0; v.play().catch(()=>{}); }catch(_){} }
+             }
+           }}
         >
           <span className="vbadge">№ {padNum(podcasts.length-i)}</span>
-          {p.thumbnailUrl
-            ? <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl})`}}></div>
-            : isDirectVideo(p.videoUrl)
-              ? <video className="th" src={p.videoUrl} muted playsInline loop preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover",background:"#241F21"}} onLoadedMetadata={seekToFrame}/>
+          {isPlayableVideo(p.videoUrl)
+            ? <video className="th" src={getVideoEmbedInfo(p.videoUrl).src} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||undefined} style={{width:"100%",height:"100%",objectFit:"cover",background:"#241F21"}} onLoadedMetadata={seekToFrame}/>
+            : p.thumbnailUrl
+              ? <div className="th" style={{backgroundImage:`url(${p.thumbnailUrl})`}}></div>
               : <div className="th" style={{background:"linear-gradient(135deg,#3A3236,#241F21)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
                   <div style={{fontFamily:"'Instrument Serif',serif",color:BRAND.paper,fontSize:"1.2rem",textAlign:"center",lineHeight:1.15}}>{p.title||"Episódio"}</div>
                 </div>}
@@ -2648,13 +2665,21 @@ function PodcastsPage(){
           <SectionLabel num="01">Vídeo da Semana</SectionLabel>
           <article style={{display:"grid",gridTemplateColumns:"7fr 5fr",gap:32,alignItems:"start"}}>
             <a href={`?view=podcast&id=${encodeURIComponent(featured.id)}`} style={{textDecoration:"none",color:"inherit",display:"block"}}
-               onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.play().catch(()=>{})}catch(_){}}}}
-               onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v){try{v.pause(); v.currentTime=1;}catch(_){}}}}>
+               onMouseEnter={e=>{const v=e.currentTarget.querySelector("video"); if(v&&!v.controls){try{v.play().catch(()=>{})}catch(_){}}}}
+               onMouseLeave={e=>{const v=e.currentTarget.querySelector("video"); if(v&&!v.controls){try{v.pause(); v.currentTime=1;}catch(_){}}}}
+               onClick={e=>{
+                 const info = getVideoEmbedInfo(featured.videoUrl);
+                 if(info && info.type==="video"){
+                   e.preventDefault();
+                   const v=e.currentTarget.querySelector("video");
+                   if(v){ try{ v.muted=false; v.loop=false; v.controls=true; v.currentTime=0; v.play().catch(()=>{}); }catch(_){} }
+                 }
+               }}>
               <div style={{position:"relative",borderRadius:14,overflow:"hidden",background:BRAND.ink,aspectRatio:"16/9",border:`1px solid ${BRAND.rule}`,boxShadow:"var(--shadow-lg)"}}>
-                {featured.thumbnailUrl
-                  ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  : isDirectVideo(featured.videoUrl)
-                    ? <video src={featured.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                {isPlayableVideo(featured.videoUrl)
+                  ? <video src={getVideoEmbedInfo(featured.videoUrl).src} muted playsInline loop preload="metadata" poster={featured.thumbnailUrl||undefined} onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                  : featured.thumbnailUrl
+                    ? <img src={featured.thumbnailUrl} alt={featured.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <div style={{fontFamily:"'Instrument Serif',serif",fontSize:"clamp(1.6rem, 3.5vw, 2.6rem)",color:BRAND.paper,textAlign:"center",padding:"0 40px",letterSpacing:"-.01em",lineHeight:1.1}}>{featured.title}</div>
                     </div>}
@@ -2702,18 +2727,26 @@ function PodcastsPage(){
                 onMouseEnter={e=>{
                   e.currentTarget.querySelector('.podthumb').style.transform="scale(1.02)";
                   const v=e.currentTarget.querySelector("video");
-                  if(v){try{v.play().catch(()=>{})}catch(_){}}
+                  if(v&&!v.controls){try{v.play().catch(()=>{})}catch(_){}}
                 }}
                 onMouseLeave={e=>{
                   e.currentTarget.querySelector('.podthumb').style.transform="scale(1)";
                   const v=e.currentTarget.querySelector("video");
-                  if(v){try{v.pause(); v.currentTime=1;}catch(_){}}
+                  if(v&&!v.controls){try{v.pause(); v.currentTime=1;}catch(_){}}
+                }}
+                onClick={e=>{
+                  const info = getVideoEmbedInfo(p.videoUrl);
+                  if(info && info.type==="video"){
+                    e.preventDefault();
+                    const v=e.currentTarget.querySelector("video");
+                    if(v){ try{ v.muted=false; v.loop=false; v.controls=true; v.currentTime=0; v.play().catch(()=>{}); }catch(_){} }
+                  }
                 }}>
                 <div className="podthumb" style={{position:"relative",aspectRatio:"16/9",background:BRAND.ink,borderRadius:14,overflow:"hidden",border:`1px solid ${BRAND.rule}`,transition:"transform .25s ease",marginBottom:14}}>
-                  {p.thumbnailUrl
-                    ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    : isDirectVideo(p.videoUrl)
-                      ? <video src={p.videoUrl} muted playsInline loop preload="metadata" onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                  {isPlayableVideo(p.videoUrl)
+                    ? <video src={getVideoEmbedInfo(p.videoUrl).src} muted playsInline loop preload="metadata" poster={p.thumbnailUrl||undefined} onLoadedMetadata={seekToFrame} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                    : p.thumbnailUrl
+                      ? <img src={p.thumbnailUrl} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                       : <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 40%, rgba(229,67,27,.3) 0%, transparent 50%)",display:"flex",alignItems:"center",justifyContent:"center",color:BRAND.paper,fontFamily:"'Instrument Serif',serif",padding:20,textAlign:"center",fontSize:"1.1rem",lineHeight:1.15}}>{p.title}</div>}
                   <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 55%,rgba(36,31,33,.6) 100%)",pointerEvents:"none"}}></div>
                   <div style={{position:"absolute",inset:0,display:"grid",placeItems:"center",pointerEvents:"none"}}>
@@ -5170,7 +5203,9 @@ ${t.slice(0,3000)}`,
       viewCount: editingPodId ? (await podcastsApi.get(editingPodId))?.viewCount||0 : 0,
     };
     const r = await podcastsApi.upsert(p);
-    setPodMsg({type:"ok",text:`✓ Podcast salvo! ${editingPodId?"":"Aparece em /?view=podcasts"}`});
+    setPodSavedAt(Date.now());
+    setPodUploadStatus(null);
+    setPodMsg({type:"ok",text:`✓ Episódio salvo${podVideoUrl?" com vídeo":""}! ${editingPodId?"":"Aparece em /?view=podcasts"}`});
     setAllPodcasts(await podcastsApi.list());
     setEditingPodId(r.id);
   };
@@ -5205,29 +5240,35 @@ ${t.slice(0,3000)}`,
   };
 
   const [podUploadPct,setPodUploadPct] = useState(null); // null = idle, 0..100 = uploading
+  const [podUploadStatus,setPodUploadStatus] = useState(null); // {type:'ok'|'err'|'info', text}
+  const [podSavedAt,setPodSavedAt] = useState(null); // timestamp of last successful save
 
   const handlePodVideoUpload = async (e) => {
     const f = e.target.files?.[0]; if(!f) return;
     const MB = 1024*1024;
     const MAX_MB = 300;
-    if(f.size > MAX_MB*MB){setPodMsg({type:"err",text:`Arquivo de ${(f.size/MB).toFixed(1)}MB excede o limite de ${MAX_MB}MB. Use uma URL externa (HeyGen, YouTube...).`});return;}
-    if(!storageApi.available()){setPodMsg({type:"err",text:"Supabase Storage não configurado. Use o campo URL externa."});return;}
+    setPodSavedAt(null);
+    if(f.size > MAX_MB*MB){const m=`Arquivo de ${(f.size/MB).toFixed(1)}MB excede o limite de ${MAX_MB}MB. Use uma URL externa.`; setPodUploadStatus({type:"err",text:m}); setPodMsg({type:"err",text:m}); return;}
+    if(!storageApi.available()){const m="Supabase Storage não configurado — o upload não pode ser salvo. Configure as chaves do Supabase ou use o campo de URL externa acima."; setPodUploadStatus({type:"err",text:m}); setPodMsg({type:"err",text:m}); return;}
     const sizeStr = (f.size/MB).toFixed(1) + "MB";
     setPodUploadPct(0);
-    setPodMsg({type:"info",text:`⏳ Enviando vídeo (${sizeStr})... não feche esta aba. O upload é retomável se a conexão cair.`});
+    setPodUploadStatus({type:"info",text:`Enviando ${f.name} (${sizeStr})… não feche esta aba.`});
+    setPodMsg({type:"info",text:`⏳ Enviando vídeo (${sizeStr})...`});
     try {
       if(isStorageUrl(podVideoUrl)) await storageApi.deleteByUrl(podVideoUrl);
-      // Resumable (TUS) handles large files reliably with progress
       const { url } = await storageApi.uploadResumable(f, "video", (frac)=>{
         setPodUploadPct(Math.round(frac*100));
       });
       setPodVideoUrl(url);
       setPodVideoBlobRef("");
       setPodUploadPct(null);
-      setPodMsg({type:"ok",text:`✓ Vídeo enviado (${sizeStr}). Aparece no preview abaixo e na página pública.`});
+      setPodUploadStatus({type:"ok",text:`✓ Vídeo enviado ao Storage (${sizeStr}). Agora clique em “💾 Salvar episódio” para gravar — só assim ele aparece na página pública.`});
+      setPodMsg({type:"ok",text:`✓ Vídeo enviado. Clique em Salvar para gravar no episódio.`});
     } catch(err){
       setPodUploadPct(null);
-      setPodMsg({type:"err",text:`Falha no upload: ${err.message||err}. Tente novamente — o upload retoma de onde parou.`});
+      const m=`Falha no upload: ${err.message||err}. Tente novamente — o upload retoma de onde parou.`;
+      setPodUploadStatus({type:"err",text:m});
+      setPodMsg({type:"err",text:m});
     }
   };
 
@@ -5824,15 +5865,22 @@ ${t.slice(0,3000)}`,
               <input type="file" accept="video/*" onChange={handlePodVideoUpload} disabled={podUploadPct!==null} style={{fontSize:".82rem"}}/>
             </Field>
             {podUploadPct!==null && <div style={{marginBottom:10}}>
-              <div style={{height:8,background:BRAND.paperDark,borderRadius:100,overflow:"hidden",border:`1px solid ${BRAND.rule}`}}>
+              <div style={{height:12,background:BRAND.paperDark,borderRadius:100,overflow:"hidden",border:`1px solid ${BRAND.rule}`}}>
                 <div style={{height:"100%",width:`${podUploadPct}%`,background:`linear-gradient(90deg,${BRAND.accent},${BRAND.signal})`,transition:"width .3s ease"}}></div>
               </div>
-              <div className="mono" style={{fontSize:".66rem",color:BRAND.mute,marginTop:5,textAlign:"center"}}>{podUploadPct}% enviado{podUploadPct>=100?" · finalizando..." :""}</div>
+              <div className="mono" style={{fontSize:".72rem",color:BRAND.ink,marginTop:6,textAlign:"center",fontWeight:600}}>{podUploadPct}% enviado{podUploadPct>=100?" · finalizando no servidor..." :""}</div>
             </div>}
+            {podUploadStatus && podUploadPct===null && <div style={{
+                marginBottom:10, padding:"12px 14px", borderRadius:8, fontSize:".82rem", lineHeight:1.45,
+                background: podUploadStatus.type==="ok" ? "rgba(34,139,34,.1)" : podUploadStatus.type==="err" ? "rgba(229,67,27,.1)" : "rgba(36,31,33,.06)",
+                color: podUploadStatus.type==="err" ? BRAND.accentDeep : BRAND.ink,
+                border: `1px solid ${podUploadStatus.type==="ok" ? "rgba(34,139,34,.3)" : podUploadStatus.type==="err" ? "rgba(229,67,27,.3)" : BRAND.rule}`,
+                fontWeight: podUploadStatus.type==="ok" ? 600 : 400,
+              }}>{podUploadStatus.text}</div>}
             {isStorageUrl(podVideoUrl) && <div style={{padding:"6px 10px",background:`rgba(229,67,27,.1)`,borderRadius:4,fontSize:".72rem",color:BRAND.accentDeep,marginBottom:10,display:"flex",alignItems:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:".05em"}}>
               <span>📦</span>
               <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>STORAGE · {(storageUrlToPath(podVideoUrl)||"").split("/").pop()}</span>
-              <button onClick={async()=>{if(confirm("Apagar este arquivo do Storage e desvincular do podcast?")){await storageApi.deleteByUrl(podVideoUrl);setPodVideoUrl("");}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
+              <button onClick={async()=>{if(confirm("Apagar este arquivo do Storage e desvincular do podcast?")){await storageApi.deleteByUrl(podVideoUrl);setPodVideoUrl("");setPodSavedAt(null);}}} style={{background:"transparent",border:"none",cursor:"pointer",color:BRAND.accent,fontSize:".72rem",fontFamily:"inherit",letterSpacing:"inherit"}}>🗑 REMOVER</button>
             </div>}
             {podVideoBlobRef && <div className="mono" style={{fontSize:".66rem",color:BRAND.signal,marginBottom:10}}>✓ Vídeo legado carregado (base64, formato antigo)</div>}
             <Field label="URL da thumbnail (opcional)" style={{marginBottom:10}}>
@@ -5894,7 +5942,9 @@ ${t.slice(0,3000)}`,
           </div>
         </div>
 
-        <div style={{display:"flex",justifyContent:"flex-end",gap:10}}>
+        <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:14}}>
+          {podSavedAt && <span className="mono" style={{fontSize:".74rem",color:"#228B22",letterSpacing:".04em"}}>✓ Salvo às {new Date(podSavedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>}
+          {isStorageUrl(podVideoUrl) && !podSavedAt && <span className="mono" style={{fontSize:".74rem",color:BRAND.accentDeep,letterSpacing:".04em"}}>⚠ Vídeo no Storage não salvo — clique Salvar</span>}
           <Btn onClick={savePodcast} disabled={!podTitle.trim()}>💾 Salvar Podcast</Btn>
         </div>
       </div>}
