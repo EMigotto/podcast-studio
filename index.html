@@ -803,11 +803,47 @@ const storageApi = {
     const p = storageUrlToPath(url);
     if(p) await this.deletePath(p);
   },
-  // Resumable upload (TUS) for large files (video up to 300MB). Reports progress 0..1.
+  // Direct upload to Supabase Storage via XHR — real progress, no external lib needed.
+  // This is the reliable path (works even if the TUS library fails to load).
+  async uploadXHR(file, folder="video", onProgress){
+    if(!SB_OK) throw new Error("Supabase Storage não disponível (configure SUPABASE_URL/KEY)");
+    const { data: sess } = await sb.auth.getSession();
+    const token = (sess && sess.session && sess.session.access_token) ? sess.session.access_token : SUPABASE_ANON_KEY;
+    const ext = (file.name.match(/\.[a-zA-Z0-9]+$/)||[""])[0].toLowerCase();
+    const baseName = sanitizeFilename(file.name.replace(ext,""));
+    const path = `${folder}/${Date.now()}-${baseName}${ext}`;
+    return new Promise((resolve, reject) => {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`);
+        xhr.setRequestHeader("authorization", `Bearer ${token}`);
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.setRequestHeader("cache-control", "31536000");
+        if(file.type) xhr.setRequestHeader("content-type", file.type);
+        xhr.upload.onprogress = (e) => { if(onProgress && e.lengthComputable) onProgress(e.loaded/e.total); };
+        xhr.onload = () => {
+          if(xhr.status >= 200 && xhr.status < 300){
+            const { data: pub } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+            resolve({ url: pub.publicUrl, path });
+          } else {
+            let msg = `HTTP ${xhr.status}`;
+            try { const j = JSON.parse(xhr.responseText); msg = j.message || j.error || msg; } catch(_){}
+            reject(new Error(msg));
+          }
+        };
+        xhr.onerror = () => reject(new Error("erro de rede"));
+        xhr.send(file);
+      } catch(err){ reject(err); }
+    });
+  },
+  // Resumable upload (TUS) for large files. Falls back to direct XHR upload if TUS isn't available.
   // Uses the logged-in admin session token so it satisfies the "authenticated" Storage RLS.
   async uploadResumable(file, folder="video", onProgress){
     if(!SB_OK) throw new Error("Supabase Storage não disponível (configure SUPABASE_URL/KEY)");
-    if(typeof window.tus === "undefined") throw new Error("Biblioteca de upload (tus) não carregou. Recarregue a página.");
+    if(typeof window.tus === "undefined"){
+      // TUS library failed to load — use the reliable direct XHR upload instead.
+      return this.uploadXHR(file, folder, onProgress);
+    }
     const { data: sess } = await sb.auth.getSession();
     const token = (sess && sess.session && sess.session.access_token) ? sess.session.access_token : SUPABASE_ANON_KEY;
     const ext = (file.name.match(/\.[a-zA-Z0-9]+$/)||[""])[0].toLowerCase();
@@ -827,7 +863,10 @@ const storageApi = {
           cacheControl: "31536000",
         },
         chunkSize: 6 * 1024 * 1024, // Supabase requires exactly 6MB chunks (except the last)
-        onError: (err) => reject(err),
+        onError: (err) => {
+          // If TUS fails mid-flight, retry with direct XHR as a last resort.
+          this.uploadXHR(file, folder, onProgress).then(resolve).catch(()=>reject(err));
+        },
         onProgress: (sent, total) => { if(onProgress && total) onProgress(sent/total); },
         onSuccess: () => {
           const { data: pub } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(path);
@@ -5266,7 +5305,7 @@ ${t.slice(0,3000)}`,
       setPodMsg({type:"ok",text:`✓ Vídeo enviado. Clique em Salvar para gravar no episódio.`});
     } catch(err){
       setPodUploadPct(null);
-      const m=`Falha no upload: ${err.message||err}. Tente novamente — o upload retoma de onde parou.`;
+      const m=`Falha no upload: ${err.message||err}. Verifique a configuração do Supabase Storage (bucket "media" público + chaves) e tente novamente.`;
       setPodUploadStatus({type:"err",text:m});
       setPodMsg({type:"err",text:m});
     }
