@@ -1,0 +1,49 @@
+# Sync·MI deploy: ignora restos de outros projetos que possam estar no repo
+# (especialmente o antigo squad-autonomo / Next.js que estava poluindo o build)
+
+# Next.js / React frameworks
+.next/
+.nuxt/
+.svelte-kit/
+out/
+build/
+dist/
+
+# Source folders típicas de Next.js / outros frameworks
+app/
+src/
+lib/
+components/
+pages/
+public/lib/
+public/components/
+
+# Configs de framework
+next.config.js
+next.config.mjs
+next.config.ts
+next-env.d.ts
+tsconfig.json
+postcss.config.js
+postcss.config.mjs
+tailwind.config.js
+tailwind.config.ts
+.eslintrc
+.eslintrc.json
+.eslintrc.js
+
+# Lockfiles (não usamos deps no build)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Dev/IDE
+node_modules/
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Sourcemaps acidentais
+*.map
