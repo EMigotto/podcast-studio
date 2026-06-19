@@ -30,7 +30,16 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tus-js-client/4.1.0/tus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js"></script>
+<script>
+  // Normalize the TUS global across CDN builds (some expose window.tus.Upload, others window.tus default)
+  (function(){
+    try {
+      if (typeof window.tus === "undefined" && typeof window.tusJsClient !== "undefined") window.tus = window.tusJsClient;
+      if (window.tus && !window.tus.Upload && window.tus.default && window.tus.default.Upload) window.tus = window.tus.default;
+    } catch(_){}
+  })();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lenis/1.1.13/lenis.min.js"></script>
@@ -838,10 +847,13 @@ const storageApi = {
   },
   // Resumable upload (TUS) for large files. Falls back to direct XHR upload if TUS isn't available.
   // Uses the logged-in admin session token so it satisfies the "authenticated" Storage RLS.
-  async uploadResumable(file, folder="video", onProgress){
+  async uploadResumable(file, folder="video", onProgress, opts={}){
     if(!SB_OK) throw new Error("Supabase Storage não disponível (configure SUPABASE_URL/KEY)");
-    if(typeof window.tus === "undefined"){
-      // TUS library failed to load — use the reliable direct XHR upload instead.
+    if(typeof window.tus === "undefined" || !window.tus.Upload){
+      // TUS not available. Small files can still go via direct XHR; large files cannot (single POST fails).
+      if(opts.requireResumableForLarge){
+        throw new Error("uploader de arquivos grandes (tus) não carregou — recarregue a página com Ctrl+Shift+R");
+      }
       return this.uploadXHR(file, folder, onProgress);
     }
     const { data: sess } = await sb.auth.getSession();
@@ -5285,19 +5297,21 @@ ${t.slice(0,3000)}`,
   const handlePodVideoUpload = async (e) => {
     const f = e.target.files?.[0]; if(!f) return;
     const MB = 1024*1024;
-    const MAX_MB = 300;
+    const MAX_MB = 2048; // Supabase Pro supports large files; bucket limit must allow it too
     setPodSavedAt(null);
-    if(f.size > MAX_MB*MB){const m=`Arquivo de ${(f.size/MB).toFixed(1)}MB excede o limite de ${MAX_MB}MB. Use uma URL externa.`; setPodUploadStatus({type:"err",text:m}); setPodMsg({type:"err",text:m}); return;}
+    if(f.size > MAX_MB*MB){const m=`Arquivo de ${(f.size/MB).toFixed(1)}MB excede o limite de ${MAX_MB}MB. Comprima o vídeo ou use uma URL externa.`; setPodUploadStatus({type:"err",text:m}); setPodMsg({type:"err",text:m}); return;}
     if(!storageApi.available()){const m="Supabase Storage não configurado — o upload não pode ser salvo. Configure as chaves do Supabase ou use o campo de URL externa acima."; setPodUploadStatus({type:"err",text:m}); setPodMsg({type:"err",text:m}); return;}
     const sizeStr = (f.size/MB).toFixed(1) + "MB";
+    const big = f.size > 40*MB; // large files need chunked/resumable (TUS), not a single XHR POST
     setPodUploadPct(0);
-    setPodUploadStatus({type:"info",text:`Enviando ${f.name} (${sizeStr})… não feche esta aba.`});
+    setPodUploadStatus({type:"info",text:`Enviando ${f.name} (${sizeStr})…${big?" arquivo grande — enviado em blocos, pode levar alguns minutos.":""} Não feche esta aba.`});
     setPodMsg({type:"info",text:`⏳ Enviando vídeo (${sizeStr})...`});
     try {
       if(isStorageUrl(podVideoUrl)) await storageApi.deleteByUrl(podVideoUrl);
+      // For big files, require the resumable/chunked uploader (TUS); for small ones either path works.
       const { url } = await storageApi.uploadResumable(f, "video", (frac)=>{
         setPodUploadPct(Math.round(frac*100));
-      });
+      }, { requireResumableForLarge: big });
       setPodVideoUrl(url);
       setPodVideoBlobRef("");
       setPodUploadPct(null);
@@ -5305,7 +5319,12 @@ ${t.slice(0,3000)}`,
       setPodMsg({type:"ok",text:`✓ Vídeo enviado. Clique em Salvar para gravar no episódio.`});
     } catch(err){
       setPodUploadPct(null);
-      const m=`Falha no upload: ${err.message||err}. Verifique a configuração do Supabase Storage (bucket "media" público + chaves) e tente novamente.`;
+      const raw = (err && err.message) ? err.message : String(err);
+      let hint = "";
+      if(/exceeded the maximum allowed size|maximum allowed/i.test(raw)) hint = " → Aumente o 'File size limit' do bucket 'media' no Supabase (Storage → bucket media → Configuration).";
+      else if(/row-level security|RLS|policy/i.test(raw)) hint = " → Falta política de RLS permitindo upload autenticado no bucket 'media'.";
+      else if(/tus|resumable|bloco/i.test(raw)) hint = " → Recarregue a página (Ctrl+Shift+R) para carregar o uploader de arquivos grandes.";
+      const m=`Falha no upload: ${raw}.${hint}`;
       setPodUploadStatus({type:"err",text:m});
       setPodMsg({type:"err",text:m});
     }

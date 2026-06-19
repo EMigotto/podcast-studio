@@ -1,0 +1,10 @@
+# OS
+.DS_Store
+
+# Pastas/arquivos locais (nao sincronizados com o GitHub)
+Backup/
+syncmi-app/
+syncmi-app-completo.zip
+
+# Pasta duplicada do repo aninhado (sera removida manualmente)
+podcast-studio/
