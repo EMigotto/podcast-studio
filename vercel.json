@@ -11,8 +11,5 @@
     "api/share.js": { "maxDuration": 10 },
     "api/send-episode.js": { "maxDuration": 60 },
     "api/healthcheck.js": { "maxDuration": 20 }
-  },
-  "crons": [
-    { "path": "/api/healthcheck", "schedule": "*/5 * * * *" }
-  ]
+  }
 }
