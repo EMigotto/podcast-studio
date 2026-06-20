@@ -21,7 +21,8 @@
 //   SUPABASE_SERVICE_ROLE_KEY    = eyJ...                  (SECRET — guarda o estado do healthcheck)
 // OPTIONAL env vars:
 //   HEALTHCHECK_URL              = https://syncmi.app      (o que será monitorado; default abaixo)
-//   CRON_SECRET                  = (string aleatória — o Vercel envia no header Authorization do cron)
+//   HEALTHCHECK_TOKEN            = (string aleatória) → proteja chamando /api/healthcheck?key=ESSE_TOKEN
+//                                  (também aceita "Authorization: Bearer <token>" do Vercel Cron)
 //   REMIND_HOURS                 = 6                       (lembrete enquanto continua fora; 0 = desliga)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -126,10 +127,17 @@ function alertHtml({ up, target, status, error, when }){
 }
 
 export default async function handler(req, res){
-  // Protect the endpoint: Vercel Cron sends "Authorization: Bearer $CRON_SECRET" when CRON_SECRET is set.
-  if(CRON_SECRET){
+  // Auth: accept the secret via query string (?key=...) OR the cron Authorization header.
+  // This lets an external pinger (UptimeRobot/cron-job.org) call it with a URL secret,
+  // while Vercel Cron (if ever on Pro) still works via the Bearer header.
+  const HEALTHCHECK_TOKEN = process.env.HEALTHCHECK_TOKEN || process.env.CRON_SECRET || "";
+  if(HEALTHCHECK_TOKEN){
+    let qKey = "";
+    try { qKey = new URL(req.url, "http://x").searchParams.get("key") || ""; } catch(_){}
     const auth = req.headers["authorization"] || "";
-    if(auth !== `Bearer ${CRON_SECRET}`) return json(res, 401, { ok:false, error:"unauthorized" });
+    const headerOk = auth === `Bearer ${HEALTHCHECK_TOKEN}`;
+    const queryOk = qKey === HEALTHCHECK_TOKEN;
+    if(!headerOk && !queryOk) return json(res, 401, { ok:false, error:"unauthorized (forneça ?key=SEU_TOKEN)" });
   }
   if(!SUPABASE_URL || !SERVICE_KEY){
     return json(res, 200, { ok:false, error:"healthcheck precisa de SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no Vercel" });
